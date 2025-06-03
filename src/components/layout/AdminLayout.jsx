@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import {
-    FiHome,
-    FiUsers,
-    FiBarChart2,
-    FiSettings,
-    FiLogOut,
-} from "react-icons/fi";
+import { FiHome, FiUsers, FiBarChart2, FiLogOut } from "react-icons/fi";
 
 const AdminLayout = () => {
     const location = useLocation();
@@ -85,8 +79,8 @@ const AdminLayout = () => {
                                     <Link
                                         to={item.path}
                                         className={`flex items-center px-4 py-3 ${location.pathname === item.path
-                                                ? "bg-indigo-800 text-white"
-                                                : "text-indigo-300 hover:bg-indigo-800 hover:text-white"
+                                            ? "bg-indigo-800 text-white"
+                                            : "text-indigo-300 hover:bg-indigo-800 hover:text-white"
                                             } transition-colors duration-200`}
                                     >
                                         <span className="mr-3">{item.icon}</span>
