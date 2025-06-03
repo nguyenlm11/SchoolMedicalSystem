@@ -1,316 +1,152 @@
-import React from "react";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer className="bg-gradient-to-r from-slate-50 to-blue-50 text-gray-700 border-t border-blue-100">
-            {/* Main Footer Content */}
+        <footer style={{ backgroundColor: '#008080' }} className="text-white">
             <div className="container mx-auto px-4 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    {/* Column 1 - About */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="col-span-1 lg:col-span-1">
+                        <div className="flex items-center mb-4">
+                            <div className="h-10 w-10 mr-3 bg-white rounded-lg flex items-center justify-center">
+                                <span style={{ color: '#008080' }} className="font-bold text-lg">M</span>
+                            </div>
+                            <span className="text-white font-bold text-2xl tracking-tight">
+                                Med<span className="text-orange-300">School</span>
+                            </span>
+                        </div>
+                        <p className="text-teal-100 text-sm leading-relaxed mb-4">
+                            Hệ thống quản lý y tế trường học hiện đại, đảm bảo sức khỏe và an toàn cho học sinh.
+                        </p>
+                        <div className="flex space-x-4">
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                                </svg>
+                            </a>
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+                                </svg>
+                            </a>
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.754-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001 12.017.001z"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
                     <div>
-                        <h4 className="font-semibold text-base mb-4 text-blue-600">
-                            Về Chúng Tôi
-                        </h4>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="text-white font-semibold text-lg mb-4">Dành cho Phụ huynh</h3>
+                        <ul className="space-y-2">
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Giới thiệu
-                                    </span>
-                                </a>
+                                <Link to="/parent/health-profile" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Hồ sơ sức khỏe
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Lịch sử phát triển
-                                    </span>
-                                </a>
+                                <Link to="/parent/vaccination/consent/new" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Đồng ý tiêm chủng
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Đội ngũ nhân viên
-                                    </span>
-                                </a>
+                                <Link to="/parent/medication/request" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Gửi thuốc
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Cơ sở vật chất
-                                    </span>
-                                </a>
+                                <Link to="/parent/health-check" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Kiểm tra định kỳ
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Đối tác
-                                    </span>
-                                </a>
+                                <Link to="/parent/dashboard" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Bảng điều khiển
+                                </Link>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Column 2 - Services */}
+                    {/* Staff Links */}
                     <div>
-                        <h4 className="font-semibold text-base mb-4 text-blue-600">
-                            Dịch Vụ
-                        </h4>
-                        <ul className="space-y-2 text-sm">
+                        <h3 className="text-white font-semibold text-lg mb-4">Nhân viên Y tế</h3>
+                        <ul className="space-y-2">
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Hồ sơ sức khỏe điện tử
-                                    </span>
-                                </a>
+                                <Link to="/staff/vaccination" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Quản lý tiêm chủng
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Quản lý tiêm chủng
-                                    </span>
-                                </a>
+                                <Link to="/staff/medication" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Quản lý thuốc
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Khám sức khỏe định kỳ
-                                    </span>
-                                </a>
+                                <Link to="/staff/health-events" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Sự kiện y tế
+                                </Link>
                             </li>
                             <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Quản lý thuốc men
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Tư vấn dinh dưỡng
-                                    </span>
-                                </a>
+                                <Link to="/staff/health-check" className="text-teal-200 hover:text-white transition-colors duration-200 text-sm">
+                                    Kiểm tra định kỳ
+                                </Link>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Column 3 - Resources */}
+                    {/* Contact Info */}
                     <div>
-                        <h4 className="font-semibold text-base mb-4 text-blue-600">
-                            Tài Nguyên
-                        </h4>
-                        <ul className="space-y-2 text-sm">
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Hướng dẫn sử dụng
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        FAQ
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Blog
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Tài liệu y tế
-                                    </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a
-                                    href="#"
-                                    className="hover:text-blue-600 transition-all duration-200 inline-flex items-center"
-                                >
-                                    <span className="hover:pl-1 transition-all duration-200">
-                                        Chính sách bảo mật
-                                    </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Column 4 - Contact */}
-                    <div>
-                        <h4 className="font-semibold text-base mb-4 text-blue-600">
-                            Liên Hệ
-                        </h4>
-                        <ul className="space-y-3 text-sm">
-                            <li className="flex items-start">
-                                <svg
-                                    className="h-5 w-5 text-blue-500 mr-2 mt-0.5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
+                        <h3 className="text-white font-semibold text-lg mb-4">Liên hệ</h3>
+                        <div className="space-y-3">
+                            <div className="flex items-start">
+                                <svg className="w-5 h-5 text-teal-200 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
-                                <span className="text-gray-600">
-                                    FPT University
-                                </span>
-                            </li>
-                            <li className="flex items-center">
-                                <svg
-                                    className="h-5 w-5 text-blue-500 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                                    />
+                                <div>
+                                    <p className="text-teal-200 text-sm">
+                                        Lô E2a-7, Đường D1, Đ. D1, Long Thạnh Mỹ, Thành Phố Thủ Đức, Thành phố Hồ Chí Minh
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center">
+                                <svg className="w-5 h-5 text-teal-200 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
-                                <span className="text-gray-600">0786485999</span>
-                            </li>
-                            <li className="flex items-center">
-                                <svg
-                                    className="h-5 w-5 text-blue-500 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                    />
+                                <p className="text-teal-200 text-sm">+84 28 7300 5588</p>
+                            </div>
+                            
+                            <div className="flex items-center">
+                                <svg className="w-5 h-5 text-teal-200 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
-                                <span className="text-gray-600">toannxse171299@fpt.edu.vn</span>
-                            </li>
-                        </ul>
-                        <div className="mt-6 flex space-x-4">
-                            <a
-                                href="#"
-                                className="text-blue-500 hover:text-blue-600 transition-all duration-200"
-                                aria-label="Facebook"
-                            >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                                </svg>
-                            </a>
-                            <a
-                                href="#"
-                                className="text-pink-500 hover:text-pink-600 transition-all duration-200"
-                                aria-label="Instagram"
-                            >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" />
-                                </svg>
-                            </a>
-                            <a
-                                href="#"
-                                className="text-blue-400 hover:text-blue-500 transition-all duration-200"
-                                aria-label="Twitter"
-                            >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                                </svg>
-                            </a>
-                            <a
-                                href="#"
-                                className="text-red-500 hover:text-red-600 transition-all duration-200"
-                                aria-label="YouTube"
-                            >
-                                <svg
-                                    className="h-5 w-5"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-                                </svg>
-                            </a>
+                                <p className="text-teal-200 text-sm">support@medschool.edu.vn</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Copyright Bar */}
-            <div className="bg-blue-600 py-4">
-                <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-white text-xs">
-                    <p>
-                        &copy; {new Date().getFullYear()} MedSchool. Tất cả quyền được bảo
-                        lưu.
-                    </p>
+            <div style={{ backgroundColor: '#006666' }} className="py-4">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-center">
+                        <div className="text-teal-200 text-sm mb-2 md:mb-0">
+                            © 2024 MedSchool. Tất cả quyền được bảo lưu.
+                        </div>
+                        <div className="flex space-x-6 text-sm">
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                Chính sách bảo mật
+                            </a>
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                Điều khoản sử dụng
+                            </a>
+                            <a href="#" className="text-teal-200 hover:text-white transition-colors duration-200">
+                                Hỗ trợ
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </footer>

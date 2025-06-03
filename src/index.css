@@ -1,1 +1,202 @@
 @import "tailwindcss";
+
+/* Modern Beautiful Auto-Hide Scrollbar Design - Teal Color Scheme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+  border-radius: 16px;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #008080 0%, #006666 50%, #004d4d 100%);
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 16px rgba(0, 128, 128, 0.25),
+    0 2px 8px rgba(0, 128, 128, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #006666 0%, #004d4d 50%, #003333 100%);
+  box-shadow: 
+    0 6px 24px rgba(0, 128, 128, 0.4),
+    0 4px 12px rgba(0, 128, 128, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, #004d4d 0%, #003333 50%, #001a1a 100%);
+  box-shadow: 
+    0 2px 8px rgba(0, 128, 128, 0.5),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(0.95);
+}
+
+::-webkit-scrollbar-corner {
+  background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+  border-radius: 16px;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Show scrollbar ONLY when actively scrolling with beautiful animation */
+.scrolling::-webkit-scrollbar,
+.scrolling::-webkit-scrollbar-track,
+.scrolling::-webkit-scrollbar-thumb,
+.scrolling::-webkit-scrollbar-corner {
+  opacity: 1;
+  animation: scrollbarShow 0.3s ease-out forwards;
+}
+
+@keyframes scrollbarShow {
+  0% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Firefox Modern Scrollbar - Teal Theme */
+* {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+.scrolling {
+  scrollbar-width: thin;
+  scrollbar-color: #008080 #f3f4f6;
+}
+
+/* Smooth Scrolling with easing */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Beautiful dropdown menu scrollbar - Teal Theme */
+.dropdown-scroll::-webkit-scrollbar {
+  width: 8px;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dropdown-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(135deg, rgba(0, 128, 128, 0.05) 0%, rgba(0, 102, 102, 0.02) 100%);
+  border-radius: 12px;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 2px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(0, 128, 128, 0.1);
+}
+
+.dropdown-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(230, 247, 247, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 128, 128, 0.2);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 8px rgba(0, 128, 128, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dropdown-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(204, 239, 239, 0.9) 100%);
+  box-shadow: 
+    0 4px 12px rgba(0, 128, 128, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.dropdown-scroll.scrolling::-webkit-scrollbar,
+.dropdown-scroll.scrolling::-webkit-scrollbar-track,
+.dropdown-scroll.scrolling::-webkit-scrollbar-thumb {
+  opacity: 1;
+  animation: dropdownScrollShow 0.2s ease-out forwards;
+}
+
+@keyframes dropdownScrollShow {
+  0% {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile dropdown - completely hidden */
+.mobile-dropdown-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mobile-dropdown-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Additional modern touches with teal accent */
+.scrolling::-webkit-scrollbar-thumb::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(230, 247, 247, 0.3) 50%, transparent 100%);
+  border-radius: inherit;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive scrollbar sizing */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .dropdown-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .dropdown-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+}

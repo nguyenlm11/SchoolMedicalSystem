@@ -2,14 +2,14 @@ import React from 'react';
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-white">
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Chào mừng đến với{' '}
-            <span className="text-blue-600">Med</span>
-            <span className="text-blue-800">School</span>
+            <span style={{ color: '#008080' }}>Med</span>
+            <span style={{ color: '#006666' }}>School</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Hệ thống quản lý y tế trường học hiện đại, giúp theo dõi và chăm sóc sức khỏe học sinh một cách toàn diện và hiệu quả.
@@ -20,10 +20,11 @@ const HomePage = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {/* Feature 1 */}
           <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-blue-600"
+                style={{ color: '#008080' }}
+                className="h-6 w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -175,7 +176,8 @@ const HomePage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
                 href="/login"
-                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                style={{ backgroundColor: '#008080' }}
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white hover:bg-teal-700 transition-colors duration-200"
               >
                 <svg
                   className="w-5 h-5 mr-2"
@@ -195,7 +197,11 @@ const HomePage = () => {
               </a>
               <a
                 href="/register"
-                className="inline-flex items-center justify-center px-6 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors duration-200"
+                style={{ 
+                  borderColor: '#008080',
+                  color: '#008080'
+                }}
+                className="inline-flex items-center justify-center px-6 py-3 border text-base font-medium rounded-md bg-white hover:bg-teal-50 transition-colors duration-200"
               >
                 <svg
                   className="w-5 h-5 mr-2"
