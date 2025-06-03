@@ -15,7 +15,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<div className="p-8 text-center">Trang đăng nhập (đang phát triển)</div>} />
             <Route path="/register" element={<div className="p-8 text-center">Trang đăng ký (đang phát triển)</div>} />
-            
+
             {/* Parent routes */}
             <Route path="/parent/health-profile" element={<div className="p-8 text-center">Danh sách hồ sơ sức khỏe (đang phát triển)</div>} />
             <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
@@ -25,7 +25,7 @@ function App() {
             <Route path="/parent/dashboard" element={<div className="p-8 text-center">Bảng điều khiển (đang phát triển)</div>} />
             <Route path="/parent/health-check" element={<div className="p-8 text-center">Xác nhận kiểm tra (đang phát triển)</div>} />
             <Route path="/parent/health-check/results" element={<div className="p-8 text-center">Xem kết quả kiểm tra (đang phát triển)</div>} />
-            
+
             {/* Staff routes */}
             <Route path="/staff/vaccination" element={<div className="p-8 text-center">Quản lý tiêm chủng (đang phát triển)</div>} />
             <Route path="/staff/vaccination/flow" element={<div className="p-8 text-center">Quy trình tiêm chủng (đang phát triển)</div>} />
