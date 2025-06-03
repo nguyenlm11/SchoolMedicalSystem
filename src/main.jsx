@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './utils/AuthContext'
 import './index.css'
 import App from './App.jsx'
 
@@ -11,10 +12,10 @@ const handleScroll = () => {
   // Add scrolling class to show scrollbar
   document.body.classList.add('scrolling');
   document.documentElement.classList.add('scrolling');
-  
+
   // Clear existing timer
   clearTimeout(scrollTimer);
-  
+
   // Hide scrollbar after user stops scrolling
   scrollTimer = setTimeout(() => {
     document.body.classList.remove('scrolling');
@@ -30,7 +31,7 @@ const handleDropdownScroll = (event) => {
   const element = event.target;
   if (element.classList.contains('dropdown-scroll')) {
     element.classList.add('scrolling');
-    
+
     clearTimeout(element.scrollTimer);
     element.scrollTimer = setTimeout(() => {
       element.classList.remove('scrolling');
@@ -44,7 +45,9 @@ document.addEventListener('scroll', handleDropdownScroll, true);
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 )

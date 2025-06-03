@@ -15,7 +15,7 @@ import HomePage from "./components/home/HomePage";
 // import MedicationRequest from "./pages/parent/medication/MedicationRequest";
 // import MedicationHistory from "./pages/parent/medication/MedicationHistory";
 // import MedicationDetail from "./pages/parent/medication/MedicationDetail";
-// import ParentDashboard from "./pages/parent/dashboard/ParentDashboard";
+import ParentDashboard from "./pages/parent/ParentDashboard";
 // import StaffMedicationList from "./pages/staff/medication/StaffMedicationList";
 // import MedicationAdminister from "./pages/staff/medication/MedicationAdminister";
 // import MedicalInventory from "./pages/staff/medication/MedicalInventory";
@@ -29,8 +29,9 @@ import HomePage from "./components/home/HomePage";
 // import HealthEventDetail from "./pages/staff/health-events/HealthEventDetail";
 // import MedicalEventSupplies from "./pages/staff/health-events/MedicalEventSupplies";
 import MainLayout from "./components/layout/MainLayout";
-// import AdminLayout from "./components/layout/AdminLayout";
+import AdminLayout from "./components/layout/AdminLayout";
 import AuthLayout from "./components/layout/AuthLayout";
+import LoginPage from "./pages/auth/LoginPage";
 // import VaccinationManagement from "./pages/staff/VaccinationManagement";
 // import VaccinationFlowDiagram from "./pages/staff/VaccinationFlowDiagram";
 // import VaccinationConsent from "./pages/parent/VaccinationConsent";
@@ -40,7 +41,7 @@ import AuthLayout from "./components/layout/AuthLayout";
 // import HealthCheckForm from "./pages/staff/HealthCheckForm";
 // import HealthCheckConfirmation from "./pages/parent/HealthCheckConfirmation";
 // Import admin components
-// import { AdminDashboard, ReportsAnalytics } from "./pages/admin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 // import UserManagement from "./pages/admin/UserManagement";
 // import UserList from "./pages/admin/UserManagement/UserList";
 // import UserRoles from "./pages/admin/UserManagement/UserRoles";
@@ -49,7 +50,7 @@ import AuthLayout from "./components/layout/AuthLayout";
 
 // Import Teacher and Student components
 // import TeacherDashboard from "./pages/teacher/TeacherDashboard";
-// import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentDashboard from "./pages/student/StudentDashboard";
 
 function App() {
   return (
@@ -57,17 +58,15 @@ function App() {
       <Routes>
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<div className="p-8 text-center">Trang đăng nhập (đang phát triển)</div>} />
-          <Route path="/register" element={<div className="p-8 text-center">Trang đăng ký (đang phát triển)</div>} />
-          {/* <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} /> */}
+          <Route path="/login" element={<LoginPage />} />
+          {/* <Route path="/register" element={<Register />} /> */}
         </Route>
 
         {/* Admin Routes - Custom Admin Layout */}
-        {/* <Route element={<AdminLayout />}>
+        <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-          <Route path="/admin/users" element={<UserManagement />}>
+          {/* <Route path="/admin/users" element={<UserManagement />}>
             <Route index element={<UserList />} />
             <Route path="roles" element={<UserRoles />} />
             <Route path="permissions" element={<UserPermissions />} />
@@ -75,8 +74,8 @@ function App() {
 
           <Route path="/admin/users/new" element={<NewUser />} />
 
-          <Route path="/admin/reports" element={<ReportsAnalytics />} />
-        </Route> */}
+          <Route path="/admin/reports" element={<ReportsAnalytics />} /> */}
+        </Route>
 
         {/* Main Routes - With Navbar and Footer */}
         <Route element={<MainLayout />}>
@@ -97,8 +96,7 @@ function App() {
           <Route path="/resources/medical-procedures" element={<MedicalProcedures />} /> */}
 
           {/* Parent Dashboard */}
-          <Route path="/parent/dashboard" element={<div className="p-8 text-center">Bảng điều khiển phụ huynh (đang phát triển)</div>} />
-          {/* <Route path="/parent/dashboard" element={<ParentDashboard />} /> */}
+          <Route path="/parent/dashboard" element={<ParentDashboard />} />
 
           {/* Parent Health Profile Routes */}
           <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
@@ -192,51 +190,15 @@ function App() {
           {/* <Route path="/teacher/dashboard" element={<TeacherDashboard />} /> */}
 
           {/* Student Routes */}
-          <Route path="/student/dashboard" element={<div className="p-8 text-center">Bảng điều khiển học sinh (đang phát triển)</div>} />
+          <Route path="/student/dashboard" element={<StudentDashboard />} />
           <Route path="/student/health-profile" element={<div className="p-8 text-center">Hồ sơ sức khỏe của học sinh (đang phát triển)</div>} />
           <Route path="/student/report-symptom" element={<div className="p-8 text-center">Báo cáo triệu chứng (đang phát triển)</div>} />
           <Route path="/student/request-visit" element={<div className="p-8 text-center">Yêu cầu gặp y tá (đang phát triển)</div>} />
           <Route path="/student/health-events" element={<div className="p-8 text-center">Sự kiện y tế của học sinh (đang phát triển)</div>} />
-          {/* <Route path="/student/dashboard" element={<StudentDashboard />} /> */}
         </Route>
       </Routes>
     </div>
   );
-=======
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<div className="p-8 text-center">Trang đăng nhập (đang phát triển)</div>} />
-            <Route path="/register" element={<div className="p-8 text-center">Trang đăng ký (đang phát triển)</div>} />
-
-            {/* Parent routes */}
-            <Route path="/parent/health-profile" element={<div className="p-8 text-center">Danh sách hồ sơ sức khỏe (đang phát triển)</div>} />
-            <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
-            <Route path="/parent/vaccination/consent/new" element={<div className="p-8 text-center">Phiếu đồng ý tiêm chủng (đang phát triển)</div>} />
-            <Route path="/parent/medication/request" element={<div className="p-8 text-center">Gửi thuốc (đang phát triển)</div>} />
-            <Route path="/parent/medication/history" element={<div className="p-8 text-center">Lịch sử gửi thuốc (đang phát triển)</div>} />
-            <Route path="/parent/dashboard" element={<div className="p-8 text-center">Bảng điều khiển (đang phát triển)</div>} />
-            <Route path="/parent/health-check" element={<div className="p-8 text-center">Xác nhận kiểm tra (đang phát triển)</div>} />
-            <Route path="/parent/health-check/results" element={<div className="p-8 text-center">Xem kết quả kiểm tra (đang phát triển)</div>} />
-
-            {/* Staff routes */}
-            <Route path="/staff/vaccination" element={<div className="p-8 text-center">Quản lý tiêm chủng (đang phát triển)</div>} />
-            <Route path="/staff/vaccination/flow" element={<div className="p-8 text-center">Quy trình tiêm chủng (đang phát triển)</div>} />
-            <Route path="/staff/medication" element={<div className="p-8 text-center">Quản lý thuốc (đang phát triển)</div>} />
-            <Route path="/staff/health-events" element={<div className="p-8 text-center">Danh sách sự kiện y tế (đang phát triển)</div>} />
-            <Route path="/staff/health-events/new" element={<div className="p-8 text-center">Thêm sự kiện mới (đang phát triển)</div>} />
-            <Route path="/staff/health-check" element={<div className="p-8 text-center">Quản lý kiểm tra (đang phát triển)</div>} />
-            <Route path="/staff/health-check/new" element={<div className="p-8 text-center">Lên lịch kiểm tra mới (đang phát triển)</div>} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </Router>
-  )
-
 }
 
 export default App;
