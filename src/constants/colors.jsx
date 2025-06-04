@@ -1,4 +1,3 @@
-// Primary color and its variations
 export const PRIMARY = {
     50: '#e6f7f7',
     100: '#ccefef',
@@ -12,7 +11,6 @@ export const PRIMARY = {
     900: '#001a1a',
 };
 
-// Secondary colors (complementary to teal)
 export const SECONDARY = {
     50: '#fff5e6',
     100: '#ffebcc',
@@ -26,7 +24,6 @@ export const SECONDARY = {
     900: '#331f00',
 };
 
-// Neutral colors
 export const GRAY = {
     50: '#f9fafb',
     100: '#f3f4f6',
@@ -40,7 +37,6 @@ export const GRAY = {
     900: '#111827',
 };
 
-// Status colors
 export const SUCCESS = {
     50: '#f0fdf4',
     100: '#dcfce7',
@@ -93,14 +89,12 @@ export const INFO = {
     900: '#1e3a8a',
 };
 
-// Common colors
 export const COMMON = {
     WHITE: '#ffffff',
     BLACK: '#000000',
     TRANSPARENT: 'transparent',
 };
 
-// Text colors
 export const TEXT = {
     PRIMARY: GRAY[900],
     SECONDARY: GRAY[600],
@@ -108,7 +102,6 @@ export const TEXT = {
     INVERSE: COMMON.WHITE,
 };
 
-// Background colors
 export const BACKGROUND = {
     DEFAULT: COMMON.WHITE,
     PAPER: COMMON.WHITE,
@@ -123,7 +116,6 @@ export const BORDER = {
     DARK: GRAY[300],
 };
 
-// Shadow colors
 export const SHADOW = {
     DEFAULT: 'rgba(0, 0, 0, 0.1)',
     LIGHT: 'rgba(0, 0, 0, 0.05)',
@@ -131,21 +123,6 @@ export const SHADOW = {
     DARK: 'rgba(0, 0, 0, 0.25)',
 };
 
-// Export all colors as a single object for easy access
-export const COLORS = {
-    PRIMARY,
-    SECONDARY,
-    GRAY,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    INFO,
-    COMMON,
-    TEXT,
-    BACKGROUND,
-    BORDER,
-    SHADOW,
-};
+export const COLORS = { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, INFO, COMMON, TEXT, BACKGROUND, BORDER, SHADOW, };
 
-// Export default
 export default COLORS;

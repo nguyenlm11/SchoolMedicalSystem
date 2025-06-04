@@ -137,11 +137,11 @@ const LoginPage = () => {
 
     // Available roles in the system
     const roles = [
-        { id: "student", label: "Học sinh", color: PRIMARY, icon: FiUser },
-        { id: "parent", label: "Phụ huynh", color: SUCCESS, icon: FiHeart },
-        { id: "manager", label: "Quản lý", color: WARNING, icon: FiUser },
-        { id: "nurse", label: "Nhân viên y tế", color: INFO, icon: FiUser },
-        { id: "admin", label: "Quản trị viên", color: ERROR, icon: FiUser },
+        { id: "student", label: "Học sinh", icon: FiUser },
+        { id: "parent", label: "Phụ huynh", icon: FiHeart },
+        { id: "manager", label: "Quản lý", icon: FiUser },
+        { id: "nurse", label: "Nhân viên y tế", icon: FiUser },
+        { id: "admin", label: "Quản trị viên", icon: FiUser },
     ];
 
     const getCurrentRole = () => {
@@ -257,9 +257,9 @@ const LoginPage = () => {
                         <div className="text-center mb-8">
                             <div
                                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                                style={{ backgroundColor: currentRole.color[100] }}
+                                style={{ backgroundColor: PRIMARY[100] }}
                             >
-                                <currentRole.icon className="h-8 w-8" style={{ color: currentRole.color[600] }} />
+                                <currentRole.icon className="h-8 w-8" style={{ color: PRIMARY[600] }} />
                             </div>
                             <h1 className="text-2xl lg:text-3xl font-bold mb-2" style={{ color: TEXT.PRIMARY }}>
                                 Chào mừng trở lại
@@ -299,7 +299,7 @@ const LoginPage = () => {
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <currentRole.icon className="h-5 w-5" style={{ color: currentRole.color[500] }} />
+                                        <currentRole.icon className="h-5 w-5" style={{ color: PRIMARY[500] }} />
                                     </div>
                                     <select
                                         id="role"
@@ -312,7 +312,7 @@ const LoginPage = () => {
                                             backgroundColor: BACKGROUND.DEFAULT,
                                             borderColor: BORDER.DEFAULT,
                                             color: TEXT.PRIMARY,
-                                            focusRingColor: currentRole.color[500],
+                                            focusRingColor: PRIMARY[500],
                                             borderWidth: '2px'
                                         }}
                                     >
@@ -418,17 +418,17 @@ const LoginPage = () => {
                                     disabled={isLoading}
                                     className="w-full py-3 px-4 rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg"
                                     style={{
-                                        backgroundColor: currentRole.color[500],
-                                        focusRingColor: currentRole.color[500]
+                                        backgroundColor: PRIMARY[500],
+                                        focusRingColor: PRIMARY[500]
                                     }}
                                     onMouseEnter={(e) => {
                                         if (!isLoading) {
-                                            e.target.style.backgroundColor = currentRole.color[600];
+                                            e.target.style.backgroundColor = PRIMARY[600];
                                         }
                                     }}
                                     onMouseLeave={(e) => {
                                         if (!isLoading) {
-                                            e.target.style.backgroundColor = currentRole.color[500];
+                                            e.target.style.backgroundColor = PRIMARY[500];
                                         }
                                     }}
                                 >
@@ -443,19 +443,6 @@ const LoginPage = () => {
                                 </button>
                             </div>
                         </form>
-
-                        {/* Demo Info */}
-                        <div
-                            className="mt-8 p-4 rounded-xl text-xs text-center"
-                            style={{
-                                backgroundColor: INFO[50],
-                                color: INFO[700],
-                                border: `1px solid ${INFO[200]}`
-                            }}
-                        >
-                            <p className="font-medium mb-1">Demo Application</p>
-                            <p>Nhập bất kỳ tên đăng nhập và mật khẩu nào để truy cập</p>
-                        </div>
                     </div>
                 </div>
             </div>
