@@ -43,7 +43,9 @@ import LoginPage from "./pages/auth/LoginPage";
 // Import admin components
 import AdminDashboard from "./pages/admin/AdminDashboard";
 // import UserManagement from "./pages/admin/UserManagement";
+import UserManagement from "./pages/admin/UserManagement";
 // import UserList from "./pages/admin/UserManagement/UserList";
+import UserList from "./pages/admin/UserManagement/UserList";
 // import UserRoles from "./pages/admin/UserManagement/UserRoles";
 // import UserPermissions from "./pages/admin/UserManagement/UserPermissions";
 // import NewUser from "./pages/admin/UserManagement/NewUser";
@@ -51,6 +53,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 // Import Teacher and Student components
 // import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import StudentDashboard from "./pages/student/StudentDashboard";
+
+
 
 function App() {
   return (
@@ -66,13 +70,13 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-          {/* <Route path="/admin/users" element={<UserManagement />}>
+          <Route path="/admin/users" element={<UserManagement />}>
             <Route index element={<UserList />} />
-            <Route path="roles" element={<UserRoles />} />
-            <Route path="permissions" element={<UserPermissions />} />
+            {/* <Route path="roles" element={<UserRoles />} />
+            <Route path="permissions" element={<UserPermissions />} /> */}
           </Route>
 
-          <Route path="/admin/users/new" element={<NewUser />} />
+          {/* <Route path="/admin/users/new" element={<NewUser />} />
 
           <Route path="/admin/reports" element={<ReportsAnalytics />} /> */}
         </Route>
