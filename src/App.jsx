@@ -51,10 +51,11 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 // Import Teacher and Student components
 // import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import StudentDashboard from "./pages/student/StudentDashboard";
+import BlogPage from "./pages/blog/BlogPage";
 
 function App() {
   return (
-    <div>
+      <div>
       <Routes>
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
@@ -195,9 +196,12 @@ function App() {
           <Route path="/student/report-symptom" element={<div className="p-8 text-center">Báo cáo triệu chứng (đang phát triển)</div>} />
           <Route path="/student/request-visit" element={<div className="p-8 text-center">Yêu cầu gặp y tá (đang phát triển)</div>} />
           <Route path="/student/health-events" element={<div className="p-8 text-center">Sự kiện y tế của học sinh (đang phát triển)</div>} />
+
+          {/* Guest Routes */}
+          <Route path="/blog" element={<BlogPage />} />
         </Route>
       </Routes>
-    </div>
+      </div>
   );
 }
 
