@@ -83,7 +83,7 @@ const Navbar = () => {
                 {
                     category: "Phụ huynh",
                     links: [
-                        { to: "/parent/vaccination/consent/new", label: "Phiếu đồng ý tiêm chủng", desc: "Gửi phiếu đồng ý cho trường" },
+                        { to: "/parent/vaccination/schedule", label: "Lịch tiêm chủng", desc: "Xem lịch tiêm chủng" },
                     ],
                 },
                 {
@@ -177,8 +177,8 @@ const Navbar = () => {
     return (
         <nav
             className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled
-                    ? 'shadow-lg border-b border-teal-400'
-                    : 'shadow-md'
+                ? 'shadow-lg border-b border-teal-400'
+                : 'shadow-md'
                 } ${isNavbarVisible ? 'translate-y-0' : '-translate-y-full'
                 }`}
             style={{
@@ -279,8 +279,8 @@ const Navbar = () => {
                                 {/* Enhanced Dropdown Menu - TEAL THEME with Scroll */}
                                 <div
                                     className={`absolute top-full left-0 mt-2 w-72 xl:w-80 transition-all duration-300 transform ${activeDropdown === item.name
-                                            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                                            : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                                        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
                                         }`}
                                     style={{ zIndex: 9999 }}
                                     data-dropdown
