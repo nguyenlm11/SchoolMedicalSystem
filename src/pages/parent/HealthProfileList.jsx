@@ -1,10 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FiPlus, FiEye, FiEdit3, FiUser, FiCalendar, FiSearch } from "react-icons/fi";
-import { PRIMARY, SUCCESS, WARNING, ERROR, GRAY, TEXT, BACKGROUND } from "../../constants/colors"
+import { PRIMARY, SUCCESS, WARNING, ERROR, GRAY, TEXT, BACKGROUND } from "../../constants/colors";
+import Loading from "../../components/Loading";
 
 const HealthProfileList = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      setIsSearching(true);
+      const timer = setTimeout(() => {
+        setIsSearching(false);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [searchTerm]);
+
   const studentProfiles = [
     {
       id: 1,
@@ -94,7 +115,6 @@ const HealthProfileList = () => {
 
   const getHealthFlags = (profile) => {
     const flags = [];
-
     if (profile.hasAllergies) {
       flags.push(
         <div key="allergy" className="flex items-center mr-3 mb-1 group">
@@ -103,7 +123,6 @@ const HealthProfileList = () => {
         </div>
       );
     }
-
     if (profile.hasChronicDiseases) {
       flags.push(
         <div key="chronic" className="flex items-center mr-3 mb-1 group">
@@ -112,7 +131,6 @@ const HealthProfileList = () => {
         </div>
       );
     }
-
     if (profile.hasVisionIssues) {
       flags.push(
         <div key="vision" className="flex items-center mr-3 mb-1 group">
@@ -121,7 +139,6 @@ const HealthProfileList = () => {
         </div>
       );
     }
-
     if (profile.hasHearingIssues) {
       flags.push(
         <div key="hearing" className="flex items-center mr-3 mb-1 group">
@@ -130,13 +147,14 @@ const HealthProfileList = () => {
         </div>
       );
     }
-
     return flags.length > 0 ? (
       <div className="flex flex-wrap">{flags}</div>
     ) : (
       <span className="text-xs font-medium" style={{ color: GRAY[400] }}>Không có vấn đề</span>
     );
   };
+
+  if (isLoading) { return <Loading type="medical" size="large" color="primary" text="Đang tải hồ sơ sức khỏe..." fullScreen={true} />; }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -226,7 +244,11 @@ const HealthProfileList = () => {
       </section>
 
       <div className="container mx-auto px-4 py-8 lg:py-16">
-        {filteredProfiles.length > 0 ? (
+        {isSearching ? (
+          <div className="text-center py-12">
+            <Loading type="medical" size="large" color="primary" text="Đang tìm kiếm hồ sơ..." />
+          </div>
+        ) : filteredProfiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {filteredProfiles.map((profile) => (
               <div
