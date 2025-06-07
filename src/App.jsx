@@ -11,7 +11,7 @@ import HomePage from "./components/home/HomePage";
 // import PhysicalDevelopment from "./pages/resources/physical-development/PhysicalDevelopment";
 // import MedicalProcedures from "./pages/resources/medical-procedures/MedicalProcedures";
 // import StudentHealthProfile from "./pages/parent/health-profile/StudentHealthProfile";
-// import HealthProfileList from "./pages/parent/health-profile/HealthProfileList";
+import HealthProfileList from "./pages/parent/HealthProfileList";
 // import MedicationRequest from "./pages/parent/medication/MedicationRequest";
 // import MedicationHistory from "./pages/parent/medication/MedicationHistory";
 // import MedicationDetail from "./pages/parent/medication/MedicationDetail";
@@ -105,7 +105,7 @@ function App() {
 
           {/* Parent Health Profile Routes */}
           <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
-          <Route path="/parent/health-profile" element={<div className="p-8 text-center">Danh sách hồ sơ sức khỏe (đang phát triển)</div>} />
+          <Route path="/parent/health-profile" element={<HealthProfileList />} />
           <Route path="/parent/health-profile/:id" element={<div className="p-8 text-center">Chi tiết hồ sơ sức khỏe (đang phát triển)</div>} />
           <Route path="/parent/health-profile/edit/:id" element={<div className="p-8 text-center">Chỉnh sửa hồ sơ sức khỏe (đang phát triển)</div>} />
           {/* <Route path="/parent/health-profile/new" element={<StudentHealthProfile />} />

@@ -5,41 +5,33 @@ import { AuthProvider } from './utils/AuthContext'
 import './index.css'
 import App from './App.jsx'
 
-// Auto-hide scrollbar functionality - Only show when scrolling
 let scrollTimer;
 
 const handleScroll = () => {
-  // Add scrolling class to show scrollbar
   document.body.classList.add('scrolling');
   document.documentElement.classList.add('scrolling');
-
-  // Clear existing timer
   clearTimeout(scrollTimer);
-
-  // Hide scrollbar after user stops scrolling
   scrollTimer = setTimeout(() => {
     document.body.classList.remove('scrolling');
     document.documentElement.classList.remove('scrolling');
-  }, 800); // Hide after 0.8 seconds of no scrolling
+  }, 800);
 };
 
-// Add scroll event listener
 window.addEventListener('scroll', handleScroll, { passive: true });
 
-// Handle scroll for dropdown menus
 const handleDropdownScroll = (event) => {
-  const element = event.target;
-  if (element.classList.contains('dropdown-scroll')) {
-    element.classList.add('scrolling');
+  const element = event?.target;
 
+  if (element && element.classList && element.classList.contains('dropdown-scroll')) {
+    element.classList.add('scrolling');
     clearTimeout(element.scrollTimer);
     element.scrollTimer = setTimeout(() => {
-      element.classList.remove('scrolling');
-    }, 600); // Faster hide for dropdowns
+      if (element.classList) {
+        element.classList.remove('scrolling');
+      }
+    }, 600);
   }
 };
-
-// Add global scroll listener for dropdowns
 document.addEventListener('scroll', handleDropdownScroll, true);
 
 createRoot(document.getElementById('root')).render(
