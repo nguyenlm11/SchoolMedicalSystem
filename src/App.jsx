@@ -16,6 +16,7 @@ import HealthProfileList from "./pages/parent/HealthProfileList";
 // import MedicationHistory from "./pages/parent/medication/MedicationHistory";
 // import MedicationDetail from "./pages/parent/medication/MedicationDetail";
 import ParentDashboard from "./pages/parent/ParentDashboard";
+import VaccinationSchedule from "./pages/parent/VaccinationSchedule";
 // import StaffMedicationList from "./pages/staff/medication/StaffMedicationList";
 // import MedicationAdminister from "./pages/staff/medication/MedicationAdminister";
 // import MedicalInventory from "./pages/staff/medication/MedicalInventory";
@@ -54,12 +55,13 @@ import UserList from "./pages/admin/UserManagement/UserList";
 // import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import BlogPage from "./pages/blog/BlogPage";
+import VaccinationDetail from "./pages/parent/VaccinationDetail";
 
 
 
 function App() {
   return (
-    <div>
+      <div>
       <Routes>
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
@@ -121,10 +123,11 @@ function App() {
           <Route path="/parent/medication/detail/:id" element={<MedicationDetail />} /> */}
 
           {/* Parent Vaccination Routes */}
-          <Route path="/parent/vaccination/consent/:id" element={<div className="p-8 text-center">Phiếu đồng ý tiêm chủng (đang phát triển)</div>} />
-          <Route path="/parent/vaccination/consent/new" element={<div className="p-8 text-center">Phiếu đồng ý tiêm chủng mới (đang phát triển)</div>} />
-          {/* <Route path="/parent/vaccination/consent/:id" element={<VaccinationConsent />} />
-          <Route path="/parent/vaccination/consent/new" element={<VaccinationConsent />} /> */}
+          <Route path="/parent/vaccination/schedule" element={<VaccinationSchedule />} />
+          <Route path="/parent/vaccination/upcoming" element={<div className="p-8 text-center">Tiêm chủng sắp tới (đang phát triển)</div>} />
+          <Route path="/parent/vaccination/history" element={<div className="p-8 text-center">Lịch sử tiêm chủng (đang phát triển)</div>} />
+          <Route path="/parent/vaccination/details/:id" element={<VaccinationDetail />} />
+          <Route path="/parent/vaccination/confirm/:id" element={<div className="p-8 text-center">Xác nhận lịch tiêm chủng (đang phát triển)</div>} />
 
           {/* Parent Health Check Routes */}
           <Route path="/parent/health-check" element={<div className="p-8 text-center">Xác nhận kiểm tra (đang phát triển)</div>} />
@@ -204,7 +207,7 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
         </Route>
       </Routes>
-    </div>
+      </div>
   );
 }
 
