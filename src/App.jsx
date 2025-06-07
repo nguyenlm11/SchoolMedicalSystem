@@ -10,7 +10,7 @@ import HomePage from "./components/home/HomePage";
 // import FirstAid from "./pages/resources/first-aid/FirstAid";
 // import PhysicalDevelopment from "./pages/resources/physical-development/PhysicalDevelopment";
 // import MedicalProcedures from "./pages/resources/medical-procedures/MedicalProcedures";
-// import StudentHealthProfile from "./pages/parent/health-profile/StudentHealthProfile";
+import StudentHealthProfile from "./pages/student/StudentHealthProfile";
 import HealthProfileList from "./pages/parent/HealthProfileList";
 // import MedicationRequest from "./pages/parent/medication/MedicationRequest";
 // import MedicationHistory from "./pages/parent/medication/MedicationHistory";
@@ -61,7 +61,7 @@ import VaccinationDetail from "./pages/parent/VaccinationDetail";
 
 function App() {
   return (
-      <div>
+    <div>
       <Routes>
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
@@ -108,11 +108,9 @@ function App() {
           {/* Parent Health Profile Routes */}
           <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
           <Route path="/parent/health-profile" element={<HealthProfileList />} />
-          <Route path="/parent/health-profile/:id" element={<div className="p-8 text-center">Chi tiết hồ sơ sức khỏe (đang phát triển)</div>} />
-          <Route path="/parent/health-profile/edit/:id" element={<div className="p-8 text-center">Chỉnh sửa hồ sơ sức khỏe (đang phát triển)</div>} />
-          {/* <Route path="/parent/health-profile/new" element={<StudentHealthProfile />} />
+          {/* <Route path="/parent/health-profile/new" element={<StudentHealthProfile />} /> */}
           <Route path="/parent/health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
-          <Route path="/parent/health-profile/edit/:id" element={<StudentHealthProfile />} /> */}
+          <Route path="/parent/health-profile/edit/:id" element={<StudentHealthProfile />} />
 
           {/* Parent Medication Routes */}
           <Route path="/parent/medication/request" element={<div className="p-8 text-center">Gửi thuốc (đang phát triển)</div>} />
@@ -207,7 +205,7 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
         </Route>
       </Routes>
-      </div>
+    </div>
   );
 }
 
