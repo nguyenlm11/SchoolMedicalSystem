@@ -59,7 +59,7 @@ import BlogPage from "./pages/blog/BlogPage";
 
 function App() {
   return (
-      <div>
+    <div>
       <Routes>
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
@@ -109,7 +109,6 @@ function App() {
           <Route path="/parent/health-profile/:id" element={<div className="p-8 text-center">Chi tiết hồ sơ sức khỏe (đang phát triển)</div>} />
           <Route path="/parent/health-profile/edit/:id" element={<div className="p-8 text-center">Chỉnh sửa hồ sơ sức khỏe (đang phát triển)</div>} />
           {/* <Route path="/parent/health-profile/new" element={<StudentHealthProfile />} />
-          <Route path="/parent/health-profile" element={<HealthProfileList />} />
           <Route path="/parent/health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
           <Route path="/parent/health-profile/edit/:id" element={<StudentHealthProfile />} /> */}
 
@@ -205,7 +204,7 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
         </Route>
       </Routes>
-      </div>
+    </div>
   );
 }
 
