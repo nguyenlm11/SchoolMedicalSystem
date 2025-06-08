@@ -31,6 +31,7 @@ import VaccinationSchedule from "./pages/parent/VaccinationSchedule";
 // import MedicalEventSupplies from "./pages/staff/health-events/MedicalEventSupplies";
 import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
+import ManagerLayout from "./components/layout/ManagerLayout";
 import AuthLayout from "./components/layout/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 // import VaccinationManagement from "./pages/staff/VaccinationManagement";
@@ -66,22 +67,27 @@ function App() {
         {/* Auth Routes - No Navbar/Footer */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
-          {/* <Route path="/register" element={<Register />} /> */}
         </Route>
 
         {/* Admin Routes - Custom Admin Layout */}
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
           <Route path="/admin/users" element={<UserManagement />}>
             <Route index element={<UserList />} />
             {/* <Route path="roles" element={<UserRoles />} />
             <Route path="permissions" element={<UserPermissions />} /> */}
           </Route>
-
           {/* <Route path="/admin/users/new" element={<NewUser />} />
-
           <Route path="/admin/reports" element={<ReportsAnalytics />} /> */}
+        </Route>
+
+        {/* Manager Routes - Custom Manager Layout */}
+        <Route element={<ManagerLayout />}>
+          <Route path="/manager/dashboard" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Manager Dashboard (đang phát triển)</div></div>} />
+          <Route path="/manager/parent-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý phụ huynh (đang phát triển)</div></div>} />
+          <Route path="/manager/student-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý học sinh (đang phát triển)</div></div>} />
+          <Route path="/manager/medicine-inventory" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Kho thuốc (đang phát triển)</div></div>} />
+          <Route path="/manager/supply-inventory" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Vật tư y tế (đang phát triển)</div></div>} />
         </Route>
 
         {/* Main Routes - With Navbar and Footer */}
@@ -104,14 +110,12 @@ function App() {
 
           {/* Parent Dashboard */}
           <Route path="/parent/dashboard" element={<ParentDashboard />} />
-
           {/* Parent Health Profile Routes */}
           <Route path="/parent/health-profile/new" element={<div className="p-8 text-center">Khai báo hồ sơ sức khỏe (đang phát triển)</div>} />
           <Route path="/parent/health-profile" element={<HealthProfileList />} />
           {/* <Route path="/parent/health-profile/new" element={<StudentHealthProfile />} /> */}
           <Route path="/parent/health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
           <Route path="/parent/health-profile/edit/:id" element={<StudentHealthProfile />} />
-
           {/* Parent Medication Routes */}
           <Route path="/parent/medication/request" element={<div className="p-8 text-center">Gửi thuốc (đang phát triển)</div>} />
           <Route path="/parent/medication/history" element={<div className="p-8 text-center">Lịch sử gửi thuốc (đang phát triển)</div>} />
@@ -119,14 +123,12 @@ function App() {
           {/* <Route path="/parent/medication/request" element={<MedicationRequest />} />
           <Route path="/parent/medication/history" element={<MedicationHistory />} />
           <Route path="/parent/medication/detail/:id" element={<MedicationDetail />} /> */}
-
           {/* Parent Vaccination Routes */}
           <Route path="/parent/vaccination/schedule" element={<VaccinationSchedule />} />
           <Route path="/parent/vaccination/upcoming" element={<div className="p-8 text-center">Tiêm chủng sắp tới (đang phát triển)</div>} />
           <Route path="/parent/vaccination/history" element={<div className="p-8 text-center">Lịch sử tiêm chủng (đang phát triển)</div>} />
           <Route path="/parent/vaccination/details/:id" element={<VaccinationDetail />} />
           <Route path="/parent/vaccination/confirm/:id" element={<div className="p-8 text-center">Xác nhận lịch tiêm chủng (đang phát triển)</div>} />
-
           {/* Parent Health Check Routes */}
           <Route path="/parent/health-check" element={<div className="p-8 text-center">Xác nhận kiểm tra (đang phát triển)</div>} />
           <Route path="/parent/health-check/results" element={<div className="p-8 text-center">Xem kết quả kiểm tra (đang phát triển)</div>} />
@@ -166,13 +168,11 @@ function App() {
           <Route path="/staff/health-events/:id" element={<HealthEventDetail />} />
           <Route path="/staff/health-events/edit/:id" element={<HealthEventForm />} />
           <Route path="/staff/health-events/:id/supplies" element={<MedicalEventSupplies />} /> */}
-
           {/* Staff Vaccination Management Routes */}
           <Route path="/staff/vaccination" element={<div className="p-8 text-center">Quản lý tiêm chủng (đang phát triển)</div>} />
           <Route path="/staff/vaccination/flow" element={<div className="p-8 text-center">Quy trình tiêm chủng (đang phát triển)</div>} />
           {/* <Route path="/staff/vaccination" element={<VaccinationManagement />} />
           <Route path="/staff/vaccination/flow" element={<VaccinationFlowDiagram />} /> */}
-
           {/* Staff Health Check Management Routes */}
           <Route path="/staff/health-check" element={<div className="p-8 text-center">Quản lý kiểm tra (đang phát triển)</div>} />
           <Route path="/staff/health-check/new" element={<div className="p-8 text-center">Lên lịch kiểm tra mới (đang phát triển)</div>} />
@@ -184,7 +184,6 @@ function App() {
           <Route path="/staff/health-check/:checkId" element={<HealthCheckExecution />} />
           <Route path="/staff/health-check/:checkId/results" element={<HealthCheckResults />} />
           <Route path="/staff/health-check/:checkId/edit" element={<HealthCheckManagement />} /> */}
-
           {/* Teacher Routes */}
           <Route path="/teacher/dashboard" element={<div className="p-8 text-center">Bảng điều khiển giáo viên (đang phát triển)</div>} />
           <Route path="/teacher/health-report/new" element={<div className="p-8 text-center">Form báo cáo sức khỏe học sinh mới (đang phát triển)</div>} />
@@ -196,7 +195,7 @@ function App() {
 
           {/* Student Routes */}
           <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/health-profile" element={<div className="p-8 text-center">Hồ sơ sức khỏe của học sinh (đang phát triển)</div>} />
+          <Route path="/student/health-profile" element={<StudentHealthProfile viewOnly={true} />} />
           <Route path="/student/report-symptom" element={<div className="p-8 text-center">Báo cáo triệu chứng (đang phát triển)</div>} />
           <Route path="/student/request-visit" element={<div className="p-8 text-center">Yêu cầu gặp y tá (đang phát triển)</div>} />
           <Route path="/student/health-events" element={<div className="p-8 text-center">Sự kiện y tế của học sinh (đang phát triển)</div>} />

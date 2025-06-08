@@ -1,11 +1,10 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 
-// Tạo context cho xác thực
 const AuthContext = createContext(null);
 
-// Role constants
 export const ROLES = {
     ADMIN: "admin",
+    MANAGER: "manager",
     STAFF: "staff",
     TEACHER: "teacher",
     PARENT: "parent",
@@ -16,7 +15,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Kiểm tra xem đã có thông tin đăng nhập được lưu trong localStorage chưa
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
@@ -25,30 +23,25 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    // Hàm đăng nhập
     const login = (userData) => {
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
     };
 
-    // Hàm đăng xuất
     const logout = () => {
         setUser(null);
         localStorage.removeItem("user");
     };
 
-    // Kiểm tra người dùng có vai trò cụ thể không
     const hasRole = (role) => {
         if (!user) return false;
         return user.role === role;
     };
 
-    // Kiểm tra đã đăng nhập chưa
     const isAuthenticated = () => {
         return !!user;
     };
 
-    // Mock function để demo đăng nhập với các vai trò khác nhau
     const loginWithRole = (role) => {
         const mockUsers = {
             [ROLES.ADMIN]: {
@@ -58,8 +51,15 @@ export const AuthProvider = ({ children }) => {
                 role: ROLES.ADMIN,
                 permissions: ["manage_users", "view_reports", "system_config"],
             },
-            [ROLES.STAFF]: {
+            [ROLES.MANAGER]: {
                 id: 2,
+                name: "Manager User",
+                email: "manager@medschool.edu.vn",
+                role: ROLES.MANAGER,
+                permissions: ["manage_parents", "manage_students", "manage_inventory", "view_reports"],
+            },
+            [ROLES.STAFF]: {
+                id: 3,
                 name: "Y tá trường",
                 email: "nurse@medschool.edu.vn",
                 role: ROLES.STAFF,
@@ -70,14 +70,14 @@ export const AuthProvider = ({ children }) => {
                 ],
             },
             [ROLES.TEACHER]: {
-                id: 3,
+                id: 4,
                 name: "Giáo viên Nguyễn Thị B",
                 email: "teacher@medschool.edu.vn",
                 role: ROLES.TEACHER,
                 permissions: ["submit_health_reports", "view_student_health_info"],
             },
             [ROLES.PARENT]: {
-                id: 4,
+                id: 5,
                 name: "Phụ huynh Trần Văn C",
                 email: "parent@medschool.edu.vn",
                 role: ROLES.PARENT,
@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
                 role: ROLES.STUDENT,
                 permissions: ["view_own_health"],
                 class: "3A",
-                parentId: 4,
+                parentId: 5,
             },
         };
 
@@ -105,14 +105,13 @@ export const AuthProvider = ({ children }) => {
         logout,
         hasRole,
         isAuthenticated,
-        loginWithRole, // Chỉ dùng cho demo
+        loginWithRole, // Chỉ dùng để demo, sẽ xóa sau khi đăng nhập thành công
         ROLES,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook để sử dụng AuthContext
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
