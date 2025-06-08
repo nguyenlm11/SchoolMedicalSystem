@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-    FiPlus,
-    FiEye,
-    FiEdit,
-    FiTrash2,
-    FiSearch,
-    FiFilter,
-    FiSave,
-    FiX,
-    FiUsers,
-} from "react-icons/fi";
+import { FiPlus, FiEye, FiEdit, FiTrash2, FiSearch, FiFilter, FiSave, FiX, FiUsers } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
-import Loading, { SkeletonLoading, CardSkeletonLoading, ButtonLoading, PageLoading } from "../../../components/Loading";
+import Loading, { SkeletonLoading, CardSkeletonLoading, ButtonLoading } from "../../../components/Loading";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -135,7 +125,6 @@ const UserList = () => {
                     createdAt: "2023-04-02T09:20:00",
                 },
             ];
-
             setUsers(mockUsers);
             setLoading(false);
         }, 1000);
@@ -447,7 +436,7 @@ const UserList = () => {
         <>
             {/* Initial Page Loading */}
             {loading && (
-                <div className="flex justify-center items-center min-h-96">
+                <div className="h-full flex justify-center items-center">
                     <Loading
                         type="medical"
                         size="large"
@@ -459,7 +448,7 @@ const UserList = () => {
 
             {/* Main Content - Hidden during initial loading */}
             {!loading && (
-                <>
+                <div className="h-full">
                     {/* Header Section */}
                     <div className="flex flex-col space-y-4 mb-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -1629,7 +1618,7 @@ const UserList = () => {
                             </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
         </>
     );

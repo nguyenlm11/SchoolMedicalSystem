@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { FiHome, FiUsers, FiBarChart2, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FiHome, FiUsers, FiUserCheck, FiTablet, FiPackage, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW } from "../../constants/colors";
 
-const AdminLayout = () => {
+const ManagerLayout = () => {
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,19 +29,29 @@ const AdminLayout = () => {
 
     const menuItems = [
         {
-            path: "/admin/dashboard",
+            path: "/manager/dashboard",
             name: "Tổng quan",
             icon: <FiHome className="w-5 h-5" />,
         },
         {
-            path: "/admin/users",
-            name: "Người dùng",
+            path: "/manager/parent-management",
+            name: "Quản lý phụ huynh",
             icon: <FiUsers className="w-5 h-5" />,
         },
         {
-            path: "/admin/reports",
-            name: "Báo cáo",
-            icon: <FiBarChart2 className="w-5 h-5" />,
+            path: "/manager/student-management",
+            name: "Quản lý học sinh",
+            icon: <FiUserCheck className="w-5 h-5" />,
+        },
+        {
+            path: "/manager/medicine-inventory",
+            name: "Kho thuốc",
+            icon: <FiTablet className="w-5 h-5" />,
+        },
+        {
+            path: "/manager/supply-inventory",
+            name: "Vật tư y tế",
+            icon: <FiPackage className="w-5 h-5" />,
         },
     ];
 
@@ -69,15 +79,14 @@ const AdminLayout = () => {
                     ${collapsed ? 'lg:w-20' : 'lg:w-64'} 
                     w-64 flex flex-col
                     transition-all duration-300 ease-in-out
-                    lg:transform-none transform
-                `}
+                    lg:transform-none transform`}
                 style={{ backgroundColor: PRIMARY[600], color: TEXT.INVERSE, boxShadow: `4px 0 6px ${SHADOW.MEDIUM}`, height: '100vh', minHeight: '100vh', maxHeight: '100vh' }}
             >
                 <div className="p-4 flex items-center justify-between border-b flex-shrink-0"
                     style={{ borderColor: PRIMARY[700] }}>
                     {!collapsed && (
                         <div className="text-xl font-bold" style={{ color: TEXT.INVERSE }}>
-                            Medical Admin
+                            Medical Manager
                         </div>
                     )}
 
@@ -110,7 +119,8 @@ const AdminLayout = () => {
                     <nav className="flex-1">
                         <ul className="space-y-1 px-3">
                             {menuItems.map((item) => {
-                                const isActive = location.pathname === item.path;
+                                const isActive = location.pathname === item.path ||
+                                    (location.pathname.startsWith(item.path) && item.path !== "/manager/dashboard");
                                 return (
                                     <li key={item.path}>
                                         <Link
@@ -177,18 +187,15 @@ const AdminLayout = () => {
                             className="p-2 rounded-full transition-all duration-200 hidden sm:block"
                             style={{ backgroundColor: 'transparent', color: GRAY[500] }}
                         >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
+                            <FiBell className="w-6 h-6" />
                         </button>
 
                         <div
                             className="h-8 w-8 lg:h-10 lg:w-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
                             style={{ backgroundColor: PRIMARY[500] }}
                         >
-                            <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }} >
-                                AD
+                            <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
+                                MG
                             </span>
                         </div>
                     </div>
@@ -204,4 +211,4 @@ const AdminLayout = () => {
     );
 };
 
-export default AdminLayout;
+export default ManagerLayout; 

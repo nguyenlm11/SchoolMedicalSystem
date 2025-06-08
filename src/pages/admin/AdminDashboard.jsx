@@ -197,7 +197,7 @@ const AdminDashboard = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
                 <Loading
                     type="medical"
                     size="xl"
@@ -209,8 +209,8 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="h-full" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+            <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
