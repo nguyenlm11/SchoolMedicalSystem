@@ -57,8 +57,7 @@ import UserList from "./pages/admin/UserManagement/UserList";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import BlogPage from "./pages/blog/BlogPage";
 import VaccinationDetail from "./pages/parent/VaccinationDetail";
-
-
+import MedicineInventory from "./pages/manager/MedicineInventory";
 
 function App() {
   return (
@@ -86,7 +85,7 @@ function App() {
           <Route path="/manager/dashboard" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Manager Dashboard (đang phát triển)</div></div>} />
           <Route path="/manager/parent-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý phụ huynh (đang phát triển)</div></div>} />
           <Route path="/manager/student-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý học sinh (đang phát triển)</div></div>} />
-          <Route path="/manager/medicine-inventory" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Kho thuốc (đang phát triển)</div></div>} />
+          <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />
           <Route path="/manager/supply-inventory" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Vật tư y tế (đang phát triển)</div></div>} />
         </Route>
 
@@ -138,7 +137,7 @@ function App() {
           <Route path="/parent/health-check/:id/results" element={<HealthCheckConfirmation />} /> */}
 
           {/* Staff Medication Routes */}
-          <Route path="/staff/medication" element={<div className="p-8 text-center">Quản lý thuốc (đang phát triển)</div>} />
+          {/* <Route path="/staff/medication" element={<MedicineManagement />} /> */}
           <Route path="/staff/medication/administer/:id" element={<div className="p-8 text-center">Cho thuốc (đang phát triển)</div>} />
           <Route path="/staff/medication/inventory" element={<div className="p-8 text-center">Kho thuốc (đang phát triển)</div>} />
           <Route path="/staff/medication/inventory/add" element={<div className="p-8 text-center">Thêm thuốc (đang phát triển)</div>} />
