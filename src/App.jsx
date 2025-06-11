@@ -2,62 +2,25 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import HomePage from "./components/home/HomePage";
-// import Login from "./pages/auth/login/Login";
-// import Register from "./pages/auth/register/Register";
-// import Nutrition from "./pages/resources/nutrition/Nutrition";
-// import DiseasePrevention from "./pages/resources/disease-prevention/DiseasePrevention";
-// import MentalHealth from "./pages/resources/mental-health/MentalHealth";
-// import FirstAid from "./pages/resources/first-aid/FirstAid";
-// import PhysicalDevelopment from "./pages/resources/physical-development/PhysicalDevelopment";
-// import MedicalProcedures from "./pages/resources/medical-procedures/MedicalProcedures";
 import StudentHealthProfile from "./pages/student/StudentHealthProfile";
 import HealthProfileList from "./pages/parent/HealthProfileList";
-// import MedicationRequest from "./pages/parent/medication/MedicationRequest";
-// import MedicationHistory from "./pages/parent/medication/MedicationHistory";
-// import MedicationDetail from "./pages/parent/medication/MedicationDetail";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import VaccinationSchedule from "./pages/parent/VaccinationSchedule";
-// import StaffMedicationList from "./pages/staff/medication/StaffMedicationList";
-// import MedicationAdminister from "./pages/staff/medication/MedicationAdminister";
-// import MedicalInventory from "./pages/staff/medication/MedicalInventory";
-// import InventoryTransaction from "./pages/staff/medication/InventoryTransaction";
-// import TransactionHistory from "./pages/staff/medication/TransactionHistory";
-// import AddMedicalItem from "./pages/staff/medication/AddMedicalItem";
-// import MedicalItemDetail from "./pages/staff/medication/MedicalItemDetail";
-// import EditMedicalItem from "./pages/staff/medication/EditMedicalItem";
-// import HealthEventList from "./pages/staff/health-events/HealthEventList";
-// import HealthEventForm from "./pages/staff/health-events/HealthEventForm";
-// import HealthEventDetail from "./pages/staff/health-events/HealthEventDetail";
-// import MedicalEventSupplies from "./pages/staff/health-events/MedicalEventSupplies";
 import MainLayout from "./components/layout/MainLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import ManagerLayout from "./components/layout/ManagerLayout";
 import AuthLayout from "./components/layout/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
-// import VaccinationManagement from "./pages/staff/VaccinationManagement";
-// import VaccinationFlowDiagram from "./pages/staff/VaccinationFlowDiagram";
-// import VaccinationConsent from "./pages/parent/VaccinationConsent";
-// import HealthCheckManagement from "./pages/staff/HealthCheckManagement";
-// import HealthCheckExecution from "./pages/staff/HealthCheckExecution";
-// import HealthCheckResults from "./pages/staff/HealthCheckResults";
-// import HealthCheckForm from "./pages/staff/HealthCheckForm";
-// import HealthCheckConfirmation from "./pages/parent/HealthCheckConfirmation";
-// Import admin components
 import AdminDashboard from "./pages/admin/AdminDashboard";
-// import UserManagement from "./pages/admin/UserManagement";
 import UserManagement from "./pages/admin/UserManagement";
-// import UserList from "./pages/admin/UserManagement/UserList";
 import UserList from "./pages/admin/UserManagement/UserList";
-// import UserRoles from "./pages/admin/UserManagement/UserRoles";
-// import UserPermissions from "./pages/admin/UserManagement/UserPermissions";
-// import NewUser from "./pages/admin/UserManagement/NewUser";
-
-// Import Teacher and Student components
-// import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import BlogPage from "./pages/blog/BlogPage";
 import VaccinationDetail from "./pages/parent/VaccinationDetail";
 import MedicineInventory from "./pages/manager/MedicineInventory";
+import SupplyInventory from "./pages/manager/SupplyInventory";
+import ParentManagement from "./pages/manager/ParentManagement";
+import StudentManagement from "./pages/manager/StudentManagement";
 
 function App() {
   return (
@@ -83,10 +46,10 @@ function App() {
         {/* Manager Routes - Custom Manager Layout */}
         <Route element={<ManagerLayout />}>
           <Route path="/manager/dashboard" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Manager Dashboard (đang phát triển)</div></div>} />
-          <Route path="/manager/parent-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý phụ huynh (đang phát triển)</div></div>} />
-          <Route path="/manager/student-management" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Quản lý học sinh (đang phát triển)</div></div>} />
+          <Route path="/manager/parent-management" element={<ParentManagement />} />
+          <Route path="/manager/student-management" element={<StudentManagement />} />
           <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />
-          <Route path="/manager/supply-inventory" element={<div className="h-full px-4 sm:px-6 lg:px-8 py-6"><div className="text-center text-xl font-semibold text-gray-600">Vật tư y tế (đang phát triển)</div></div>} />
+          <Route path="/manager/supply-inventory" element={<SupplyInventory />} />
         </Route>
 
         {/* Main Routes - With Navbar and Footer */}
