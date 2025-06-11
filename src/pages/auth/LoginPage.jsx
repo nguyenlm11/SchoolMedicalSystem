@@ -1,29 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-    FiUser,
-    FiLock,
-    FiHome,
-    FiChevronDown,
-    FiLoader,
-    FiHeart
-} from "react-icons/fi";
-import {
-    PRIMARY,
-    SECONDARY,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    INFO,
-    BACKGROUND,
-    TEXT,
-    BORDER,
-    SHADOW
-} from "../../constants/colors";
+import { FiUser, FiLock, FiHome, FiChevronDown, FiLoader, FiHeart } from "react-icons/fi";
+import { PRIMARY, ERROR, BACKGROUND, TEXT, BORDER, } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth, ROLES } from "../../utils/AuthContext";
 
-// Safe Link component
 const SafeLink = ({ to, children, className, style, onClick }) => {
     try {
         return (
@@ -118,7 +99,7 @@ const LoginPage = () => {
                 // Redirect to the appropriate dashboard based on role
                 const redirectMap = {
                     [ROLES.ADMIN]: "/admin/dashboard",
-                    [ROLES.STAFF]: "/staff/medication",
+                    [ROLES.STAFF]: "/staff/dashboard",
                     [ROLES.MANAGER]: "/manager/dashboard",
                     [ROLES.PARENT]: "/parent/dashboard",
                     [ROLES.STUDENT]: "/student/dashboard",
@@ -154,12 +135,7 @@ const LoginPage = () => {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading
-                    type="medical"
-                    size="xl"
-                    color="primary"
-                    text="Đang xác thực thông tin đăng nhập..."
-                />
+                <Loading type="medical" size="large" color="primary" text="Đang xác thực thông tin đăng nhập..." />
             </div>
         );
     }

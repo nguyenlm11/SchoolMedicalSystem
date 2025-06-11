@@ -1,25 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-    FiUsers,
-    FiActivity,
-    FiCalendar,
-    FiTrendingUp,
-    FiAlertCircle,
-    FiCheckCircle,
-    FiClock,
-} from "react-icons/fi";
-import {
-    PRIMARY,
-    SECONDARY,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    INFO,
-    BACKGROUND,
-    TEXT,
-    BORDER,
-    SHADOW
-} from "../../constants/colors";
+import { FiUsers, FiActivity, FiCalendar, FiTrendingUp, FiAlertCircle, FiCheckCircle, FiClock } from "react-icons/fi";
+import { PRIMARY, SECONDARY, SUCCESS, WARNING, ERROR, INFO, BACKGROUND, TEXT, BORDER, SHADOW } from "../../constants/colors";
 import Loading from "../../components/Loading";
 
 const AdminDashboard = () => {
@@ -198,12 +179,7 @@ const AdminDashboard = () => {
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading
-                    type="medical"
-                    size="xl"
-                    color="primary"
-                    text="Đang tải dữ liệu dashboard..."
-                />
+                <Loading type="medical" size="large" color="primary" text="Đang tải dữ liệu dashboard..." />
             </div>
         );
     }

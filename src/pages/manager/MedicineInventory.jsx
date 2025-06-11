@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
-import MedicineModal from "../../components/modal/MedicineModal";
+import MedicineModal from "../../components/modal/AddMedicineModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
 
@@ -267,7 +267,9 @@ const MedicineInventory = () => {
 
     if (loading) {
         return (
-            <Loading type="medical" size="xl" color="primary" text="Đang tải danh sách thuốc..." fullScreen={true} />
+            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải thuốc..." />
+            </div>
         );
     }
 
@@ -383,10 +385,7 @@ const MedicineInventory = () => {
 
                 <div
                     className="rounded-2xl shadow-xl border backdrop-blur-sm"
-                    style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: BORDER.LIGHT,
-                    }}
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}
                 >
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
@@ -437,14 +436,6 @@ const MedicineInventory = () => {
                                         color: PRIMARY[600],
                                         borderColor: PRIMARY[200],
                                         backgroundColor: PRIMARY[50]
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = PRIMARY[100];
-                                        e.target.style.transform = 'scale(1.02)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = PRIMARY[50];
-                                        e.target.style.transform = 'scale(1)';
                                     }}
                                 >
                                     <FiRefreshCw className="mr-2 h-4 w-4" />
@@ -554,8 +545,6 @@ const MedicineInventory = () => {
                                                                 backgroundColor: item.isActive ? GRAY[50] : SUCCESS[50],
                                                                 color: item.isActive ? GRAY[600] : SUCCESS[600]
                                                             }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = item.isActive ? GRAY[100] : SUCCESS[100]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = item.isActive ? GRAY[50] : SUCCESS[50]}
                                                             title={item.isActive ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
                                                         >
                                                             {item.isActive ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
@@ -567,8 +556,6 @@ const MedicineInventory = () => {
                                                                 backgroundColor: ERROR[50],
                                                                 color: ERROR[600]
                                                             }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = ERROR[100]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = ERROR[50]}
                                                             title="Xóa"
                                                         >
                                                             <FiTrash2 className="h-4 w-4" />
@@ -604,8 +591,6 @@ const MedicineInventory = () => {
                                                                 backgroundColor: PRIMARY[100],
                                                                 color: PRIMARY[700]
                                                             }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
                                                         >
                                                             <FiRefreshCw className="mr-2 h-4 w-4" />
                                                             Đặt lại bộ lọc
@@ -618,8 +603,6 @@ const MedicineInventory = () => {
                                                                 backgroundColor: PRIMARY[100],
                                                                 color: PRIMARY[700]
                                                             }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
                                                         >
                                                             Về trang đầu
                                                         </button>
