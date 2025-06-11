@@ -1,15 +1,7 @@
 import React from 'react';
 import { PRIMARY, SECONDARY, SUCCESS, WARNING, ERROR, INFO, TEXT, BACKGROUND } from '../constants/colors';
 
-const Loading = ({
-    type = 'spinner',
-    size = 'medium',
-    color = 'primary',
-    text = '',
-    overlay = false,
-    fullScreen = false
-}) => {
-    // Color mapping
+const Loading = ({ type = 'spinner', size = 'medium', color = 'primary', text = '', overlay = false, fullScreen = false }) => {
     const getColor = (colorType) => {
         switch (colorType) {
             case 'primary': return PRIMARY[500];
@@ -22,7 +14,6 @@ const Loading = ({
         }
     };
 
-    // Size mapping
     const getSizeClasses = (sizeType) => {
         switch (sizeType) {
             case 'small': return {
@@ -60,7 +51,6 @@ const Loading = ({
     const mainColor = getColor(color);
     const sizeClasses = getSizeClasses(size);
 
-    // Spinner Loading
     const SpinnerLoading = () => (
         <div
             className={`animate-spin rounded-full border-t-transparent border-solid ${sizeClasses.spinner}`}
@@ -71,7 +61,6 @@ const Loading = ({
         />
     );
 
-    // Dots Loading
     const DotsLoading = () => (
         <div className="flex space-x-1">
             {[0, 1, 2].map((i) => (
@@ -87,7 +76,6 @@ const Loading = ({
         </div>
     );
 
-    // Pulse Loading
     const PulseLoading = () => (
         <div className="flex space-x-1">
             {[0, 1, 2, 3].map((i) => (
@@ -103,7 +91,6 @@ const Loading = ({
         </div>
     );
 
-    // Bars Loading
     const BarsLoading = () => (
         <div className="flex items-end space-x-1">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -119,7 +106,6 @@ const Loading = ({
         </div>
     );
 
-    // Wave Loading
     const WaveLoading = () => (
         <div className="flex items-center space-x-1">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -137,7 +123,6 @@ const Loading = ({
         </div>
     );
 
-    // Ring Loading
     const RingLoading = () => (
         <div className="relative">
             <div
@@ -151,7 +136,6 @@ const Loading = ({
         </div>
     );
 
-    // Square Loading
     const SquareLoading = () => (
         <div
             className={`animate-spin ${sizeClasses.spinner.replace('rounded-full', 'rounded-sm')}`}
@@ -159,7 +143,6 @@ const Loading = ({
         />
     );
 
-    // Heart Loading (for medical theme)
     const HeartLoading = () => (
         <div className="flex items-center">
             <div
@@ -173,7 +156,6 @@ const Loading = ({
         </div>
     );
 
-    // Medical Cross Loading (for medical theme)
     const MedicalLoading = () => (
         <div className="relative">
             <div
@@ -187,7 +169,6 @@ const Loading = ({
         </div>
     );
 
-    // Render loading based on type
     const renderLoading = () => {
         switch (type) {
             case 'spinner': return <SpinnerLoading />;
@@ -232,7 +213,6 @@ const Loading = ({
     );
 };
 
-// Skeleton Loading Component
 export const SkeletonLoading = ({
     lines = 3,
     height = 'h-4',
@@ -257,7 +237,6 @@ export const SkeletonLoading = ({
     </div>
 );
 
-// Card Skeleton Loading
 export const CardSkeletonLoading = ({ className = '' }) => (
     <div className={`bg-white rounded-xl shadow-sm p-6 ${className}`}>
         <div className="animate-pulse">
@@ -295,7 +274,6 @@ export const CardSkeletonLoading = ({ className = '' }) => (
     </div>
 );
 
-// Button Loading Component
 export const ButtonLoading = ({
     size = 'medium',
     color = 'primary',
@@ -321,7 +299,6 @@ export const ButtonLoading = ({
     );
 };
 
-// Page Loading Component
 export const PageLoading = ({ message = "Đang tải..." }) => (
     <Loading
         type="medical"
