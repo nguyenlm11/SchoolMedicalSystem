@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage, FiTrendingDown, FiActivity } from "react-icons/fi";
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, ERROR, WARNING } from "../../constants/colors";
+import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage } from "react-icons/fi";
+import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
+import Loading from "../../components/Loading";
+import MedicineModal from "../../components/modal/MedicineModal";
+import ConfirmModal from "../../components/modal/ConfirmModal";
+import AlertModal from "../../components/modal/AlertModal";
 
 const MedicineInventory = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const queryParams = new URLSearchParams(location.search);
-    const initialFilter = queryParams.get("filter") || "all";
+    const initialFilter = new URLSearchParams(location.search).get("filter") || "all";
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
     const [sortOrder, setSortOrder] = useState("asc");
+    const [currentPage, setCurrentPage] = useState(1);
     const [stats, setStats] = useState({ total: 0, inactive: 0, lowStock: 0 });
     const [showItemModal, setShowItemModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [showAlertModal, setShowAlertModal] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
+    const [confirmAction, setConfirmAction] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
+    const medicinesPerPage = 5;
     const [itemForm, setItemForm] = useState({
         id: 0,
         name: "",
@@ -24,145 +36,215 @@ const MedicineInventory = () => {
         isActive: true,
     });
     const [formErrors, setFormErrors] = useState({});
+
     const mockMedicines = [
-        {
-            medicineId: 1,
-            name: "Paracetamol 500mg",
-            stockQuantity: 120,
-            isActive: true,
-        },
-        {
-            medicineId: 2,
-            name: "Ibuprofen 200mg",
-            stockQuantity: 25,
-            isActive: true,
-        },
-        {
-            medicineId: 3,
-            name: "Vitamin C 500mg",
-            stockQuantity: 200,
-            isActive: true,
-        },
-        {
-            medicineId: 4,
-            name: "Aspirin 100mg",
-            stockQuantity: 5,
-            isActive: false,
-        },
+        { medicineId: 1, name: "Paracetamol 500mg", stockQuantity: 120, isActive: true },
+        { medicineId: 2, name: "Ibuprofen 200mg", stockQuantity: 25, isActive: true },
+        { medicineId: 3, name: "Vitamin C 500mg", stockQuantity: 200, isActive: true },
+        { medicineId: 4, name: "Aspirin 100mg", stockQuantity: 5, isActive: false },
+        { medicineId: 5, name: "Amoxicillin 250mg", stockQuantity: 80, isActive: true },
+        { medicineId: 6, name: "Cephalexin 500mg", stockQuantity: 45, isActive: true },
     ];
 
     useEffect(() => {
         fetchMedicines();
     }, []);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterStatus, debouncedSearchTerm]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const showAlert = (type, title, message) => {
+        setAlertConfig({ type, title, message });
+        setShowAlertModal(true);
+    };
+
     const fetchMedicines = async () => {
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const items = mockMedicines;
-            setMedicines(items);
-            const total = items.length;
-            const inactive = items.filter((item) => !item.isActive).length;
-            const lowStock = items.filter((item) => item.stockQuantity < 50).length;
-
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setMedicines(mockMedicines);
+            const total = mockMedicines.length;
+            const inactive = mockMedicines.filter(item => !item.isActive).length;
+            const lowStock = mockMedicines.filter(item => item.stockQuantity < 50).length;
             setStats({ total, inactive, lowStock });
-            setLoading(false);
         } catch (error) {
             console.error("Error fetching medicines:", error);
+            showAlert("error", "Lỗi", "Không thể tải danh sách thuốc. Vui lòng thử lại.");
+        } finally {
             setLoading(false);
         }
     };
 
     const createMedicine = async () => {
         if (!validateForm()) return;
-
+        setSubmitting(true);
         try {
-            const newId = Math.max(...medicines.map(m => m.medicineId)) + 1;
+            await new Promise(resolve => setTimeout(resolve, 800));
             const newMedicine = {
-                medicineId: newId,
+                medicineId: Math.max(...medicines.map(m => m.medicineId)) + 1,
                 name: itemForm.name,
                 stockQuantity: parseInt(itemForm.stockQuantity),
                 isActive: itemForm.isActive,
             };
-
             setMedicines([...medicines, newMedicine]);
-            fetchMedicines();
-            setShowItemModal(false);
-            resetForm();
+            closeModal();
+            showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được thêm thành công.`);
         } catch (error) {
             console.error("Error creating medicine:", error);
+            showAlert("error", "Lỗi", "Không thể thêm thuốc mới. Vui lòng thử lại.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const updateMedicine = async () => {
         if (!validateForm()) return;
-
+        setSubmitting(true);
         try {
+            await new Promise(resolve => setTimeout(resolve, 800));
             const updatedMedicines = medicines.map(med =>
                 med.medicineId === itemForm.id
                     ? { ...med, name: itemForm.name, stockQuantity: parseInt(itemForm.stockQuantity), isActive: itemForm.isActive }
                     : med
             );
-
             setMedicines(updatedMedicines);
-            fetchMedicines();
-            setShowItemModal(false);
-            resetForm();
+            closeModal();
+            showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được cập nhật thành công.`);
         } catch (error) {
             console.error("Error updating medicine:", error);
+            showAlert("error", "Lỗi", "Không thể cập nhật thông tin thuốc. Vui lòng thử lại.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
     const deleteMedicine = async (id) => {
-        if (window.confirm("Bạn có chắc chắn muốn xóa thuốc này không?")) {
-            try {
-                const updatedMedicines = medicines.filter(med => med.medicineId !== id);
-                setMedicines(updatedMedicines);
-                fetchMedicines();
-            } catch (error) {
-                console.error("Error deleting medicine:", error);
-            }
+        setDeleting(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const medicineToDelete = medicines.find(med => med.medicineId === id);
+            setMedicines(medicines.filter(med => med.medicineId !== id));
+            showAlert("success", "Thành công", `Thuốc "${medicineToDelete?.name}" đã được xóa thành công.`);
+        } catch (error) {
+            console.error("Error deleting medicine:", error);
+            showAlert("error", "Lỗi", "Không thể xóa thuốc. Vui lòng thử lại.");
+        } finally {
+            setDeleting(false);
+            setShowConfirmModal(false);
         }
     };
 
-    const toggleMedicineStatus = async (item) => {
+    const handleDeleteClick = (id) => {
+        setConfirmAction(() => () => deleteMedicine(id));
+        setShowConfirmModal(true);
+    };
+
+    const toggleMedicineStatus = (item) => {
         try {
             const updatedMedicines = medicines.map(med =>
                 med.medicineId === item.medicineId ? { ...med, isActive: !med.isActive } : med
             );
-
             setMedicines(updatedMedicines);
-            fetchMedicines();
+            const newStatus = !item.isActive;
+            const statusText = newStatus ? "kích hoạt" : "vô hiệu hóa";
+            showAlert("success", "Thành công", `Thuốc "${item.name}" đã được ${statusText} thành công.`);
         } catch (error) {
             console.error("Error toggling medicine status:", error);
+            showAlert("error", "Lỗi", "Không thể thay đổi trạng thái thuốc. Vui lòng thử lại.");
         }
     };
 
     const handleFilterChange = (status) => {
         setFilterStatus(status);
         const params = new URLSearchParams(location.search);
-        params.set("filter", status);
+        if (status === "all") {
+            params.delete("filter");
+        } else {
+            params.set("filter", status);
+        }
         navigate({ search: params.toString() });
     };
 
     const resetFilters = () => {
         setFilterStatus("all");
         setSearchTerm("");
+        setDebouncedSearchTerm("");
         setSortBy("name");
         setSortOrder("asc");
-        const params = new URLSearchParams(location.search);
-        params.delete("filter");
-        navigate({ search: params.toString() });
+        setCurrentPage(1);
+        navigate({ search: "" });
+    };
+
+    const handleSortChange = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(column);
+            setSortOrder("asc");
+        }
+    };
+
+    const openModal = (item = null) => {
+        if (item) {
+            setItemForm({
+                id: item.medicineId,
+                name: item.name,
+                stockQuantity: item.stockQuantity,
+                isActive: item.isActive,
+            });
+            setSelectedItem(item);
+        } else {
+            setItemForm({ id: 0, name: "", stockQuantity: 0, isActive: true });
+            setSelectedItem(null);
+        }
+        setFormErrors({});
+        setShowItemModal(true);
+    };
+
+    const closeModal = () => {
+        setShowItemModal(false);
+        setSelectedItem(null);
+        setFormErrors({});
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        if (!itemForm.name.trim()) errors.name = "Tên thuốc không được để trống";
+        if (isNaN(itemForm.stockQuantity) || itemForm.stockQuantity < 0) {
+            errors.stockQuantity = "Số lượng phải là số dương";
+        }
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setItemForm({ ...itemForm, [name]: type === "checkbox" ? checked : value });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        selectedItem ? updateMedicine() : createMedicine();
     };
 
     const filteredMedicines = medicines.filter((item) => {
-        const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.medicineId && item.medicineId.toString().includes(searchTerm));
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        const matchesSearch = !debouncedSearchTerm ||
+            item.name.toLowerCase().includes(searchLower) ||
+            item.medicineId.toString().includes(searchLower) ||
+            item.stockQuantity.toString().includes(searchLower);
 
-        let matchesStatus = true;
-        if (filterStatus === "active") matchesStatus = item.isActive;
-        else if (filterStatus === "inactive") matchesStatus = !item.isActive;
-        else if (filterStatus === "low-stock") matchesStatus = item.stockQuantity < 50;
+        const matchesStatus =
+            filterStatus === "all" ||
+            (filterStatus === "active" && item.isActive) ||
+            (filterStatus === "inactive" && !item.isActive) ||
+            (filterStatus === "low-stock" && item.stockQuantity < 50);
 
         return matchesSearch && matchesStatus;
     });
@@ -178,72 +260,20 @@ const MedicineInventory = () => {
         return sortOrder === "asc" ? comparison : -comparison;
     });
 
-    const isLowStock = (item) => item.stockQuantity < 50;
-
-    const handleSortChange = (column) => {
-        if (sortBy === column) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-        } else {
-            setSortBy(column);
-            setSortOrder("asc");
-        }
-    };
-
-    const handleAddEditMedicine = (item = null) => {
-        if (item) {
-            setItemForm({
-                id: item.medicineId,
-                name: item.name,
-                stockQuantity: item.stockQuantity,
-                isActive: item.isActive,
-            });
-            setSelectedItem(item);
-        } else {
-            resetForm();
-            setSelectedItem(null);
-        }
-        setShowItemModal(true);
-    };
-
-    const resetForm = () => {
-        setItemForm({ id: 0, name: "", stockQuantity: 0, isActive: true });
-        setFormErrors({});
-    };
-
-    const validateForm = () => {
-        const errors = {};
-        if (!itemForm.name.trim()) errors.name = "Tên thuốc không được để trống";
-        if (isNaN(itemForm.stockQuantity) || itemForm.stockQuantity < 0) errors.stockQuantity = "Số lượng phải là số dương";
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setItemForm({ ...itemForm, [name]: type === "checkbox" ? checked : value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (selectedItem) updateMedicine();
-        else createMedicine();
-    };
+    const totalPages = Math.ceil(sortedMedicines.length / medicinesPerPage);
+    const indexOfLastMedicine = currentPage * medicinesPerPage;
+    const indexOfFirstMedicine = indexOfLastMedicine - medicinesPerPage;
+    const currentMedicines = sortedMedicines.slice(indexOfFirstMedicine, indexOfLastMedicine);
 
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 mb-4" style={{ borderColor: PRIMARY[500] }}></div>
-                    <p style={{ color: TEXT.SECONDARY }}>Đang tải danh sách thuốc...</p>
-                </div>
-            </div>
+            <Loading type="medical" size="xl" color="primary" text="Đang tải danh sách thuốc..." fullScreen={true} />
         );
     }
 
     return (
         <div className="min-h-screen" >
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div>
@@ -255,7 +285,7 @@ const MedicineInventory = () => {
                             </p>
                         </div>
                         <button
-                            onClick={() => handleAddEditMedicine()}
+                            onClick={() => openModal()}
                             className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                             style={{
                                 background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
@@ -268,7 +298,6 @@ const MedicineInventory = () => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
@@ -352,16 +381,13 @@ const MedicineInventory = () => {
                     </div>
                 </div>
 
-                {/* Main Content Card */}
                 <div
                     className="rounded-2xl shadow-xl border backdrop-blur-sm"
                     style={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
                         borderColor: BORDER.LIGHT,
-                        boxShadow: `0 25px 50px -12px ${SHADOW.MEDIUM}`
                     }}
                 >
-                    {/* Filters */}
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                             <div className="flex-1">
@@ -369,8 +395,8 @@ const MedicineInventory = () => {
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo tên hoặc mã thuốc..."
-                                        className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        placeholder="Tìm kiếm theo tên, mã thuốc hoặc số lượng..."
+                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{
                                             borderColor: BORDER.DEFAULT,
                                             backgroundColor: BACKGROUND.DEFAULT,
@@ -379,6 +405,11 @@ const MedicineInventory = () => {
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
+                                    {searchTerm !== debouncedSearchTerm && (
+                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -423,7 +454,6 @@ const MedicineInventory = () => {
                         </div>
                     </div>
 
-                    {/* Table */}
                     <div className="overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
@@ -455,8 +485,8 @@ const MedicineInventory = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                                    {sortedMedicines.length > 0 ? (
-                                        sortedMedicines.map((item, index) => (
+                                    {currentMedicines.length > 0 ? (
+                                        currentMedicines.map((item, index) => (
                                             <tr
                                                 key={item.medicineId}
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
@@ -482,11 +512,11 @@ const MedicineInventory = () => {
                                                     <div className="flex items-center">
                                                         <span
                                                             className="font-bold text-lg"
-                                                            style={{ color: isLowStock(item) ? ERROR[600] : TEXT.PRIMARY }}
+                                                            style={{ color: item.stockQuantity < 50 ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
                                                             {item.stockQuantity}
                                                         </span>
-                                                        {isLowStock(item) && (
+                                                        {item.stockQuantity < 50 && (
                                                             <div className="ml-3 flex items-center">
                                                                 <FiAlertTriangle className="h-4 w-4 mr-1" style={{ color: WARNING[500] }} />
                                                                 <span className="text-xs font-medium" style={{ color: WARNING[600] }}>
@@ -510,7 +540,7 @@ const MedicineInventory = () => {
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center space-x-3">
                                                         <button
-                                                            onClick={() => handleAddEditMedicine(item)}
+                                                            onClick={() => openModal(item)}
                                                             className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                                                             style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                                             title="Chỉnh sửa"
@@ -531,7 +561,7 @@ const MedicineInventory = () => {
                                                             {item.isActive ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
                                                         </button>
                                                         <button
-                                                            onClick={() => deleteMedicine(item.medicineId)}
+                                                            onClick={() => handleDeleteClick(item.medicineId)}
                                                             className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                                                             style={{
                                                                 backgroundColor: ERROR[50],
@@ -558,24 +588,42 @@ const MedicineInventory = () => {
                                                         <FiPackage className="h-10 w-10" style={{ color: GRAY[400] }} />
                                                     </div>
                                                     <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
-                                                        Không có thuốc nào phù hợp
+                                                        {sortedMedicines.length === 0 ? "Không có thuốc nào phù hợp" : "Không có dữ liệu trang này"}
                                                     </p>
                                                     <p className="mb-4" style={{ color: TEXT.SECONDARY }}>
-                                                        Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác
+                                                        {sortedMedicines.length === 0 ?
+                                                            "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác" :
+                                                            "Vui lòng chọn trang khác hoặc điều chỉnh bộ lọc"
+                                                        }
                                                     </p>
-                                                    <button
-                                                        onClick={resetFilters}
-                                                        className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                        style={{
-                                                            backgroundColor: PRIMARY[100],
-                                                            color: PRIMARY[700]
-                                                        }}
-                                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
-                                                        onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
-                                                    >
-                                                        <FiRefreshCw className="mr-2 h-4 w-4" />
-                                                        Đặt lại bộ lọc
-                                                    </button>
+                                                    {sortedMedicines.length === 0 ? (
+                                                        <button
+                                                            onClick={resetFilters}
+                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
+                                                            style={{
+                                                                backgroundColor: PRIMARY[100],
+                                                                color: PRIMARY[700]
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
+                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
+                                                        >
+                                                            <FiRefreshCw className="mr-2 h-4 w-4" />
+                                                            Đặt lại bộ lọc
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setCurrentPage(1)}
+                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
+                                                            style={{
+                                                                backgroundColor: PRIMARY[100],
+                                                                color: PRIMARY[700]
+                                                            }}
+                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
+                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
+                                                        >
+                                                            Về trang đầu
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -583,126 +631,137 @@ const MedicineInventory = () => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                                <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
+                                    <span className="text-sm">
+                                        Hiển thị {indexOfFirstMedicine + 1}-{Math.min(indexOfLastMedicine, sortedMedicines.length)} trong tổng số {sortedMedicines.length} thuốc
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={() => setCurrentPage(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            style={{
+                                                borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                                color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                                backgroundColor: BACKGROUND.DEFAULT
+                                            }}
+                                        >
+                                            <svg
+                                                className="h-4 w-4 lg:h-5 lg:w-5"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 20 20"
+                                                fill="currentColor"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </button>
+
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                                            <button
+                                                key={number}
+                                                onClick={() => setCurrentPage(number)}
+                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                                style={{
+                                                    borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
+                                                    backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                    color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
+                                                }}
+                                            >
+                                                {number}
+                                            </button>
+                                        ))}
+
+                                        <button
+                                            onClick={() => setCurrentPage(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            style={{
+                                                borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                                color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                                backgroundColor: BACKGROUND.DEFAULT
+                                            }}
+                                        >
+                                            <svg
+                                                className="h-4 w-4 lg:h-5 lg:w-5"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 20 20"
+                                                fill="currentColor"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Modal */}
-                {showItemModal && (
+                <MedicineModal
+                    isOpen={showItemModal}
+                    onClose={closeModal}
+                    onSubmit={handleSubmit}
+                    itemForm={itemForm}
+                    selectedItem={selectedItem}
+                    formErrors={formErrors}
+                    submitting={submitting}
+                    onInputChange={handleInputChange}
+                />
+
+                <ConfirmModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={confirmAction}
+                    title="Xác nhận xóa thuốc"
+                    message="Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác."
+                    confirmText="Xóa"
+                    cancelText="Hủy"
+                    type="error"
+                    isLoading={deleting}
+                />
+
+                <AlertModal
+                    isOpen={showAlertModal}
+                    onClose={() => setShowAlertModal(false)}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                    okText="OK"
+                />
+
+                {deleting && (
                     <div
-                        className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 flex items-center justify-center z-50"
                         style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)' }}
-                        onClick={() => setShowItemModal(false)}
                     >
                         <div
-                            className="rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100"
+                            className="rounded-2xl shadow-2xl p-8 transform transition-all duration-300"
                             style={{ backgroundColor: BACKGROUND.DEFAULT }}
-                            onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                                <h3 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                    {selectedItem ? "Chỉnh sửa thuốc" : "Thêm thuốc mới"}
-                                </h3>
+                            <div className="text-center">
+                                <Loading type="medical" size="large" color="primary" text="Đang xóa thuốc..." />
                             </div>
-
-                            <form onSubmit={handleSubmit} className="p-6">
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                            Tên thuốc *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={itemForm.name}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                            style={{
-                                                borderColor: formErrors.name ? ERROR[500] : BORDER.DEFAULT,
-                                                focusRingColor: PRIMARY[500] + '40'
-                                            }}
-                                            placeholder="Nhập tên thuốc..."
-                                        />
-                                        {formErrors.name && (
-                                            <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                                {formErrors.name}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                            Số lượng *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="stockQuantity"
-                                            value={itemForm.stockQuantity}
-                                            onChange={handleInputChange}
-                                            min="0"
-                                            className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                            style={{
-                                                borderColor: formErrors.stockQuantity ? ERROR[500] : BORDER.DEFAULT,
-                                                focusRingColor: PRIMARY[500] + '40'
-                                            }}
-                                            placeholder="Nhập số lượng..."
-                                        />
-                                        {formErrors.stockQuantity && (
-                                            <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                                {formErrors.stockQuantity}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center">
-                                        <input
-                                            type="checkbox"
-                                            name="isActive"
-                                            checked={itemForm.isActive}
-                                            onChange={handleInputChange}
-                                            className="h-5 w-5 rounded focus:ring-2 transition-all duration-200"
-                                            style={{
-                                                color: PRIMARY[600],
-                                                focusRingColor: PRIMARY[500] + '40'
-                                            }}
-                                        />
-                                        <label className="ml-3 text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                            Đang sử dụng
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-3 mt-8">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowItemModal(false)}
-                                        className="flex-1 py-3 px-4 border rounded-xl font-semibold transition-all duration-200"
-                                        style={{
-                                            borderColor: BORDER.DEFAULT,
-                                            color: TEXT.SECONDARY,
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                            color: TEXT.INVERSE
-                                        }}
-                                    >
-                                        {selectedItem ? "Cập nhật" : "Thêm mới"}
-                                    </button>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

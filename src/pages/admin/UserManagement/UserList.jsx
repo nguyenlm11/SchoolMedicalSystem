@@ -29,9 +29,7 @@ const UserList = () => {
     });
     const [formErrors, setFormErrors] = useState({});
 
-    // Mock data - in a real application, this would come from an API
     useEffect(() => {
-        // Simulate API call
         setTimeout(() => {
             const mockUsers = [
                 {
@@ -88,49 +86,12 @@ const UserList = () => {
                     lastLogin: null,
                     createdAt: "2023-05-17T16:00:00",
                 },
-                {
-                    id: 7,
-                    name: "Đỗ Văn G",
-                    email: "dovang@example.com",
-                    role: "parent",
-                    status: "active",
-                    lastLogin: "2023-05-15T10:20:00",
-                    createdAt: "2023-03-05T09:30:00",
-                },
-                {
-                    id: 8,
-                    name: "Vũ Thị H",
-                    email: "vuthih@example.com",
-                    role: "staff",
-                    status: "active",
-                    lastLogin: "2023-05-18T11:05:00",
-                    createdAt: "2023-03-15T13:45:00",
-                },
-                {
-                    id: 9,
-                    name: "Trương Văn I",
-                    email: "truongvani@example.com",
-                    role: "teacher",
-                    status: "active",
-                    lastLogin: "2023-05-18T15:30:00",
-                    createdAt: "2023-03-20T10:15:00",
-                },
-                {
-                    id: 10,
-                    name: "Lý Thị K",
-                    email: "lythik@example.com",
-                    role: "teacher",
-                    status: "inactive",
-                    lastLogin: "2023-05-05T08:45:00",
-                    createdAt: "2023-04-02T09:20:00",
-                },
             ];
             setUsers(mockUsers);
             setLoading(false);
         }, 1000);
     }, []);
 
-    // Handle sorting
     const handleSort = (column) => {
         if (sortColumn === column) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -140,41 +101,26 @@ const UserList = () => {
         }
     };
 
-    // Filter and search users
     const filteredUsers = users.filter((user) => {
-        // Filter by role
         if (filterRole !== "all" && user.role !== filterRole) {
             return false;
         }
-
-        // Filter by status
         if (filterStatus !== "all" && user.status !== filterStatus) {
             return false;
         }
-
-        // Search by name or email
-        if (
-            searchTerm &&
-            !user.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            !user.email.toLowerCase().includes(searchTerm.toLowerCase())
-        ) {
+        if (searchTerm && !user.name.toLowerCase().includes(searchTerm.toLowerCase()) && !user.email.toLowerCase().includes(searchTerm.toLowerCase())) {
             return false;
         }
-
         return true;
     });
 
-    // Sort users
     const sortedUsers = [...filteredUsers].sort((a, b) => {
         let valA = a[sortColumn];
         let valB = b[sortColumn];
-
-        // Handle date columns
         if (sortColumn === "lastLogin" || sortColumn === "createdAt") {
             valA = valA ? new Date(valA).getTime() : 0;
             valB = valB ? new Date(valB).getTime() : 0;
         }
-
         if (valA < valB) {
             return sortDirection === "asc" ? -1 : 1;
         }
@@ -184,17 +130,12 @@ const UserList = () => {
         return 0;
     });
 
-    // Pagination
     const usersPerPage = 5;
     const indexOfLastUser = currentPage * usersPerPage;
     const indexOfFirstUser = indexOfLastUser - usersPerPage;
     const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser);
     const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
-
-    // Handle page change
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    // Format date
     const formatDate = (dateString) => {
         if (!dateString) return "Chưa đăng nhập";
         const date = new Date(dateString);
@@ -207,7 +148,6 @@ const UserList = () => {
         }).format(date);
     };
 
-    // Handle delete user
     const handleDeleteClick = (user) => {
         setUserToDelete(user);
         setShowDeleteModal(true);
@@ -216,16 +156,12 @@ const UserList = () => {
     const confirmDelete = async () => {
         setDeleting(true);
         try {
-            // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // In a real application, this would make an API call
             setUsers(users.filter((user) => user.id !== userToDelete.id));
             setShowDeleteModal(false);
             setUserToDelete(null);
         } catch (error) {
             console.error('Error deleting user:', error);
-            // Handle error - could show toast notification
         } finally {
             setDeleting(false);
         }
@@ -237,8 +173,6 @@ const UserList = () => {
                 return "Quản trị viên";
             case "staff":
                 return "Nhân viên y tế";
-            case "teacher":
-                return "Giáo viên";
             case "parent":
                 return "Phụ huynh";
             default:
@@ -302,12 +236,6 @@ const UserList = () => {
                     color: INFO[700],
                     borderColor: INFO[200]
                 };
-            case "teacher":
-                return {
-                    backgroundColor: '#f3e8ff',
-                    color: '#7c3aed',
-                    borderColor: '#d8b4fe'
-                };
             case "parent":
                 return {
                     backgroundColor: SUCCESS[50],
@@ -323,60 +251,44 @@ const UserList = () => {
         }
     };
 
-    // Handle input change in form
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
-
-        // Clear error when field is edited
         if (formErrors[name]) {
             setFormErrors({ ...formErrors, [name]: undefined });
         }
     };
 
-    // Validate form
     const validateForm = () => {
         const newErrors = {};
-
         if (!formData.name.trim()) {
             newErrors.name = "Vui lòng nhập họ tên";
         }
-
         if (!formData.email.trim()) {
             newErrors.email = "Vui lòng nhập email";
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = "Email không hợp lệ";
         }
-
         if (!formData.password) {
             newErrors.password = "Vui lòng nhập mật khẩu";
         } else if (formData.password.length < 6) {
             newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
         }
-
         if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
         }
-
         setFormErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle form submission
     const handleAddUser = async (e) => {
         e.preventDefault();
-
         if (!validateForm()) {
             return;
         }
-
         setSubmitting(true);
         try {
-            // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // In a real app, submit to API
-            // For mock data, create a new user and add to the list
             const newUser = {
                 id: users.length + 1,
                 name: formData.name,
@@ -386,10 +298,7 @@ const UserList = () => {
                 lastLogin: null,
                 createdAt: new Date().toISOString(),
             };
-
             setUsers([...users, newUser]);
-
-            // Reset form and close modal
             setFormData({
                 name: "",
                 email: "",
@@ -402,23 +311,18 @@ const UserList = () => {
             setShowAddModal(false);
         } catch (error) {
             console.error('Error adding user:', error);
-            // Handle error - could show toast notification
         } finally {
             setSubmitting(false);
         }
     };
 
-    // Open add user modal
     const openAddModal = () => {
-        // Set available roles
         setRoles([
             { id: 1, name: "admin", label: "Quản trị viên" },
             { id: 2, name: "staff", label: "Nhân viên y tế" },
             { id: 3, name: "teacher", label: "Giáo viên" },
             { id: 4, name: "parent", label: "Phụ huynh" },
         ]);
-
-        // Reset form
         setFormData({
             name: "",
             email: "",
@@ -428,13 +332,11 @@ const UserList = () => {
             status: "active",
         });
         setFormErrors({});
-
         setShowAddModal(true);
     };
 
     return (
         <>
-            {/* Initial Page Loading */}
             {loading && (
                 <div className="h-full flex justify-center items-center">
                     <Loading
@@ -446,10 +348,8 @@ const UserList = () => {
                 </div>
             )}
 
-            {/* Main Content - Hidden during initial loading */}
             {!loading && (
                 <div className="h-full">
-                    {/* Header Section */}
                     <div className="flex flex-col space-y-4 mb-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                             <div className="mb-4 lg:mb-0">
@@ -505,7 +405,6 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    {/* Filter and Search Section */}
                     <div
                         className="rounded-xl p-4 lg:p-6 mb-6 shadow-sm border"
                         style={{
@@ -515,7 +414,6 @@ const UserList = () => {
                         }}
                     >
                         <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
-                            {/* Search Input */}
                             <div className="w-full lg:w-1/2 xl:w-1/3 relative">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                                     <FiSearch style={{ color: GRAY[400] }} />
@@ -534,20 +432,10 @@ const UserList = () => {
                                         backgroundColor: BACKGROUND.DEFAULT,
                                         color: TEXT.PRIMARY
                                     }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = PRIMARY[500];
-                                        e.target.style.boxShadow = `0 0 0 2px ${PRIMARY[100]}`;
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = BORDER.DEFAULT;
-                                        e.target.style.boxShadow = 'none';
-                                    }}
                                 />
                             </div>
 
-                            {/* Filters */}
                             <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-                                {/* Role Filter */}
                                 <div className="flex items-center space-x-2">
                                     <div className="flex items-center space-x-1">
                                         <FiFilter style={{ color: GRAY[400] }} className="w-4 h-4" />
@@ -567,14 +455,6 @@ const UserList = () => {
                                             backgroundColor: BACKGROUND.DEFAULT,
                                             color: TEXT.PRIMARY
                                         }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = PRIMARY[500];
-                                            e.target.style.boxShadow = `0 0 0 2px ${PRIMARY[100]}`;
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = BORDER.DEFAULT;
-                                            e.target.style.boxShadow = 'none';
-                                        }}
                                     >
                                         <option value="all">Tất cả</option>
                                         <option value="admin">Quản trị viên</option>
@@ -584,7 +464,6 @@ const UserList = () => {
                                     </select>
                                 </div>
 
-                                {/* Status Filter */}
                                 <div className="flex items-center space-x-2">
                                     <div className="flex items-center space-x-1">
                                         <FiFilter style={{ color: GRAY[400] }} className="w-4 h-4" />
@@ -604,14 +483,6 @@ const UserList = () => {
                                             backgroundColor: BACKGROUND.DEFAULT,
                                             color: TEXT.PRIMARY
                                         }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = PRIMARY[500];
-                                            e.target.style.boxShadow = `0 0 0 2px ${PRIMARY[100]}`;
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = BORDER.DEFAULT;
-                                            e.target.style.boxShadow = 'none';
-                                        }}
                                     >
                                         <option value="all">Tất cả</option>
                                         <option value="active">Đang hoạt động</option>
@@ -623,7 +494,6 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    {/* Users Table */}
                     <div
                         className="rounded-xl shadow-sm border overflow-hidden"
                         style={{
@@ -632,7 +502,6 @@ const UserList = () => {
                             boxShadow: `0 1px 3px ${SHADOW.LIGHT}`
                         }}
                     >
-                        {/* Mobile View */}
                         <div className="block lg:hidden">
                             {loading ? (
                                 <div className="p-6 space-y-4">
@@ -722,7 +591,6 @@ const UserList = () => {
                             )}
                         </div>
 
-                        {/* Desktop Table View */}
                         <div className="hidden lg:block overflow-x-auto">
                             {loading ? (
                                 <div className="p-6">
@@ -940,14 +808,6 @@ const UserList = () => {
                                                             to={`/admin/users/${user.id}/edit`}
                                                             className="p-2 rounded-lg transition-all duration-200"
                                                             style={{ color: WARNING[600] }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = WARNING[50];
-                                                                e.target.style.color = WARNING[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = 'transparent';
-                                                                e.target.style.color = WARNING[600];
-                                                            }}
                                                             title="Chỉnh sửa"
                                                         >
                                                             <FiEdit className="h-5 w-5" />
@@ -956,14 +816,6 @@ const UserList = () => {
                                                             onClick={() => handleDeleteClick(user)}
                                                             className="p-2 rounded-lg transition-all duration-200"
                                                             style={{ color: ERROR[600] }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = ERROR[50];
-                                                                e.target.style.color = ERROR[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = 'transparent';
-                                                                e.target.style.color = ERROR[600];
-                                                            }}
                                                             title="Xóa người dùng"
                                                         >
                                                             <FiTrash2 className="h-5 w-5" />
@@ -995,7 +847,7 @@ const UserList = () => {
                     {/* Pagination */}
                     {!loading && sortedUsers.length > 0 && (
                         <div
-                            className="mt-6 px-4 py-4 lg:px-6 lg:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between border-t"
+                            className="flex items-center justify-between p-6 border-t"
                             style={{
                                 backgroundColor: BACKGROUND.DEFAULT,
                                 borderColor: BORDER.DEFAULT,
@@ -1015,37 +867,19 @@ const UserList = () => {
                                     người dùng
                                 </p>
                             </div>
+
                             <div>
-                                <nav
-                                    className="relative z-0 inline-flex rounded-lg shadow-sm"
-                                    aria-label="Pagination"
-                                >
+                                <div className="flex items-center space-x-2">
                                     <button
                                         onClick={() => paginate(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className={`relative inline-flex items-center px-3 py-2 rounded-l-lg border text-sm font-medium transition-all duration-200 ${currentPage === 1
-                                            ? "cursor-not-allowed opacity-50"
-                                            : "hover:shadow-md"
-                                            }`}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                         style={{
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            borderColor: BORDER.DEFAULT,
-                                            color: currentPage === 1 ? GRAY[400] : TEXT.SECONDARY
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (currentPage !== 1) {
-                                                e.target.style.backgroundColor = GRAY[50];
-                                                e.target.style.borderColor = BORDER.DARK;
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (currentPage !== 1) {
-                                                e.target.style.backgroundColor = BACKGROUND.DEFAULT;
-                                                e.target.style.borderColor = BORDER.DEFAULT;
-                                            }
+                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <span className="sr-only">Trang trước</span>
                                         <svg
                                             className="h-4 w-4 lg:h-5 lg:w-5"
                                             xmlns="http://www.w3.org/2000/svg"
@@ -1061,61 +895,31 @@ const UserList = () => {
                                         </svg>
                                     </button>
 
-                                    {[...Array(totalPages).keys()].map((number) => (
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
                                         <button
-                                            key={number + 1}
-                                            onClick={() => paginate(number + 1)}
-                                            className={`relative inline-flex items-center px-3 lg:px-4 py-2 border text-sm font-medium transition-all duration-200 hover:shadow-md ${currentPage === number + 1 ? 'z-10' : ''}`}
+                                            key={number}
+                                            onClick={() => paginate(number)}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
                                             style={{
-                                                backgroundColor: currentPage === number + 1 ? PRIMARY[50] : BACKGROUND.DEFAULT,
-                                                borderColor: currentPage === number + 1 ? PRIMARY[500] : BORDER.DEFAULT,
-                                                color: currentPage === number + 1 ? PRIMARY[700] : TEXT.SECONDARY
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (currentPage !== number + 1) {
-                                                    e.target.style.backgroundColor = GRAY[50];
-                                                    e.target.style.borderColor = BORDER.DARK;
-                                                    e.target.style.color = TEXT.PRIMARY;
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (currentPage !== number + 1) {
-                                                    e.target.style.backgroundColor = BACKGROUND.DEFAULT;
-                                                    e.target.style.borderColor = BORDER.DEFAULT;
-                                                    e.target.style.color = TEXT.SECONDARY;
-                                                }
+                                                borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
+                                                backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
                                             }}
                                         >
-                                            {number + 1}
+                                            {number}
                                         </button>
                                     ))}
 
                                     <button
                                         onClick={() => paginate(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className={`relative inline-flex items-center px-3 py-2 rounded-r-lg border text-sm font-medium transition-all duration-200 ${currentPage === totalPages
-                                            ? "cursor-not-allowed opacity-50"
-                                            : "hover:shadow-md"
-                                            }`}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                         style={{
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            borderColor: BORDER.DEFAULT,
-                                            color: currentPage === totalPages ? GRAY[400] : TEXT.SECONDARY
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (currentPage !== totalPages) {
-                                                e.target.style.backgroundColor = GRAY[50];
-                                                e.target.style.borderColor = BORDER.DARK;
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (currentPage !== totalPages) {
-                                                e.target.style.backgroundColor = BACKGROUND.DEFAULT;
-                                                e.target.style.borderColor = BORDER.DEFAULT;
-                                            }
+                                            borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <span className="sr-only">Trang sau</span>
                                         <svg
                                             className="h-4 w-4 lg:h-5 lg:w-5"
                                             xmlns="http://www.w3.org/2000/svg"
@@ -1130,12 +934,11 @@ const UserList = () => {
                                             />
                                         </svg>
                                     </button>
-                                </nav>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Add User Modal */}
                     {showAddModal && (
                         <div className="fixed inset-0 z-50 overflow-y-auto">
                             <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
@@ -1193,14 +996,6 @@ const UserList = () => {
                                                             backgroundColor: BACKGROUND.DEFAULT,
                                                             color: TEXT.PRIMARY
                                                         }}
-                                                        onFocus={(e) => {
-                                                            e.target.style.borderColor = formErrors.name ? ERROR[500] : PRIMARY[500];
-                                                            e.target.style.boxShadow = `0 0 0 2px ${formErrors.name ? ERROR[100] : PRIMARY[100]}`;
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            e.target.style.borderColor = formErrors.name ? ERROR[500] : BORDER.DEFAULT;
-                                                            e.target.style.boxShadow = 'none';
-                                                        }}
                                                         placeholder="Nhập họ tên đầy đủ"
                                                     />
                                                     {formErrors.name && (
@@ -1230,14 +1025,6 @@ const UserList = () => {
                                                             borderColor: formErrors.email ? ERROR[500] : BORDER.DEFAULT,
                                                             backgroundColor: BACKGROUND.DEFAULT,
                                                             color: TEXT.PRIMARY
-                                                        }}
-                                                        onFocus={(e) => {
-                                                            e.target.style.borderColor = formErrors.email ? ERROR[500] : PRIMARY[500];
-                                                            e.target.style.boxShadow = `0 0 0 2px ${formErrors.email ? ERROR[100] : PRIMARY[100]}`;
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            e.target.style.borderColor = formErrors.email ? ERROR[500] : BORDER.DEFAULT;
-                                                            e.target.style.boxShadow = 'none';
                                                         }}
                                                         placeholder="example@email.com"
                                                     />
@@ -1271,14 +1058,6 @@ const UserList = () => {
                                                                 backgroundColor: BACKGROUND.DEFAULT,
                                                                 color: TEXT.PRIMARY
                                                             }}
-                                                            onFocus={(e) => {
-                                                                e.target.style.borderColor = formErrors.password ? ERROR[500] : PRIMARY[500];
-                                                                e.target.style.boxShadow = `0 0 0 2px ${formErrors.password ? ERROR[100] : PRIMARY[100]}`;
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                e.target.style.borderColor = formErrors.password ? ERROR[500] : BORDER.DEFAULT;
-                                                                e.target.style.boxShadow = 'none';
-                                                            }}
                                                             placeholder="Ít nhất 6 ký tự"
                                                         />
                                                         {formErrors.password && (
@@ -1309,14 +1088,6 @@ const UserList = () => {
                                                                 backgroundColor: BACKGROUND.DEFAULT,
                                                                 color: TEXT.PRIMARY
                                                             }}
-                                                            onFocus={(e) => {
-                                                                e.target.style.borderColor = formErrors.confirmPassword ? ERROR[500] : PRIMARY[500];
-                                                                e.target.style.boxShadow = `0 0 0 2px ${formErrors.confirmPassword ? ERROR[100] : PRIMARY[100]}`;
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                e.target.style.borderColor = formErrors.confirmPassword ? ERROR[500] : BORDER.DEFAULT;
-                                                                e.target.style.boxShadow = 'none';
-                                                            }}
                                                             placeholder="Nhập lại mật khẩu"
                                                         />
                                                         {formErrors.confirmPassword && (
@@ -1327,9 +1098,7 @@ const UserList = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Grid for Role and Status */}
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {/* Vai trò */}
                                                     <div>
                                                         <label
                                                             htmlFor="role"
@@ -1366,7 +1135,6 @@ const UserList = () => {
                                                         </select>
                                                     </div>
 
-                                                    {/* Trạng thái */}
                                                     <div>
                                                         <label
                                                             htmlFor="status"
@@ -1385,14 +1153,6 @@ const UserList = () => {
                                                                 borderColor: BORDER.DEFAULT,
                                                                 backgroundColor: BACKGROUND.DEFAULT,
                                                                 color: TEXT.PRIMARY
-                                                            }}
-                                                            onFocus={(e) => {
-                                                                e.target.style.borderColor = PRIMARY[500];
-                                                                e.target.style.boxShadow = `0 0 0 2px ${PRIMARY[100]}`;
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                e.target.style.borderColor = BORDER.DEFAULT;
-                                                                e.target.style.boxShadow = 'none';
                                                             }}
                                                         >
                                                             <option value="active">Đang hoạt động</option>
@@ -1419,18 +1179,6 @@ const UserList = () => {
                                                     color: TEXT.INVERSE,
                                                     borderColor: submitting ? GRAY[400] : PRIMARY[500]
                                                 }}
-                                                onMouseEnter={(e) => {
-                                                    if (!submitting) {
-                                                        e.target.style.backgroundColor = PRIMARY[600];
-                                                        e.target.style.borderColor = PRIMARY[600];
-                                                    }
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    if (!submitting) {
-                                                        e.target.style.backgroundColor = PRIMARY[500];
-                                                        e.target.style.borderColor = PRIMARY[500];
-                                                    }
-                                                }}
                                             >
                                                 {submitting ? (
                                                     <>
@@ -1454,20 +1202,6 @@ const UserList = () => {
                                                     color: TEXT.SECONDARY,
                                                     borderColor: BORDER.DEFAULT
                                                 }}
-                                                onMouseEnter={(e) => {
-                                                    if (!submitting) {
-                                                        e.target.style.backgroundColor = GRAY[50];
-                                                        e.target.style.borderColor = BORDER.DARK;
-                                                        e.target.style.color = TEXT.PRIMARY;
-                                                    }
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    if (!submitting) {
-                                                        e.target.style.backgroundColor = BACKGROUND.DEFAULT;
-                                                        e.target.style.borderColor = BORDER.DEFAULT;
-                                                        e.target.style.color = TEXT.SECONDARY;
-                                                    }
-                                                }}
                                             >
                                                 <FiX className="mr-2 w-4 h-4" />
                                                 Hủy
@@ -1479,7 +1213,6 @@ const UserList = () => {
                         </div>
                     )}
 
-                    {/* Delete User Modal */}
                     {showDeleteModal && (
                         <div className="fixed inset-0 z-50 overflow-y-auto">
                             <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
@@ -1594,20 +1327,6 @@ const UserList = () => {
                                                 backgroundColor: BACKGROUND.DEFAULT,
                                                 color: TEXT.SECONDARY,
                                                 borderColor: BORDER.DEFAULT
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!deleting) {
-                                                    e.target.style.backgroundColor = GRAY[50];
-                                                    e.target.style.borderColor = BORDER.DARK;
-                                                    e.target.style.color = TEXT.PRIMARY;
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!deleting) {
-                                                    e.target.style.backgroundColor = BACKGROUND.DEFAULT;
-                                                    e.target.style.borderColor = BORDER.DEFAULT;
-                                                    e.target.style.color = TEXT.SECONDARY;
-                                                }
                                             }}
                                         >
                                             <FiX className="mr-2 w-4 h-4" />
