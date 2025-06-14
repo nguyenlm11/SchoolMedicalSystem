@@ -121,6 +121,12 @@ const Navbar = () => {
                         { to: "/staff/medication", label: "Quản lý thuốc", desc: "Theo dõi thuốc trong trường" },
                     ],
                 },
+                {
+                    category: "Học sinh",
+                    links: [
+                        { to: "/student/medication", label: "Lịch uống thuốc", desc: "Theo dõi và quản lý lịch trình uống thuốc của bạn" },
+                    ],
+                },
             ],
         },
         {

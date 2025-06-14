@@ -21,6 +21,7 @@ import MedicineInventory from "./pages/manager/MedicineInventory";
 import SupplyInventory from "./pages/manager/SupplyInventory";
 import ParentManagement from "./pages/manager/ParentManagement";
 import StudentManagement from "./pages/manager/StudentManagement";
+import StudentMedication from "./pages/student/StudentMedication";
 
 function App() {
   return (
@@ -152,6 +153,7 @@ function App() {
           {/* Student Routes */}
           <Route path="/student/dashboard" element={<StudentDashboard />} />
           <Route path="/student/health-profile" element={<StudentHealthProfile viewOnly={true} />} />
+          <Route path="/student/medication" element={<StudentMedication viewOnly={true} />} />
           <Route path="/student/report-symptom" element={<div className="p-8 text-center">Báo cáo triệu chứng (đang phát triển)</div>} />
           <Route path="/student/request-visit" element={<div className="p-8 text-center">Yêu cầu gặp y tá (đang phát triển)</div>} />
           <Route path="/student/health-events" element={<div className="p-8 text-center">Sự kiện y tế của học sinh (đang phát triển)</div>} />
