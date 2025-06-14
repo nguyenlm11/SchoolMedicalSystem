@@ -148,6 +148,12 @@ const Navbar = () => {
                         { to: "/staff/health-events/new", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
                     ],
                 },
+                {
+                    category: "Học sinh",
+                    links: [
+                        { to: "/student/health-events", label: "Sự kiện y tế", desc: "Lịch khám sức khỏe, tiêm chủng và các hoạt động y tế khác" },
+                    ],
+                },
             ],
         },
         {
