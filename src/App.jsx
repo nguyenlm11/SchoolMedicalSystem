@@ -22,6 +22,7 @@ import SupplyInventory from "./pages/manager/SupplyInventory";
 import ParentManagement from "./pages/manager/ParentManagement";
 import StudentManagement from "./pages/manager/StudentManagement";
 import StudentMedication from "./pages/student/StudentMedication";
+import StudentHealthEvents from "./pages/student/StudentHealthEvents";
 
 function App() {
   return (
@@ -156,7 +157,7 @@ function App() {
           <Route path="/student/medication" element={<StudentMedication viewOnly={true} />} />
           <Route path="/student/report-symptom" element={<div className="p-8 text-center">Báo cáo triệu chứng (đang phát triển)</div>} />
           <Route path="/student/request-visit" element={<div className="p-8 text-center">Yêu cầu gặp y tá (đang phát triển)</div>} />
-          <Route path="/student/health-events" element={<div className="p-8 text-center">Sự kiện y tế của học sinh (đang phát triển)</div>} />
+          <Route path="/student/health-events" element={<StudentHealthEvents />} />
 
           {/* Guest Routes */}
           <Route path="/blog" element={<BlogPage />} />

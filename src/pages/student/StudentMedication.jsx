@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheck, FiClock, FiAlertTriangle, FiX, FiCalendar } from "react-icons/fi";
+import { FiCheck, FiClock, FiAlertTriangle, FiX, FiCalendar, FiInfo } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, COMMON, SUCCESS, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 
@@ -188,6 +188,32 @@ const StudentMedication = () => {
               </p>
             </div>
           </div>
+          
+          {/* Reminder Card */}
+          <div
+            className="bg-blue-50 p-6 rounded-xl shadow-sm mb-8"
+            style={{
+              backgroundColor: "#e1f5fe",
+              boxShadow: SHADOW.DEFAULT,
+            }}
+          >
+            <div className="flex items-start mb-4">
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: "#81d4fa" }}>
+                <FiInfo className="h-5 w-5" style={{ color: "#01579b" }} />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium" style={{ color: "#01579b" }}>
+                  Lưu ý khi uống thuốc
+                </h3>
+              </div>
+            </div>
+            <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: TEXT.SECONDARY }}>
+              <li>Uống thuốc đúng giờ để đảm bảo hiệu quả điều trị tốt nhất</li>
+              <li>Luôn uống theo đúng liều lượng được chỉ định</li>
+              <li>Đọc kỹ hướng dẫn sử dụng trước khi uống thuốc</li>
+              <li>Nếu quên uống thuốc, hãy liên hệ với y tá của trường hoặc phụ huynh</li>
+            </ul>
+          </div>
 
           {/* Tab Navigation */}
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
@@ -364,8 +390,6 @@ const StudentMedication = () => {
               )}
             </div>
           )}
-          {/* Continue similarly for "upcoming" and "completed" tabs */}
-
       </div>      
     </div>
   );
