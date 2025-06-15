@@ -3,11 +3,12 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FiHome, FiUsers, FiUserCheck, FiTablet, FiPackage, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW } from "../../constants/colors";
 import { useAuth } from "../../utils/AuthContext";
+import UnauthorizedPage from "../../pages/auth/UnauthorizedPage";
 
 const ManagerLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { user, logout, hasRole, ROLES } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -29,6 +30,11 @@ const ManagerLayout = () => {
             document.documentElement.style.padding = '';
         };
     }, []);
+
+
+    if (!hasRole(ROLES.MANAGER)) {
+        return <UnauthorizedPage currentRole={user?.role} />;
+    }
 
     const menuItems = [
         {
@@ -200,13 +206,23 @@ const ManagerLayout = () => {
                             <FiBell className="w-6 h-6" />
                         </button>
 
-                        <div
-                            className="h-8 w-8 lg:h-10 lg:w-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
-                            style={{ backgroundColor: PRIMARY[500] }}
-                        >
-                            <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
-                                MG
-                            </span>
+                        <div className="flex items-center space-x-3">
+                            <div className="hidden sm:block text-right">
+                                <div className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                    {user?.name || 'Manager'}
+                                </div>
+                                <div className="text-xs" style={{ color: GRAY[500] }}>
+                                    {user?.email || ''}
+                                </div>
+                            </div>
+                            <div
+                                className="h-8 w-8 lg:h-10 lg:w-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
+                                style={{ backgroundColor: PRIMARY[500] }}
+                            >
+                                <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
+                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </header>
