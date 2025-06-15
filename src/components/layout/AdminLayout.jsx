@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FiHome, FiUsers, FiBarChart2, FiLogOut, FiMenu, FiX } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW } from "../../constants/colors";
+import { useAuth } from "../../utils/AuthContext";
 
 const AdminLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -47,6 +50,11 @@ const AdminLayout = () => {
 
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
     };
 
     return (
@@ -138,19 +146,21 @@ const AdminLayout = () => {
                 </div>
 
                 <div className="p-4 border-t flex-shrink-0" style={{ borderColor: PRIMARY[700] }}>
-                    <Link
-                        to="/login"
-                        onClick={() => setMobileMenuOpen(false)}
+                    <button
+                        onClick={() => {
+                            setMobileMenuOpen(false);
+                            handleLogout();
+                        }}
                         className={`
-                            flex items-center px-3 py-3 rounded-lg
-                            transition-all duration-200 font-normal
+                            w-full flex items-center px-3 py-3 rounded-lg
+                            transition-all duration-200 font-normal hover:bg-red-600
                             ${collapsed ? 'justify-center' : ''}
                         `}
                         style={{ backgroundColor: 'transparent', color: PRIMARY[100] }}
                     >
                         <FiLogOut className={`w-5 h-5 ${collapsed ? '' : 'mr-3'}`} />
                         {!collapsed && <span>Đăng xuất</span>}
-                    </Link>
+                    </button>
                 </div>
             </div>
 

@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../utils/AuthContext";
 
 const Navbar = () => {
+    const navigate = useNavigate();
+    const { user, logout, isAuthenticated } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -44,6 +47,12 @@ const Navbar = () => {
 
     const closeDropdown = () => {
         setActiveDropdown(null);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
+        setIsMobileMenuOpen(false);
     };
 
     const menuItems = [
@@ -357,32 +366,62 @@ const Navbar = () => {
 
                     {/* Auth Links - Better responsive */}
                     <div className="hidden xl:flex items-center space-x-3 xl:space-x-4">
-                        <Link
-                            to="/login"
-                            className="group relative px-4 xl:px-6 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center overflow-hidden text-sm xl:text-base text-teal-700"
-                            style={{
-                                background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
-                                boxShadow: '0 4px 16px rgba(255, 255, 255, 0.2)'
-                            }}
-                        >
-                            <div
-                                className="absolute inset-0 bg-gradient-to-r from-white to-teal-50 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                            ></div>
-                            <svg
-                                className="w-4 h-4 xl:w-5 xl:h-5 mr-2 relative z-10 group-hover:text-teal-800 transition-colors duration-300"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                        {isAuthenticated() ? (
+                            <div className="flex items-center space-x-3">
+                                <span className="text-white text-sm xl:text-base font-medium">
+                                    Xin chào, {user?.name || user?.username}
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="group relative px-4 xl:px-6 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center overflow-hidden text-sm xl:text-base text-white bg-red-600 hover:bg-red-700"
+                                    style={{
+                                        boxShadow: '0 4px 16px rgba(220, 38, 38, 0.3)'
+                                    }}
+                                >
+                                    <svg
+                                        className="w-4 h-4 xl:w-5 xl:h-5 mr-2 relative z-10 transition-colors duration-300"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                        />
+                                    </svg>
+                                    <span className="relative z-10 transition-colors duration-300">Đăng xuất</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="group relative px-4 xl:px-6 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center overflow-hidden text-sm xl:text-base text-teal-700"
+                                style={{
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
+                                    boxShadow: '0 4px 16px rgba(255, 255, 255, 0.2)'
+                                }}
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                                />
-                            </svg>
-                            <span className="relative z-10 group-hover:text-teal-800 transition-colors duration-300">Đăng nhập</span>
-                        </Link>
+                                <div
+                                    className="absolute inset-0 bg-gradient-to-r from-white to-teal-50 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                ></div>
+                                <svg
+                                    className="w-4 h-4 xl:w-5 xl:h-5 mr-2 relative z-10 group-hover:text-teal-800 transition-colors duration-300"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                                    />
+                                </svg>
+                                <span className="relative z-10 group-hover:text-teal-800 transition-colors duration-300">Đăng nhập</span>
+                            </Link>
+                        )}
                     </div>
 
                     {/* Enhanced Mobile menu button with better breakpoint */}
@@ -518,29 +557,56 @@ const Navbar = () => {
 
                             {/* Mobile Auth Links */}
                             <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-teal-400/30">
-                                <Link
-                                    to="/login"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="group w-full flex items-center justify-center px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl font-medium transition-all duration-300 text-sm sm:text-base text-teal-700"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)'
-                                    }}
-                                >
-                                    <svg
-                                        className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
+                                {isAuthenticated() ? (
+                                    <div className="space-y-3">
+                                        <div className="text-center text-white text-sm font-medium">
+                                            Xin chào, {user?.name || user?.username}
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="group w-full flex items-center justify-center px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl font-medium transition-all duration-300 text-sm sm:text-base text-white bg-red-600 hover:bg-red-700"
+                                        >
+                                            <svg
+                                                className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                                />
+                                            </svg>
+                                            Đăng xuất
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="group w-full flex items-center justify-center px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl font-medium transition-all duration-300 text-sm sm:text-base text-teal-700"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)'
+                                        }}
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                                        />
-                                    </svg>
-                                    Đăng nhập
-                                </Link>
+                                        <svg
+                                            className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                                            />
+                                        </svg>
+                                        Đăng nhập
+                                    </Link>
+                                )}
                             </div>
                         </div>
                     </div>

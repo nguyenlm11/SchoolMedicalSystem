@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://14.225.211.217:5200/api',
+  baseURL: '/api',
+  // baseURL: 'https://schoolmedicalsystem.ddns.net/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

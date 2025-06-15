@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiUser, FiLock, FiHome, FiChevronDown, FiLoader, FiHeart } from "react-icons/fi";
-import { PRIMARY, ERROR, BACKGROUND, TEXT, BORDER } from "../../constants/colors";
+import { PRIMARY, BACKGROUND, TEXT, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import { useAuth } from "../../utils/AuthContext";
@@ -68,18 +68,15 @@ const LoginPage = () => {
             });
 
             if (result.success) {
-                showAlert("success", "Đăng nhập thành công", "Chào mừng bạn trở lại hệ thống!");
-                setTimeout(() => {
-                    const redirectMap = {
-                        admin: "/admin/dashboard",
-                        staff: "/staff/dashboard",
-                        manager: "/manager/dashboard",
-                        parent: "/parent/dashboard",
-                        student: "/student/dashboard",
-                    };
-                    const userRole = result.data.role.toLowerCase();
-                    navigate(redirectMap[userRole] || "/");
-                }, 1500);
+                const redirectMap = {
+                    admin: "/admin/dashboard",
+                    staff: "/staff/dashboard",
+                    manager: "/manager/dashboard",
+                    parent: "/parent/dashboard",
+                    student: "/student/dashboard",
+                };
+                const userRole = result.data.role.toLowerCase();
+                navigate(redirectMap[userRole] || "/");
             } else {
                 showAlert("error", "Đăng nhập thất bại", result.message || "Vui lòng kiểm tra lại thông tin đăng nhập.");
             }
@@ -92,7 +89,7 @@ const LoginPage = () => {
 
     const roles = [
         { id: "student", label: "Học sinh", icon: FiUser, serverRole: "STUDENT" },
-        { id: "parent", label: "Phụ huynh", icon: FiHeart, serverRole: "PARENT" },
+        { id: "parent", label: "Phụ huynh", icon: FiUser, serverRole: "PARENT" },
         { id: "manager", label: "Quản lý", icon: FiUser, serverRole: "MANAGER" },
         { id: "staff", label: "Nhân viên y tế", icon: FiUser, serverRole: "STAFF" },
         { id: "admin", label: "Quản trị viên", icon: FiUser, serverRole: "ADMIN" },
