@@ -1,96 +1,71 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FiPlus, FiEye, FiEdit, FiTrash2, FiSearch, FiFilter, FiSave, FiX, FiUsers } from "react-icons/fi";
+import { FiSearch, FiFilter, FiUsers, FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
-import Loading, { SkeletonLoading, CardSkeletonLoading, ButtonLoading } from "../../../components/Loading";
+import Loading, { SkeletonLoading } from "../../../components/Loading";
+import userApi from "../../../api/userApi";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [deleting, setDeleting] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filterRole, setFilterRole] = useState("all");
-    const [filterStatus, setFilterStatus] = useState("all");
+    const [filterRole, setFilterRole] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [userToDelete, setUserToDelete] = useState(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [sortColumn, setSortColumn] = useState("name");
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalCount, setTotalCount] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
+    const [sortColumn, setSortColumn] = useState("fullName");
     const [sortDirection, setSortDirection] = useState("asc");
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [roles, setRoles] = useState([]);
-    const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        role: "parent",
-        status: "active",
-    });
-    const [formErrors, setFormErrors] = useState({});
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            const orderBy = sortColumn && sortDirection ? `${sortColumn}_${sortDirection}` : '';
+            const params = {
+                pageIndex: currentPage,
+                pageSize: pageSize,
+                searchTerm: debouncedSearchTerm,
+                orderBy: orderBy,
+                role: filterRole
+            };
+            const response = await userApi.getUsers(params);
+            if (response.success && response.data) {
+                setUsers(response.data);
+                setTotalCount(response.totalCount);
+                setTotalPages(response.totalPages);
+            } else {
+                console.error('Error fetching users:', response.message);
+                setUsers([]);
+                setTotalCount(0);
+                setTotalPages(0);
+            }
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            setUsers([]);
+            setTotalCount(0);
+            setTotalPages(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
-        setTimeout(() => {
-            const mockUsers = [
-                {
-                    id: 1,
-                    name: "Nguyễn Văn A",
-                    email: "nguyenvana@example.com",
-                    role: "admin",
-                    status: "active",
-                    lastLogin: "2023-05-17T14:30:00",
-                    createdAt: "2023-01-10T09:00:00",
-                },
-                {
-                    id: 2,
-                    name: "Trần Thị B",
-                    email: "tranthib@example.com",
-                    role: "staff",
-                    status: "active",
-                    lastLogin: "2023-05-18T09:15:00",
-                    createdAt: "2023-01-15T10:30:00",
-                },
-                {
-                    id: 3,
-                    name: "Lê Văn C",
-                    email: "levanc@example.com",
-                    role: "parent",
-                    status: "active",
-                    lastLogin: "2023-05-16T16:45:00",
-                    createdAt: "2023-02-05T11:20:00",
-                },
-                {
-                    id: 4,
-                    name: "Phạm Thị D",
-                    email: "phamthid@example.com",
-                    role: "parent",
-                    status: "inactive",
-                    lastLogin: "2023-05-10T13:10:00",
-                    createdAt: "2023-02-10T14:00:00",
-                },
-                {
-                    id: 5,
-                    name: "Hoàng Văn E",
-                    email: "hoangvane@example.com",
-                    role: "staff",
-                    status: "active",
-                    lastLogin: "2023-05-18T08:30:00",
-                    createdAt: "2023-02-20T08:15:00",
-                },
-                {
-                    id: 6,
-                    name: "Ngô Thị F",
-                    email: "ngothif@example.com",
-                    role: "parent",
-                    status: "pending",
-                    lastLogin: null,
-                    createdAt: "2023-05-17T16:00:00",
-                },
-            ];
-            setUsers(mockUsers);
-            setLoading(false);
-        }, 1000);
-    }, []);
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterRole]);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [currentPage, pageSize, debouncedSearchTerm, filterRole, sortColumn, sortDirection]);
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -99,42 +74,9 @@ const UserList = () => {
             setSortColumn(column);
             setSortDirection("asc");
         }
+        setCurrentPage(1);
     };
 
-    const filteredUsers = users.filter((user) => {
-        if (filterRole !== "all" && user.role !== filterRole) {
-            return false;
-        }
-        if (filterStatus !== "all" && user.status !== filterStatus) {
-            return false;
-        }
-        if (searchTerm && !user.name.toLowerCase().includes(searchTerm.toLowerCase()) && !user.email.toLowerCase().includes(searchTerm.toLowerCase())) {
-            return false;
-        }
-        return true;
-    });
-
-    const sortedUsers = [...filteredUsers].sort((a, b) => {
-        let valA = a[sortColumn];
-        let valB = b[sortColumn];
-        if (sortColumn === "lastLogin" || sortColumn === "createdAt") {
-            valA = valA ? new Date(valA).getTime() : 0;
-            valB = valB ? new Date(valB).getTime() : 0;
-        }
-        if (valA < valB) {
-            return sortDirection === "asc" ? -1 : 1;
-        }
-        if (valA > valB) {
-            return sortDirection === "asc" ? 1 : -1;
-        }
-        return 0;
-    });
-
-    const usersPerPage = 5;
-    const indexOfLastUser = currentPage * usersPerPage;
-    const indexOfFirstUser = indexOfLastUser - usersPerPage;
-    const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser);
-    const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
     const formatDate = (dateString) => {
         if (!dateString) return "Chưa đăng nhập";
@@ -148,99 +90,52 @@ const UserList = () => {
         }).format(date);
     };
 
-    const handleDeleteClick = (user) => {
-        setUserToDelete(user);
-        setShowDeleteModal(true);
-    };
 
-    const confirmDelete = async () => {
-        setDeleting(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            setUsers(users.filter((user) => user.id !== userToDelete.id));
-            setShowDeleteModal(false);
-            setUserToDelete(null);
-        } catch (error) {
-            console.error('Error deleting user:', error);
-        } finally {
-            setDeleting(false);
-        }
-    };
 
     const getRoleLabel = (role) => {
         switch (role) {
-            case "admin":
-                return "Quản trị viên";
-            case "staff":
-                return "Nhân viên y tế";
-            case "parent":
-                return "Phụ huynh";
+            case "MANAGER":
+                return "Quản lý";
+            case "SCHOOLNURSE":
+                return "Y tá trường học";
             default:
                 return role;
         }
     };
 
-    const getStatusLabel = (status) => {
-        switch (status) {
-            case "active":
-                return "Đang hoạt động";
-            case "inactive":
-                return "Không hoạt động";
-            case "pending":
-                return "Chờ xác nhận";
-            default:
-                return status;
-        }
+    const getStatusLabel = (isActive) => {
+        return isActive ? "Đang hoạt động" : "Không hoạt động";
     };
 
-    const getStatusStyle = (status) => {
-        switch (status) {
-            case "active":
-                return {
-                    backgroundColor: SUCCESS[50],
-                    color: SUCCESS[700],
-                    borderColor: SUCCESS[200]
-                };
-            case "inactive":
-                return {
-                    backgroundColor: ERROR[50],
-                    color: ERROR[700],
-                    borderColor: ERROR[200]
-                };
-            case "pending":
-                return {
-                    backgroundColor: WARNING[50],
-                    color: WARNING[700],
-                    borderColor: WARNING[200]
-                };
-            default:
-                return {
-                    backgroundColor: GRAY[50],
-                    color: GRAY[700],
-                    borderColor: GRAY[200]
-                };
+    const getStatusStyle = (isActive) => {
+        if (isActive) {
+            return {
+                backgroundColor: SUCCESS[50],
+                color: SUCCESS[700],
+                borderColor: SUCCESS[200]
+            };
+        } else {
+            return {
+                backgroundColor: ERROR[50],
+                color: ERROR[700],
+                borderColor: ERROR[200]
+            };
         }
     };
 
     const getRoleStyle = (role) => {
         switch (role) {
-            case "admin":
+            case "MANAGER":
                 return {
-                    backgroundColor: PRIMARY[50],
-                    color: PRIMARY[700],
-                    borderColor: PRIMARY[200]
+                    backgroundColor: WARNING[50],
+                    color: WARNING[700],
+                    borderColor: WARNING[200]
                 };
-            case "staff":
+            case "SCHOOLNURSE":
                 return {
                     backgroundColor: INFO[50],
                     color: INFO[700],
                     borderColor: INFO[200]
-                };
-            case "parent":
-                return {
-                    backgroundColor: SUCCESS[50],
-                    color: SUCCESS[700],
-                    borderColor: SUCCESS[200]
                 };
             default:
                 return {
@@ -251,100 +146,13 @@ const UserList = () => {
         }
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-        if (formErrors[name]) {
-            setFormErrors({ ...formErrors, [name]: undefined });
-        }
-    };
 
-    const validateForm = () => {
-        const newErrors = {};
-        if (!formData.name.trim()) {
-            newErrors.name = "Vui lòng nhập họ tên";
-        }
-        if (!formData.email.trim()) {
-            newErrors.email = "Vui lòng nhập email";
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "Email không hợp lệ";
-        }
-        if (!formData.password) {
-            newErrors.password = "Vui lòng nhập mật khẩu";
-        } else if (formData.password.length < 6) {
-            newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-        }
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = "Mật khẩu xác nhận không khớp";
-        }
-        setFormErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleAddUser = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) {
-            return;
-        }
-        setSubmitting(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const newUser = {
-                id: users.length + 1,
-                name: formData.name,
-                email: formData.email,
-                role: formData.role,
-                status: formData.status,
-                lastLogin: null,
-                createdAt: new Date().toISOString(),
-            };
-            setUsers([...users, newUser]);
-            setFormData({
-                name: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-                role: "parent",
-                status: "active",
-            });
-            setFormErrors({});
-            setShowAddModal(false);
-        } catch (error) {
-            console.error('Error adding user:', error);
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const openAddModal = () => {
-        setRoles([
-            { id: 1, name: "admin", label: "Quản trị viên" },
-            { id: 2, name: "staff", label: "Nhân viên y tế" },
-            { id: 3, name: "teacher", label: "Giáo viên" },
-            { id: 4, name: "parent", label: "Phụ huynh" },
-        ]);
-        setFormData({
-            name: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            role: "parent",
-            status: "active",
-        });
-        setFormErrors({});
-        setShowAddModal(true);
-    };
 
     return (
         <>
             {loading && (
                 <div className="h-full flex justify-center items-center">
-                    <Loading
-                        type="medical"
-                        size="large"
-                        color="primary"
-                        text="Đang tải danh sách người dùng..."
-                    />
+                    <Loading type="medical" size="large" color="primary" text="Đang tải danh sách người dùng..." />
                 </div>
             )}
 
@@ -366,52 +174,13 @@ const UserList = () => {
                                     Quản lý tất cả người dùng trong hệ thống y tế trường học
                                 </p>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={openAddModal}
-                                    disabled={submitting}
-                                    className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium text-sm lg:text-base transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    style={{
-                                        backgroundColor: submitting ? GRAY[400] : PRIMARY[500],
-                                        color: TEXT.INVERSE,
-                                        borderColor: submitting ? GRAY[400] : PRIMARY[500]
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        if (!submitting) {
-                                            e.target.style.backgroundColor = PRIMARY[600];
-                                            e.target.style.borderColor = PRIMARY[600];
-                                        }
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        if (!submitting) {
-                                            e.target.style.backgroundColor = PRIMARY[500];
-                                            e.target.style.borderColor = PRIMARY[500];
-                                        }
-                                    }}
-                                >
-                                    {submitting ? (
-                                        <>
-                                            <ButtonLoading size="small" color="primary" />
-                                            <span className="ml-2">Đang xử lý...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FiPlus className="mr-2 w-4 h-4 lg:w-5 lg:h-5" />
-                                            Thêm người dùng
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+
                         </div>
                     </div>
 
                     <div
                         className="rounded-xl p-4 lg:p-6 mb-6 shadow-sm border"
-                        style={{
-                            backgroundColor: BACKGROUND.DEFAULT,
-                            borderColor: BORDER.DEFAULT,
-                            boxShadow: `0 1px 3px ${SHADOW.LIGHT}`
-                        }}
+                        style={{ backgroundColor: BACKGROUND.DEFAULT, borderColor: BORDER.DEFAULT, boxShadow: `0 1px 3px ${SHADOW.LIGHT}` }}
                     >
                         <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
                             <div className="w-full lg:w-1/2 xl:w-1/3 relative">
@@ -421,17 +190,10 @@ const UserList = () => {
                                 <input
                                     type="text"
                                     value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
+                                    onChange={(e) => { setSearchTerm(e.target.value) }}
                                     placeholder="Tìm kiếm theo tên hoặc email..."
                                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border transition-all duration-200 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        color: TEXT.PRIMARY
-                                    }}
+                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 />
                             </div>
 
@@ -445,51 +207,17 @@ const UserList = () => {
                                     </div>
                                     <select
                                         value={filterRole}
-                                        onChange={(e) => {
-                                            setFilterRole(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
+                                        onChange={(e) => { setFilterRole(e.target.value) }}
                                         className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
-                                        style={{
-                                            borderColor: BORDER.DEFAULT,
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            color: TEXT.PRIMARY
-                                        }}
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                     >
-                                        <option value="all">Tất cả</option>
-                                        <option value="admin">Quản trị viên</option>
-                                        <option value="staff">Nhân viên y tế</option>
-                                        <option value="teacher">Giáo viên</option>
-                                        <option value="parent">Phụ huynh</option>
+                                        <option value="">Tất cả</option>
+                                        <option value="MANAGER">Quản lý</option>
+                                        <option value="SCHOOLNURSE">Y tá trường học</option>
                                     </select>
                                 </div>
 
-                                <div className="flex items-center space-x-2">
-                                    <div className="flex items-center space-x-1">
-                                        <FiFilter style={{ color: GRAY[400] }} className="w-4 h-4" />
-                                        <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                            Trạng thái:
-                                        </span>
-                                    </div>
-                                    <select
-                                        value={filterStatus}
-                                        onChange={(e) => {
-                                            setFilterStatus(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[140px]"
-                                        style={{
-                                            borderColor: BORDER.DEFAULT,
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            color: TEXT.PRIMARY
-                                        }}
-                                    >
-                                        <option value="all">Tất cả</option>
-                                        <option value="active">Đang hoạt động</option>
-                                        <option value="inactive">Không hoạt động</option>
-                                        <option value="pending">Chờ xác nhận</option>
-                                    </select>
-                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -499,19 +227,18 @@ const UserList = () => {
                         style={{
                             backgroundColor: BACKGROUND.DEFAULT,
                             borderColor: BORDER.DEFAULT,
-                            boxShadow: `0 1px 3px ${SHADOW.LIGHT}`
+                            boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`
                         }}
                     >
+                        {/* Mobile View */}
                         <div className="block lg:hidden">
                             {loading ? (
-                                <div className="p-6 space-y-4">
-                                    {[...Array(5)].map((_, index) => (
-                                        <CardSkeletonLoading key={index} className="shadow-sm" />
-                                    ))}
+                                <div className="p-6 text-center">
+                                    <Loading type="medical" size="medium" color="primary" text="Đang tải..." />
                                 </div>
                             ) : (
                                 <div className="divide-y" style={{ borderColor: BORDER.DEFAULT }}>
-                                    {currentUsers.map((user) => (
+                                    {users.map((user) => (
                                         <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
                                             <div className="flex items-start space-x-4">
                                                 <div className="flex-shrink-0">
@@ -519,51 +246,17 @@ const UserList = () => {
                                                         className="h-12 w-12 rounded-full flex items-center justify-center text-white font-semibold text-lg"
                                                         style={{ backgroundColor: PRIMARY[500] }}
                                                     >
-                                                        {user.name.charAt(0)}
+                                                        {user.fullName.charAt(0)}
                                                     </div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1">
-                                                            <p className="text-base font-semibold truncate" style={{ color: TEXT.PRIMARY }}>
-                                                                {user.name}
-                                                            </p>
-                                                            <p className="text-sm truncate" style={{ color: TEXT.SECONDARY }}>
-                                                                {user.email}
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex space-x-2 ml-2">
-                                                            <Link
-                                                                to={`/admin/users/${user.id}`}
-                                                                className="p-2 rounded-lg transition-colors duration-200"
-                                                                style={{ color: INFO[600] }}
-                                                                onMouseEnter={(e) => e.target.style.backgroundColor = INFO[50]}
-                                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                                                title="Xem chi tiết"
-                                                            >
-                                                                <FiEye className="h-4 w-4" />
-                                                            </Link>
-                                                            <Link
-                                                                to={`/admin/users/${user.id}/edit`}
-                                                                className="p-2 rounded-lg transition-colors duration-200"
-                                                                style={{ color: WARNING[600] }}
-                                                                onMouseEnter={(e) => e.target.style.backgroundColor = WARNING[50]}
-                                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                                                title="Chỉnh sửa"
-                                                            >
-                                                                <FiEdit className="h-4 w-4" />
-                                                            </Link>
-                                                            <button
-                                                                onClick={() => handleDeleteClick(user)}
-                                                                className="p-2 rounded-lg transition-colors duration-200"
-                                                                style={{ color: ERROR[600] }}
-                                                                onMouseEnter={(e) => e.target.style.backgroundColor = ERROR[50]}
-                                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                                                title="Xóa người dùng"
-                                                            >
-                                                                <FiTrash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </div>
+                                                    <div>
+                                                        <p className="text-base font-semibold truncate" style={{ color: TEXT.PRIMARY }}>
+                                                            {user.fullName}
+                                                        </p>
+                                                        <p className="text-sm truncate" style={{ color: TEXT.SECONDARY }}>
+                                                            {user.email}
+                                                        </p>
                                                     </div>
                                                     <div className="mt-3 flex flex-wrap gap-2">
                                                         <span
@@ -574,14 +267,14 @@ const UserList = () => {
                                                         </span>
                                                         <span
                                                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                                                            style={getStatusStyle(user.status)}
+                                                            style={getStatusStyle(user.isActive)}
                                                         >
-                                                            {getStatusLabel(user.status)}
+                                                            {getStatusLabel(user.isActive)}
                                                         </span>
                                                     </div>
                                                     <div className="mt-2 text-xs" style={{ color: TEXT.SECONDARY }}>
-                                                        <p>Đăng nhập cuối: {formatDate(user.lastLogin)}</p>
-                                                        <p>Ngày tạo: {formatDate(user.createdAt)}</p>
+                                                        <p>Mã nhân viên: {user.staffCode || 'N/A'}</p>
+                                                        <p>Ngày tạo: {formatDate(user.createdDate)}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -591,82 +284,81 @@ const UserList = () => {
                             )}
                         </div>
 
+                        {/* Desktop View */}
                         <div className="hidden lg:block overflow-x-auto">
                             {loading ? (
-                                <div className="p-6">
-                                    <table className="min-w-full">
-                                        <thead style={{ backgroundColor: GRAY[50] }}>
-                                            <tr>
-                                                <th className="px-6 py-4 text-left">
-                                                    <SkeletonLoading className="h-4 w-32" />
-                                                </th>
-                                                <th className="px-6 py-4 text-left">
-                                                    <SkeletonLoading className="h-4 w-20" />
-                                                </th>
-                                                <th className="px-6 py-4 text-left">
-                                                    <SkeletonLoading className="h-4 w-24" />
-                                                </th>
-                                                <th className="px-6 py-4 text-left">
+                                <table className="min-w-full">
+                                    <thead>
+                                        <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
+                                            <th className="px-6 py-5 text-left">
+                                                <SkeletonLoading className="h-4 w-32" />
+                                            </th>
+                                            <th className="px-6 py-5 text-left">
+                                                <SkeletonLoading className="h-4 w-20" />
+                                            </th>
+                                            <th className="px-6 py-5 text-left">
+                                                <SkeletonLoading className="h-4 w-24" />
+                                            </th>
+                                            <th className="px-6 py-5 text-left">
+                                                <SkeletonLoading className="h-4 w-28" />
+                                            </th>
+                                            <th className="px-6 py-5 text-left">
+                                                <SkeletonLoading className="h-4 w-20" />
+                                            </th>
+                                            <th className="px-6 py-5 text-right">
+                                                <SkeletonLoading className="h-4 w-16 ml-auto" />
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
+                                        {[...Array(5)].map((_, index) => (
+                                            <tr key={index} className="border-b hover:bg-gray-50/50 transition-colors duration-200" style={{ borderColor: BORDER.DEFAULT }}>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex items-center">
+                                                        <SkeletonLoading className="h-12 w-12 rounded-full" />
+                                                        <div className="ml-4 space-y-2">
+                                                            <SkeletonLoading className="h-4 w-32" />
+                                                            <SkeletonLoading className="h-3 w-24" />
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <SkeletonLoading className="h-6 w-20 rounded-full" />
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <SkeletonLoading className="h-6 w-24 rounded-full" />
+                                                </td>
+                                                <td className="px-6 py-6">
                                                     <SkeletonLoading className="h-4 w-28" />
-                                                </th>
-                                                <th className="px-6 py-4 text-left">
+                                                </td>
+                                                <td className="px-6 py-6">
                                                     <SkeletonLoading className="h-4 w-20" />
-                                                </th>
-                                                <th className="px-6 py-4 text-right">
-                                                    <SkeletonLoading className="h-4 w-16 ml-auto" />
-                                                </th>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex justify-end space-x-2">
+                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
+                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
+                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
+                                                    </div>
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody className="divide-y" style={{ backgroundColor: BACKGROUND.DEFAULT, borderColor: BORDER.DEFAULT }}>
-                                            {[...Array(5)].map((_, index) => (
-                                                <tr key={index}>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex items-center">
-                                                            <SkeletonLoading className="h-10 w-10 rounded-full" />
-                                                            <div className="ml-4 space-y-2">
-                                                                <SkeletonLoading className="h-4 w-32" />
-                                                                <SkeletonLoading className="h-3 w-24" />
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <SkeletonLoading className="h-6 w-20 rounded-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <SkeletonLoading className="h-6 w-24 rounded-full" />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <SkeletonLoading className="h-4 w-28" />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <SkeletonLoading className="h-4 w-20" />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex justify-end space-x-2">
-                                                            <SkeletonLoading className="h-8 w-8 rounded-lg" />
-                                                            <SkeletonLoading className="h-8 w-8 rounded-lg" />
-                                                            <SkeletonLoading className="h-8 w-8 rounded-lg" />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ))}
+                                    </tbody>
+                                </table>
                             ) : (
-                                <table className="min-w-full divide-y" style={{ borderColor: BORDER.DEFAULT }}>
-                                    <thead style={{ backgroundColor: GRAY[50] }}>
-                                        <tr>
+                                <table className="min-w-full">
+                                    <thead>
+                                        <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("name")}
+                                                onClick={() => handleSort("fullName")}
                                             >
-                                                <div className="flex items-center space-x-1">
-                                                    <span>Tên người dùng</span>
-                                                    {sortColumn === "name" && (
-                                                        <span className="text-sm" style={{ color: PRIMARY[500] }}>
+                                                <div className="flex items-center space-x-2">
+                                                    <span>Người dùng</span>
+                                                    {sortColumn === "fullName" && (
+                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                             {sortDirection === "asc" ? "↑" : "↓"}
                                                         </span>
                                                     )}
@@ -674,14 +366,14 @@ const UserList = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
                                                 style={{ color: TEXT.SECONDARY }}
                                                 onClick={() => handleSort("role")}
                                             >
-                                                <div className="flex items-center space-x-1">
+                                                <div className="flex items-center space-x-2">
                                                     <span>Vai trò</span>
                                                     {sortColumn === "role" && (
-                                                        <span className="text-sm" style={{ color: PRIMARY[500] }}>
+                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                             {sortDirection === "asc" ? "↑" : "↓"}
                                                         </span>
                                                     )}
@@ -689,14 +381,14 @@ const UserList = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("status")}
+                                                onClick={() => handleSort("isActive")}
                                             >
-                                                <div className="flex items-center space-x-1">
+                                                <div className="flex items-center space-x-2">
                                                     <span>Trạng thái</span>
-                                                    {sortColumn === "status" && (
-                                                        <span className="text-sm" style={{ color: PRIMARY[500] }}>
+                                                    {sortColumn === "isActive" && (
+                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                             {sortDirection === "asc" ? "↑" : "↓"}
                                                         </span>
                                                     )}
@@ -704,14 +396,14 @@ const UserList = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("lastLogin")}
+                                                onClick={() => handleSort("staffCode")}
                                             >
-                                                <div className="flex items-center space-x-1">
-                                                    <span>Đăng nhập cuối</span>
-                                                    {sortColumn === "lastLogin" && (
-                                                        <span className="text-sm" style={{ color: PRIMARY[500] }}>
+                                                <div className="flex items-center space-x-2">
+                                                    <span>Mã NV</span>
+                                                    {sortColumn === "staffCode" && (
+                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                             {sortDirection === "asc" ? "↑" : "↓"}
                                                         </span>
                                                     )}
@@ -719,14 +411,14 @@ const UserList = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-100"
+                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("createdAt")}
+                                                onClick={() => handleSort("createdDate")}
                                             >
-                                                <div className="flex items-center space-x-1">
+                                                <div className="flex items-center space-x-2">
                                                     <span>Ngày tạo</span>
-                                                    {sortColumn === "createdAt" && (
-                                                        <span className="text-sm" style={{ color: PRIMARY[500] }}>
+                                                    {sortColumn === "createdDate" && (
+                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                             {sortDirection === "asc" ? "↑" : "↓"}
                                                         </span>
                                                     )}
@@ -734,91 +426,87 @@ const UserList = () => {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider"
+                                                className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider"
                                                 style={{ color: TEXT.SECONDARY }}
                                             >
                                                 Thao tác
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y" style={{ backgroundColor: BACKGROUND.DEFAULT, borderColor: BORDER.DEFAULT }}>
-                                        {currentUsers.map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50 transition-colors duration-200">
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
+                                        {users.map((user) => (
+                                            <tr key={user.id} className="border-b hover:bg-gray-50/70 transition-all duration-200" style={{ borderColor: BORDER.DEFAULT }}>
+                                                <td className="px-6 py-6">
                                                     <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-10 w-10">
+                                                        <div className="flex-shrink-0 h-12 w-12">
                                                             <div
-                                                                className="h-10 w-10 rounded-full flex items-center justify-center text-white font-semibold"
+                                                                className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm"
                                                                 style={{ backgroundColor: PRIMARY[500] }}
                                                             >
-                                                                {user.name.charAt(0)}
+                                                                {user.fullName.charAt(0).toUpperCase()}
                                                             </div>
                                                         </div>
                                                         <div className="ml-4">
-                                                            <div className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                                {user.name}
+                                                            <div className="text-sm font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {user.fullName}
                                                             </div>
-                                                            <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                            <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                                 {user.email}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-6">
                                                     <span
-                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
                                                         style={getRoleStyle(user.role)}
                                                     >
                                                         {getRoleLabel(user.role)}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-6">
                                                     <span
-                                                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                                                        style={getStatusStyle(user.status)}
+                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
+                                                        style={getStatusStyle(user.isActive)}
                                                     >
-                                                        {getStatusLabel(user.status)}
+                                                        {getStatusLabel(user.isActive)}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                    {formatDate(user.lastLogin)}
+                                                <td className="px-6 py-6">
+                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {user.staffCode || 'N/A'}
+                                                    </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                    {formatDate(user.createdAt)}
+                                                <td className="px-6 py-6">
+                                                    <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                        {formatDate(user.createdDate)}
+                                                    </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <td className="px-6 py-6 text-right">
                                                     <div className="flex justify-end space-x-2">
-                                                        <Link
-                                                            to={`/admin/users/${user.id}`}
-                                                            className="p-2 rounded-lg transition-all duration-200"
+                                                        <button
+                                                            disabled
+                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
                                                             style={{ color: INFO[600] }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = INFO[50];
-                                                                e.target.style.color = INFO[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = 'transparent';
-                                                                e.target.style.color = INFO[600];
-                                                            }}
                                                             title="Xem chi tiết"
                                                         >
-                                                            <FiEye className="h-5 w-5" />
-                                                        </Link>
-                                                        <Link
-                                                            to={`/admin/users/${user.id}/edit`}
-                                                            className="p-2 rounded-lg transition-all duration-200"
+                                                            <FiEye className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            disabled
+                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
                                                             style={{ color: WARNING[600] }}
                                                             title="Chỉnh sửa"
                                                         >
-                                                            <FiEdit className="h-5 w-5" />
-                                                        </Link>
+                                                            <FiEdit className="h-4 w-4" />
+                                                        </button>
                                                         <button
-                                                            onClick={() => handleDeleteClick(user)}
-                                                            className="p-2 rounded-lg transition-all duration-200"
+                                                            disabled
+                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
                                                             style={{ color: ERROR[600] }}
                                                             title="Xóa người dùng"
                                                         >
-                                                            <FiTrash2 className="h-5 w-5" />
+                                                            <FiTrash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -828,16 +516,16 @@ const UserList = () => {
                                 </table>
                             )}
 
-                            {!loading && currentUsers.length === 0 && (
-                                <div className="p-8 text-center">
-                                    <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: GRAY[100] }}>
-                                        <FiUsers className="h-6 w-6" style={{ color: GRAY[400] }} />
+                            {!loading && users.length === 0 && (
+                                <div className="p-12 text-center">
+                                    <div className="mx-auto h-16 w-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: GRAY[100] }}>
+                                        <FiUsers className="h-8 w-8" style={{ color: GRAY[400] }} />
                                     </div>
-                                    <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                    <h3 className="text-xl font-semibold mb-3" style={{ color: TEXT.PRIMARY }}>
                                         Không tìm thấy người dùng
                                     </h3>
-                                    <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                        Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác
+                                    <p className="text-base max-w-md mx-auto" style={{ color: TEXT.SECONDARY }}>
+                                        Thử điều chỉnh bộ lọc hoặc tìm kiếm với từ khóa khác để tìm thấy người dùng phù hợp
                                     </p>
                                 </div>
                             )}
@@ -845,498 +533,114 @@ const UserList = () => {
                     </div>
 
                     {/* Pagination */}
-                    {!loading && sortedUsers.length > 0 && (
+                    {!loading && users.length > 0 && (
                         <div
-                            className="flex items-center justify-between p-6 border-t"
+                            className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
                             style={{
-                                backgroundColor: BACKGROUND.DEFAULT,
                                 borderColor: BORDER.DEFAULT,
                                 borderRadius: '0 0 0.75rem 0.75rem'
                             }}
                         >
                             <div className="mb-4 sm:mb-0">
-                                <p className="text-sm lg:text-base" style={{ color: TEXT.SECONDARY }}>
+                                <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                     Hiển thị{" "}
-                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{indexOfFirstUser + 1}</span>{" "}
-                                    đến{" "}
-                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                        {Math.min(indexOfLastUser, sortedUsers.length)}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {((currentPage - 1) * pageSize) + 1}
+                                    </span>{" "}
+                                    -{" "}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {Math.min(currentPage * pageSize, totalCount)}
                                     </span>{" "}
                                     trong tổng số{" "}
-                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{sortedUsers.length}</span>{" "}
+                                    <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
                                     người dùng
                                 </p>
                             </div>
 
-                            <div>
-                                <div className="flex items-center space-x-2">
-                                    <button
-                                        onClick={() => paginate(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
-                                    >
-                                        <svg
-                                            className="h-4 w-4 lg:h-5 lg:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </button>
-
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                                        <button
-                                            key={number}
-                                            onClick={() => paginate(number)}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
-                                            style={{
-                                                borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
-                                                backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
-                                            }}
-                                        >
-                                            {number}
-                                        </button>
-                                    ))}
-
-                                    <button
-                                        onClick={() => paginate(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
-                                            color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
-                                    >
-                                        <svg
-                                            className="h-4 w-4 lg:h-5 lg:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showAddModal && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto">
-                            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
-                                <div
-                                    className="fixed inset-0 transition-opacity"
-                                    aria-hidden="true"
-                                    onClick={() => setShowAddModal(false)}
-                                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-                                />
-
-                                <span
-                                    className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                                    aria-hidden="true"
-                                >
-                                    &#8203;
-                                </span>
-
-                                <div
-                                    className="inline-block align-bottom rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50"
+                            <div className="flex items-center space-x-1">
+                                <button
+                                    onClick={() => paginate(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
                                     style={{
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        boxShadow: `0 20px 25px -5px ${SHADOW.DARK}, 0 10px 10px -5px ${SHADOW.MEDIUM}`
+                                        borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
                                     }}
-                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <form onSubmit={handleAddUser}>
-                                        <div className="px-6 pt-6 pb-4">
-                                            <div className="mb-6">
-                                                <h3 className="text-xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                    Thêm người dùng mới
-                                                </h3>
-                                                <p className="mt-1 text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                    Nhập thông tin để tạo tài khoản người dùng mới
-                                                </p>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-4">
-                                                {/* Họ tên */}
-                                                <div>
-                                                    <label
-                                                        htmlFor="name"
-                                                        className="block text-sm font-medium mb-2"
-                                                        style={{ color: TEXT.PRIMARY }}
-                                                    >
-                                                        Họ tên <span style={{ color: ERROR[500] }}>*</span>
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        id="name"
-                                                        name="name"
-                                                        value={formData.name}
-                                                        onChange={handleInputChange}
-                                                        className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                        style={{
-                                                            borderColor: formErrors.name ? ERROR[500] : BORDER.DEFAULT,
-                                                            backgroundColor: BACKGROUND.DEFAULT,
-                                                            color: TEXT.PRIMARY
-                                                        }}
-                                                        placeholder="Nhập họ tên đầy đủ"
-                                                    />
-                                                    {formErrors.name && (
-                                                        <p className="mt-1 text-xs" style={{ color: ERROR[600] }}>
-                                                            {formErrors.name}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                {/* Email */}
-                                                <div>
-                                                    <label
-                                                        htmlFor="email"
-                                                        className="block text-sm font-medium mb-2"
-                                                        style={{ color: TEXT.PRIMARY }}
-                                                    >
-                                                        Email <span style={{ color: ERROR[500] }}>*</span>
-                                                    </label>
-                                                    <input
-                                                        type="email"
-                                                        id="email"
-                                                        name="email"
-                                                        value={formData.email}
-                                                        onChange={handleInputChange}
-                                                        className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                        style={{
-                                                            borderColor: formErrors.email ? ERROR[500] : BORDER.DEFAULT,
-                                                            backgroundColor: BACKGROUND.DEFAULT,
-                                                            color: TEXT.PRIMARY
-                                                        }}
-                                                        placeholder="example@email.com"
-                                                    />
-                                                    {formErrors.email && (
-                                                        <p className="mt-1 text-xs" style={{ color: ERROR[600] }}>
-                                                            {formErrors.email}
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                {/* Grid for Password fields */}
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {/* Mật khẩu */}
-                                                    <div>
-                                                        <label
-                                                            htmlFor="password"
-                                                            className="block text-sm font-medium mb-2"
-                                                            style={{ color: TEXT.PRIMARY }}
-                                                        >
-                                                            Mật khẩu <span style={{ color: ERROR[500] }}>*</span>
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            id="password"
-                                                            name="password"
-                                                            value={formData.password}
-                                                            onChange={handleInputChange}
-                                                            className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                            style={{
-                                                                borderColor: formErrors.password ? ERROR[500] : BORDER.DEFAULT,
-                                                                backgroundColor: BACKGROUND.DEFAULT,
-                                                                color: TEXT.PRIMARY
-                                                            }}
-                                                            placeholder="Ít nhất 6 ký tự"
-                                                        />
-                                                        {formErrors.password && (
-                                                            <p className="mt-1 text-xs" style={{ color: ERROR[600] }}>
-                                                                {formErrors.password}
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Xác nhận mật khẩu */}
-                                                    <div>
-                                                        <label
-                                                            htmlFor="confirmPassword"
-                                                            className="block text-sm font-medium mb-2"
-                                                            style={{ color: TEXT.PRIMARY }}
-                                                        >
-                                                            Xác nhận mật khẩu <span style={{ color: ERROR[500] }}>*</span>
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            id="confirmPassword"
-                                                            name="confirmPassword"
-                                                            value={formData.confirmPassword}
-                                                            onChange={handleInputChange}
-                                                            className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                            style={{
-                                                                borderColor: formErrors.confirmPassword ? ERROR[500] : BORDER.DEFAULT,
-                                                                backgroundColor: BACKGROUND.DEFAULT,
-                                                                color: TEXT.PRIMARY
-                                                            }}
-                                                            placeholder="Nhập lại mật khẩu"
-                                                        />
-                                                        {formErrors.confirmPassword && (
-                                                            <p className="mt-1 text-xs" style={{ color: ERROR[600] }}>
-                                                                {formErrors.confirmPassword}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label
-                                                            htmlFor="role"
-                                                            className="block text-sm font-medium mb-2"
-                                                            style={{ color: TEXT.PRIMARY }}
-                                                        >
-                                                            Vai trò
-                                                        </label>
-                                                        <select
-                                                            id="role"
-                                                            name="role"
-                                                            value={formData.role}
-                                                            onChange={handleInputChange}
-                                                            className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                            style={{
-                                                                borderColor: BORDER.DEFAULT,
-                                                                backgroundColor: BACKGROUND.DEFAULT,
-                                                                color: TEXT.PRIMARY
-                                                            }}
-                                                            onFocus={(e) => {
-                                                                e.target.style.borderColor = PRIMARY[500];
-                                                                e.target.style.boxShadow = `0 0 0 2px ${PRIMARY[100]}`;
-                                                            }}
-                                                            onBlur={(e) => {
-                                                                e.target.style.borderColor = BORDER.DEFAULT;
-                                                                e.target.style.boxShadow = 'none';
-                                                            }}
-                                                        >
-                                                            {roles.map((role) => (
-                                                                <option key={role.id} value={role.name}>
-                                                                    {role.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    <div>
-                                                        <label
-                                                            htmlFor="status"
-                                                            className="block text-sm font-medium mb-2"
-                                                            style={{ color: TEXT.PRIMARY }}
-                                                        >
-                                                            Trạng thái
-                                                        </label>
-                                                        <select
-                                                            id="status"
-                                                            name="status"
-                                                            value={formData.status}
-                                                            onChange={handleInputChange}
-                                                            className="w-full px-4 py-2.5 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                                                            style={{
-                                                                borderColor: BORDER.DEFAULT,
-                                                                backgroundColor: BACKGROUND.DEFAULT,
-                                                                color: TEXT.PRIMARY
-                                                            }}
-                                                        >
-                                                            <option value="active">Đang hoạt động</option>
-                                                            <option value="inactive">Không hoạt động</option>
-                                                            <option value="pending">Chờ xác nhận</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div
-                                            className="px-6 py-4 sm:flex sm:flex-row-reverse sm:space-x-reverse sm:space-x-3 space-y-3 sm:space-y-0 border-t"
-                                            style={{
-                                                backgroundColor: GRAY[50],
-                                                borderColor: BORDER.DEFAULT
-                                            }}
-                                        >
-                                            <button
-                                                type="submit"
-                                                disabled={submitting}
-                                                className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{
-                                                    backgroundColor: submitting ? GRAY[400] : PRIMARY[500],
-                                                    color: TEXT.INVERSE,
-                                                    borderColor: submitting ? GRAY[400] : PRIMARY[500]
-                                                }}
-                                            >
-                                                {submitting ? (
-                                                    <>
-                                                        <ButtonLoading size="small" color="primary" />
-                                                        <span className="ml-2">Đang tạo...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <FiSave className="mr-2 w-4 h-4" />
-                                                        Tạo tài khoản
-                                                    </>
-                                                )}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowAddModal(false)}
-                                                disabled={submitting}
-                                                className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 border disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{
-                                                    backgroundColor: BACKGROUND.DEFAULT,
-                                                    color: TEXT.SECONDARY,
-                                                    borderColor: BORDER.DEFAULT
-                                                }}
-                                            >
-                                                <FiX className="mr-2 w-4 h-4" />
-                                                Hủy
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {showDeleteModal && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto">
-                            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:p-0">
-                                <div
-                                    className="fixed inset-0 transition-opacity"
-                                    aria-hidden="true"
-                                    onClick={() => setShowDeleteModal(false)}
-                                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-                                />
-
-                                <span
-                                    className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                                    aria-hidden="true"
-                                >
-                                    &#8203;
-                                </span>
-
-                                <div
-                                    className="inline-block align-bottom rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50"
-                                    style={{
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        boxShadow: `0 20px 25px -5px ${SHADOW.DARK}, 0 10px 10px -5px ${SHADOW.MEDIUM}`
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <div className="px-6 pt-6 pb-4">
-                                        <div className="sm:flex sm:items-start">
-                                            <div
-                                                className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
-                                                style={{ backgroundColor: ERROR[100] }}
-                                            >
-                                                <FiTrash2 className="h-6 w-6" style={{ color: ERROR[600] }} />
-                                            </div>
-                                            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                                <h3
-                                                    className="text-lg font-bold mb-2"
-                                                    style={{ color: TEXT.PRIMARY }}
-                                                >
-                                                    Xác nhận xóa người dùng
-                                                </h3>
-                                                <div className="mt-2">
-                                                    <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                        Bạn có chắc chắn muốn xóa người dùng{" "}
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {userToDelete?.name}
-                                                        </span>{" "}
-                                                        không?
-                                                    </p>
-                                                    <div
-                                                        className="mt-3 p-3 rounded-lg border-l-4"
-                                                        style={{
-                                                            backgroundColor: WARNING[50],
-                                                            borderColor: WARNING[400]
-                                                        }}
-                                                    >
-                                                        <p className="text-xs" style={{ color: WARNING[700] }}>
-                                                            ⚠️ Hành động này không thể được hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa vĩnh viễn.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div
-                                        className="px-6 py-4 sm:flex sm:flex-row-reverse sm:space-x-reverse sm:space-x-3 space-y-3 sm:space-y-0 border-t"
-                                        style={{
-                                            backgroundColor: GRAY[50],
-                                            borderColor: BORDER.DEFAULT
-                                        }}
+                                    <svg
+                                        className="h-4 w-4"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
                                     >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+
+                                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                    let pageNumber;
+                                    if (totalPages <= 5) {
+                                        pageNumber = i + 1;
+                                    } else if (currentPage <= 3) {
+                                        pageNumber = i + 1;
+                                    } else if (currentPage >= totalPages - 2) {
+                                        pageNumber = totalPages - 4 + i;
+                                    } else {
+                                        pageNumber = currentPage - 2 + i;
+                                    }
+                                    
+                                    return (
                                         <button
-                                            type="button"
-                                            onClick={confirmDelete}
-                                            disabled={deleting}
-                                            className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            key={pageNumber}
+                                            onClick={() => paginate(pageNumber)}
+                                            className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
                                             style={{
-                                                backgroundColor: deleting ? GRAY[400] : ERROR[500],
-                                                color: TEXT.INVERSE,
-                                                borderColor: deleting ? GRAY[400] : ERROR[500]
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!deleting) {
-                                                    e.target.style.backgroundColor = ERROR[600];
-                                                    e.target.style.borderColor = ERROR[600];
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!deleting) {
-                                                    e.target.style.backgroundColor = ERROR[500];
-                                                    e.target.style.borderColor = ERROR[500];
-                                                }
+                                                borderColor: currentPage === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
+                                                backgroundColor: currentPage === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: currentPage === pageNumber ? 'white' : TEXT.PRIMARY,
+                                                boxShadow: currentPage === pageNumber ? `0 2px 4px ${PRIMARY[200]}` : 'none'
                                             }}
                                         >
-                                            {deleting ? (
-                                                <>
-                                                    <ButtonLoading size="small" color="error" />
-                                                    <span className="ml-2">Đang xóa...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <FiTrash2 className="mr-2 w-4 h-4" />
-                                                    Xóa vĩnh viễn
-                                                </>
-                                            )}
+                                            {pageNumber}
                                         </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowDeleteModal(false)}
-                                            disabled={deleting}
-                                            className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 border disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                backgroundColor: BACKGROUND.DEFAULT,
-                                                color: TEXT.SECONDARY,
-                                                borderColor: BORDER.DEFAULT
-                                            }}
-                                        >
-                                            <FiX className="mr-2 w-4 h-4" />
-                                            Hủy
-                                        </button>
-                                    </div>
-                                </div>
+                                    );
+                                })}
+
+                                <button
+                                    onClick={() => paginate(currentPage + 1)}
+                                    disabled={currentPage === totalPages}
+                                    className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                    style={{
+                                        borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
+                                    }}
+                                >
+                                    <svg
+                                        className="h-4 w-4"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     )}
+
+
                 </div>
             )}
         </>
