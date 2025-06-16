@@ -37,6 +37,25 @@ const userApi = {
             };
         }
     },
+
+    // Lấy thông tin chi tiết của nhân viên
+    getStaffProfile: async (staffId) => {
+        try {
+            const response = await apiClient.get(`/users/staff/${staffId}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy thông tin nhân viên",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
     // Create Manager
     createManager: async (managerData) => {
         try {
@@ -46,6 +65,7 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
+
     // Create School Nurse
     createSchoolNurse: async (nurseData) => {
         try {
@@ -55,6 +75,7 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
+
     // Delete Manager
     deleteManager: async (managerId) => {
         try {
@@ -64,6 +85,7 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
+
     // Delete School Nurse
     deleteSchoolNurse: async (nurseId) => {
         try {

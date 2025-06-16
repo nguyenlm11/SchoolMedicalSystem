@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiEdit3, FiCopy, FiAward, FiSave, FiX } from 'react-icons/fi';
 import { PRIMARY, SECONDARY, SUCCESS, TEXT, BACKGROUND, SHADOW, BORDER } from '../../constants/colors';
 
-const StaffProfilePage = () => {
+const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedProfile, setEditedProfile] = useState({
         fullName: "Lê Minh Nguyên",
@@ -602,4 +602,4 @@ const StaffProfilePage = () => {
     );
 };
 
-export default StaffProfilePage;
+export default UserProfilePage;

@@ -1,6 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
-import StaffProfilePage from "../pages/auth/StaffProfilePage";
+import UserProfilePage from "../pages/auth/UserProfilePage";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -37,7 +37,7 @@ const staffRoutes = (
     <Route path="/staff/health-check/:checkId/edit" element={<PlaceholderPage title="Chỉnh sửa kiểm tra (đang phát triển)" />} />
 
     {/* Staff Profile Routes */}
-    <Route path="/staff/profile" element={<StaffProfilePage />} />
+    <Route path="/staff/profile" element={<UserProfilePage />} />
   </>
 );
 
