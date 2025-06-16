@@ -5,6 +5,7 @@ import ParentManagement from "../pages/manager/ParentManagement";
 import StudentManagement from "../pages/manager/StudentManagement";
 import MedicineInventory from "../pages/manager/MedicineInventory";
 import SupplyInventory from "../pages/manager/SupplyInventory";
+import StaffProfilePage from "../pages/auth/StaffProfilePage";
 
 const PlaceholderPage = ({ title }) => (
   <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
@@ -19,6 +20,7 @@ const managerRoutes = (
     <Route path="/manager/student-management" element={<StudentManagement />} />
     <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />
     <Route path="/manager/supply-inventory" element={<SupplyInventory />} />
+    <Route path="/manager/profile" element={<StaffProfilePage />} />
   </Route>
 );
 
