@@ -4,6 +4,7 @@ import AdminLayout from "../components/layout/AdminLayout";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserManagement from "../pages/admin/UserManagement/index";
 import UserList from "../pages/admin/UserManagement/UserList";
+import StaffProfilePage from "../pages/auth/StaffProfilePage";
 
 const adminRoutes = (
   <Route element={<AdminLayout />}>
@@ -11,6 +12,7 @@ const adminRoutes = (
     <Route path="/admin/users" element={<UserManagement />}>
       <Route index element={<UserList />} />
     </Route>
+    <Route path="/admin/users/:id" element={<StaffProfilePage />} />
   </Route>
 );
 
