@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus, FiEye } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
 import Loading from "../../../components/Loading";
 import userApi from "../../../api/userApi";
 import AddStaffModal from "../../../components/modal/AddStaffModal";
 import ConfirmModal from "../../../components/modal/ConfirmModal";
+import AlertModal from "../../../components/modal/AlertModal";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -21,6 +23,10 @@ const UserList = () => {
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [alertModalOpen, setAlertModalOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertType, setAlertType] = useState("success");
+    const navigate = useNavigate();
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -146,14 +152,21 @@ const UserList = () => {
             const response = await deleteFunction(selectedUser.id);
 
             if (response.success) {
+                setAlertType("success");
+                setAlertMessage(`Đã xóa người dùng "${selectedUser.fullName}" thành công`);
                 fetchUsers();
                 setDeleteModalOpen(false);
                 setSelectedUser(null);
+                setAlertModalOpen(true);
             } else {
-                console.error('Error deleting user:', response.message);
+                setAlertType("error");
+                setAlertMessage(`Không thể xóa người dùng "${selectedUser.fullName}". ${response.message || 'Vui lòng thử lại sau.'}`);
+                setAlertModalOpen(true);
             }
         } catch (error) {
-            console.error('Error deleting user:', error);
+            setAlertType("error");
+            setAlertMessage(`Không thể xóa người dùng "${selectedUser.fullName}". Vui lòng thử lại sau.`);
+            setAlertModalOpen(true);
         } finally {
             setDeleteLoading(false);
         }
@@ -386,7 +399,15 @@ const UserList = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-6 text-right">
-                                                <div className="flex justify-end">
+                                                <div className="flex justify-end space-x-2">
+                                                    <button
+                                                        onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                        className="p-2.5 rounded-lg transition-all duration-200 hover:bg-blue-50 border"
+                                                        style={{ color: PRIMARY[600], borderColor: PRIMARY[200] }}
+                                                        title="Xem chi tiết"
+                                                    >
+                                                        <FiEye className="h-4 w-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteClick(user)}
                                                         className="p-2.5 rounded-lg transition-all duration-200 hover:bg-red-50 border"
@@ -549,6 +570,14 @@ const UserList = () => {
                 isOpen={isAddStaffModalOpen}
                 onClose={() => setIsAddStaffModalOpen(false)}
                 onSuccess={() => fetchUsers()}
+            />
+
+            <AlertModal
+                isOpen={alertModalOpen}
+                onClose={() => setAlertModalOpen(false)}
+                title={alertType === "success" ? "Thành công" : "Lỗi"}
+                message={alertMessage}
+                type={alertType}
             />
         </>
     );
