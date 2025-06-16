@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiFilter, FiUsers, FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
-import Loading, { SkeletonLoading } from "../../../components/Loading";
+import Loading from "../../../components/Loading";
 import userApi from "../../../api/userApi";
 import AddStaffModal from "../../../components/modal/AddStaffModal";
+import ConfirmModal from "../../../components/modal/ConfirmModal";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -13,10 +14,13 @@ const UserList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize] = useState(10);
     const [sortColumn, setSortColumn] = useState("fullName");
     const [sortDirection, setSortDirection] = useState("asc");
     const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -80,10 +84,15 @@ const UserList = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     const formatDate = (dateString) => {
         if (!dateString) return "Chưa đăng nhập";
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
+        return new Intl.DateTimeFormat("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }).format(date);
     };
 
     const getRoleLabel = (role) => {
@@ -96,7 +105,10 @@ const UserList = () => {
                 return role;
         }
     };
-    const getStatusLabel = (isActive) => { return isActive ? "Đang hoạt động" : "Không hoạt động" };
+
+    const getStatusLabel = (isActive) => {
+        return isActive ? "Đang hoạt động" : "Không hoạt động"
+    };
 
     const getStatusStyle = (isActive) => {
         if (isActive) {
@@ -117,6 +129,36 @@ const UserList = () => {
         }
     };
 
+    const handleDeleteClick = (user) => {
+        setSelectedUser(user);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!selectedUser) return;
+
+        setDeleteLoading(true);
+        try {
+            const deleteFunction = selectedUser.role === 'MANAGER'
+                ? userApi.deleteManager
+                : userApi.deleteSchoolNurse;
+
+            const response = await deleteFunction(selectedUser.id);
+
+            if (response.success) {
+                fetchUsers();
+                setDeleteModalOpen(false);
+                setSelectedUser(null);
+            } else {
+                console.error('Error deleting user:', response.message);
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
     return (
         <>
             {loading && (
@@ -130,16 +172,10 @@ const UserList = () => {
                     <div className="flex flex-col space-y-4 mb-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                             <div className="mb-4 lg:mb-0">
-                                <h2
-                                    className="text-2xl lg:text-3xl font-bold mb-2"
-                                    style={{ color: TEXT.PRIMARY }}
-                                >
+                                <h2 className="text-2xl lg:text-3xl font-bold mb-2" style={{ color: TEXT.PRIMARY }}>
                                     Quản lý người dùng
                                 </h2>
-                                <p
-                                    className="text-sm lg:text-base"
-                                    style={{ color: TEXT.SECONDARY }}
-                                >
+                                <p className="text-sm lg:text-base" style={{ color: TEXT.SECONDARY }}>
                                     Quản lý tất cả người dùng trong hệ thống y tế trường học
                                 </p>
                             </div>
@@ -200,8 +236,6 @@ const UserList = () => {
                                         <option value="SCHOOLNURSE">Y tá trường học</option>
                                     </select>
                                 </div>
-
-
                             </div>
                         </div>
                     </div>
@@ -214,291 +248,164 @@ const UserList = () => {
                             boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`
                         }}
                     >
-                        <div className="block lg:hidden">
-                            {loading ? (
-                                <div className="p-6 text-center">
-                                    <Loading type="medical" size="medium" color="primary" text="Đang tải..." />
-                                </div>
-                            ) : (
-                                <div className="divide-y" style={{ borderColor: BORDER.DEFAULT }}>
-                                    {users.map((user) => (
-                                        <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors duration-200">
-                                            <div className="flex items-start space-x-4">
-                                                <div className="flex-shrink-0">
-                                                    <div
-                                                        className="h-12 w-12 rounded-full flex items-center justify-center text-white font-semibold text-lg"
-                                                        style={{ backgroundColor: PRIMARY[500] }}
-                                                    >
-                                                        {user.fullName.charAt(0)}
-                                                    </div>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div>
-                                                        <p className="text-base font-semibold truncate" style={{ color: TEXT.PRIMARY }}>
-                                                            {user.fullName}
-                                                        </p>
-                                                        <p className="text-sm truncate" style={{ color: TEXT.SECONDARY }}>
-                                                            {user.email}
-                                                        </p>
-                                                    </div>
-                                                    <div className="mt-3 flex flex-wrap gap-2">
-                                                        <span
-                                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                                                            style={getRoleStyle(user.role)}
-                                                        >
-                                                            {getRoleLabel(user.role)}
-                                                        </span>
-                                                        <span
-                                                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
-                                                            style={getStatusStyle(user.isActive)}
-                                                        >
-                                                            {getStatusLabel(user.isActive)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-2 text-xs" style={{ color: TEXT.SECONDARY }}>
-                                                        <p>Mã nhân viên: {user.staffCode || 'N/A'}</p>
-                                                        <p>Ngày tạo: {formatDate(user.createdDate)}</p>
-                                                    </div>
-                                                </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                                <thead>
+                                    <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
+                                            style={{ color: TEXT.SECONDARY }}
+                                            onClick={() => handleSort("fullName")}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>Người dùng</span>
+                                                {sortColumn === "fullName" && (
+                                                    <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
+                                                        {sortDirection === "asc" ? "↑" : "↓"}
+                                                    </span>
+                                                )}
                                             </div>
-                                        </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
+                                            style={{ color: TEXT.SECONDARY }}
+                                            onClick={() => handleSort("role")}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>Vai trò</span>
+                                                {sortColumn === "role" && (
+                                                    <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
+                                                        {sortDirection === "asc" ? "↑" : "↓"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
+                                            style={{ color: TEXT.SECONDARY }}
+                                            onClick={() => handleSort("isActive")}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>Trạng thái</span>
+                                                {sortColumn === "isActive" && (
+                                                    <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
+                                                        {sortDirection === "asc" ? "↑" : "↓"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
+                                            style={{ color: TEXT.SECONDARY }}
+                                            onClick={() => handleSort("staffCode")}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>Mã NV</span>
+                                                {sortColumn === "staffCode" && (
+                                                    <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
+                                                        {sortDirection === "asc" ? "↑" : "↓"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
+                                            style={{ color: TEXT.SECONDARY }}
+                                            onClick={() => handleSort("createdDate")}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <span>Ngày tạo</span>
+                                                {sortColumn === "createdDate" && (
+                                                    <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
+                                                        {sortDirection === "asc" ? "↑" : "↓"}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider"
+                                            style={{ color: TEXT.SECONDARY }}
+                                        >
+                                            Thao tác
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
+                                    {users.map((user) => (
+                                        <tr key={user.id} className="border-b hover:bg-gray-50/70 transition-all duration-200" style={{ borderColor: BORDER.DEFAULT }}>
+                                            <td className="px-6 py-6">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-12 w-12">
+                                                        <div
+                                                            className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm"
+                                                            style={{ backgroundColor: PRIMARY[500] }}
+                                                        >
+                                                            {user.fullName.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {user.fullName}
+                                                        </div>
+                                                        <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                            {user.email}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-6">
+                                                <span
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
+                                                    style={getRoleStyle(user.role)}
+                                                >
+                                                    {getRoleLabel(user.role)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-6">
+                                                <span
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
+                                                    style={getStatusStyle(user.isActive)}
+                                                >
+                                                    {getStatusLabel(user.isActive)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-6">
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                    {user.staffCode || 'N/A'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-6">
+                                                <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                    {formatDate(user.createdDate)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-6 text-right">
+                                                <div className="flex justify-end">
+                                                    <button
+                                                        onClick={() => handleDeleteClick(user)}
+                                                        className="p-2.5 rounded-lg transition-all duration-200 hover:bg-red-50 border"
+                                                        style={{
+                                                            color: ERROR[600],
+                                                            borderColor: ERROR[200]
+                                                        }}
+                                                        title="Xóa người dùng"
+                                                    >
+                                                        <FiTrash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     ))}
-                                </div>
-                            )}
-                        </div>
+                                </tbody>
+                            </table>
 
-                        <div className="hidden lg:block overflow-x-auto">
-                            {loading ? (
-                                <table className="min-w-full">
-                                    <thead>
-                                        <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
-                                            <th className="px-6 py-5 text-left">
-                                                <SkeletonLoading className="h-4 w-32" />
-                                            </th>
-                                            <th className="px-6 py-5 text-left">
-                                                <SkeletonLoading className="h-4 w-20" />
-                                            </th>
-                                            <th className="px-6 py-5 text-left">
-                                                <SkeletonLoading className="h-4 w-24" />
-                                            </th>
-                                            <th className="px-6 py-5 text-left">
-                                                <SkeletonLoading className="h-4 w-28" />
-                                            </th>
-                                            <th className="px-6 py-5 text-left">
-                                                <SkeletonLoading className="h-4 w-20" />
-                                            </th>
-                                            <th className="px-6 py-5 text-right">
-                                                <SkeletonLoading className="h-4 w-16 ml-auto" />
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
-                                        {[...Array(5)].map((_, index) => (
-                                            <tr key={index} className="border-b hover:bg-gray-50/50 transition-colors duration-200" style={{ borderColor: BORDER.DEFAULT }}>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex items-center">
-                                                        <SkeletonLoading className="h-12 w-12 rounded-full" />
-                                                        <div className="ml-4 space-y-2">
-                                                            <SkeletonLoading className="h-4 w-32" />
-                                                            <SkeletonLoading className="h-3 w-24" />
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <SkeletonLoading className="h-6 w-20 rounded-full" />
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <SkeletonLoading className="h-6 w-24 rounded-full" />
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <SkeletonLoading className="h-4 w-28" />
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <SkeletonLoading className="h-4 w-20" />
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex justify-end space-x-2">
-                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
-                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
-                                                        <SkeletonLoading className="h-9 w-9 rounded-lg" />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : (
-                                <table className="min-w-full">
-                                    <thead>
-                                        <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                                style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("fullName")}
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <span>Người dùng</span>
-                                                    {sortColumn === "fullName" && (
-                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
-                                                            {sortDirection === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                                style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("role")}
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <span>Vai trò</span>
-                                                    {sortColumn === "role" && (
-                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
-                                                            {sortDirection === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                                style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("isActive")}
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <span>Trạng thái</span>
-                                                    {sortColumn === "isActive" && (
-                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
-                                                            {sortDirection === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                                style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("staffCode")}
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <span>Mã NV</span>
-                                                    {sortColumn === "staffCode" && (
-                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
-                                                            {sortDirection === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                                style={{ color: TEXT.SECONDARY }}
-                                                onClick={() => handleSort("createdDate")}
-                                            >
-                                                <div className="flex items-center space-x-2">
-                                                    <span>Ngày tạo</span>
-                                                    {sortColumn === "createdDate" && (
-                                                        <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
-                                                            {sortDirection === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider"
-                                                style={{ color: TEXT.SECONDARY }}
-                                            >
-                                                Thao tác
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
-                                        {users.map((user) => (
-                                            <tr key={user.id} className="border-b hover:bg-gray-50/70 transition-all duration-200" style={{ borderColor: BORDER.DEFAULT }}>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex items-center">
-                                                        <div className="flex-shrink-0 h-12 w-12">
-                                                            <div
-                                                                className="h-12 w-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm"
-                                                                style={{ backgroundColor: PRIMARY[500] }}
-                                                            >
-                                                                {user.fullName.charAt(0).toUpperCase()}
-                                                            </div>
-                                                        </div>
-                                                        <div className="ml-4">
-                                                            <div className="text-sm font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                                {user.fullName}
-                                                            </div>
-                                                            <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                                {user.email}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
-                                                        style={getRoleStyle(user.role)}
-                                                    >
-                                                        {getRoleLabel(user.role)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
-                                                        style={getStatusStyle(user.isActive)}
-                                                    >
-                                                        {getStatusLabel(user.isActive)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                        {user.staffCode || 'N/A'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-6">
-                                                    <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                        {formatDate(user.createdDate)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-6 text-right">
-                                                    <div className="flex justify-end space-x-2">
-                                                        <button
-                                                            disabled
-                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
-                                                            style={{ color: INFO[600] }}
-                                                            title="Xem chi tiết"
-                                                        >
-                                                            <FiEye className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            disabled
-                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
-                                                            style={{ color: WARNING[600] }}
-                                                            title="Chỉnh sửa"
-                                                        >
-                                                            <FiEdit className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            disabled
-                                                            className="p-2.5 rounded-lg transition-all duration-200 opacity-50 cursor-not-allowed border border-gray-200 bg-gray-50"
-                                                            style={{ color: ERROR[600] }}
-                                                            title="Xóa người dùng"
-                                                        >
-                                                            <FiTrash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-
-                            {!loading && users.length === 0 && (
+                            {users.length === 0 && (
                                 <div className="p-12 text-center">
                                     <div className="mx-auto h-16 w-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: GRAY[100] }}>
                                         <FiUsers className="h-8 w-8" style={{ color: GRAY[400] }} />
@@ -514,8 +421,7 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    {/* Pagination */}
-                    {!loading && users.length > 0 && (
+                    {users.length > 0 && (
                         <div
                             className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
                             style={{
@@ -623,6 +529,21 @@ const UserList = () => {
                     )}
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={deleteModalOpen}
+                onClose={() => {
+                    setDeleteModalOpen(false);
+                    setSelectedUser(null);
+                }}
+                onConfirm={handleDeleteConfirm}
+                title="Xác nhận xóa"
+                message={`Bạn có chắc chắn muốn xóa người dùng "${selectedUser?.fullName}"? Hành động này không thể hoàn tác.`}
+                confirmText="Xóa"
+                cancelText="Hủy"
+                type="error"
+                isLoading={deleteLoading}
+            />
 
             <AddStaffModal
                 isOpen={isAddStaffModalOpen}

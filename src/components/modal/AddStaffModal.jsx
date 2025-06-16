@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
-import { createManager, createSchoolNurse } from '../../api/staffApi';
+import userApi from '../../api/userApi';
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/colors';
 import Loading from '../Loading';
 import AlertModal from './AlertModal';
@@ -160,7 +160,6 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
       showAlertMessage('error', 'Lỗi validation', 'Vui lòng kiểm tra lại thông tin đã nhập');
       return;
     }
-
     setLoading(true);
     try {
       const baseData = {
@@ -175,15 +174,13 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
       };
 
       const response = staffType === 'manager'
-        ? await createManager(baseData)
-        : await createSchoolNurse({
+        ? await userApi.createManager(baseData)
+        : await userApi.createSchoolNurse({
           ...baseData,
           licenseNumber: formData.licenseNumber,
           specialization: formData.specialization
         });
-
       setLoading(false);
-
       if (response.success) {
         showAlertMessage('success', 'Thành công', `Nhân viên "${formData.fullName}" đã được thêm thành công.`);
       } else {
