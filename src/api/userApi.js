@@ -32,7 +32,7 @@ const userApi = {
             }
             return {
                 success: false,
-                message: 'Có lỗi xảy ra khi tải danh sách người dùng.',
+                message: response.error,
                 data: []
             };
         }
