@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus, FiEye } from "react-icons/fi";
+import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus, FiEye, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
 import Loading from "../../../components/Loading";
 import userApi from "../../../api/userApi";
@@ -26,6 +26,9 @@ const UserList = () => {
     const [alertModalOpen, setAlertModalOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [alertType, setAlertType] = useState("success");
+    const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
+    const [showImportDropdown, setShowImportDropdown] = useState(false);
+    const [showExportDropdown, setShowExportDropdown] = useState(false);
     const navigate = useNavigate();
 
     const fetchUsers = async () => {
@@ -172,6 +175,48 @@ const UserList = () => {
         }
     };
 
+    const handleTemplateDownload = (type) => {
+        setShowTemplateDropdown(false);
+        console.log(`Downloading ${type} template`);
+    };
+
+    const handleImport = (type) => {
+        setShowImportDropdown(false);
+        console.log(`Importing ${type} data`);
+    };
+
+    const handleExport = (type) => {
+        setShowExportDropdown(false);
+        console.log(`Exporting ${type} data`);
+    };
+
+    const dropdownStyle = {
+        position: 'absolute',
+        top: '100%',
+        right: 0,
+        marginTop: '0.5rem',
+        backgroundColor: BACKGROUND.DEFAULT,
+        border: `1px solid ${BORDER.DEFAULT}`,
+        borderRadius: '0.5rem',
+        boxShadow: `0 4px 6px -1px ${SHADOW.MEDIUM}`,
+        zIndex: 50,
+        minWidth: '160px',
+        overflow: 'hidden'
+    };
+
+    const dropdownItemStyle = {
+        padding: '0.75rem 1rem',
+        fontSize: '0.875rem',
+        color: TEXT.PRIMARY,
+        backgroundColor: BACKGROUND.DEFAULT,
+        cursor: 'pointer',
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        transition: 'all 0.2s',
+        borderBottom: `1px solid ${BORDER.DEFAULT}`
+    };
+
     return (
         <>
             {loading && (
@@ -194,6 +239,129 @@ const UserList = () => {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3">
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            setShowTemplateDropdown(!showTemplateDropdown);
+                                            setShowImportDropdown(false);
+                                            setShowExportDropdown(false);
+                                        }}
+                                        className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                        style={{
+                                            backgroundColor: INFO[600],
+                                            color: 'white',
+                                            borderColor: INFO[600]
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = INFO[700]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = INFO[600]}
+                                    >
+                                        <FiFileText className="h-4 w-4 mr-2" />
+                                        Lấy mẫu
+                                    </button>
+                                    {showTemplateDropdown && (
+                                        <div style={dropdownStyle}>
+                                            <button
+                                                onClick={() => handleTemplateDownload('manager')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Mẫu Quản lý
+                                            </button>
+                                            <button
+                                                onClick={() => handleTemplateDownload('nurse')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Mẫu Y tế
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            setShowImportDropdown(!showImportDropdown);
+                                            setShowTemplateDropdown(false);
+                                            setShowExportDropdown(false);
+                                        }}
+                                        className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                        style={{
+                                            backgroundColor: SUCCESS[600],
+                                            color: 'white',
+                                            borderColor: SUCCESS[600]
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = SUCCESS[700]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = SUCCESS[600]}
+                                    >
+                                        <FiUpload className="h-4 w-4 mr-2" />
+                                        Nhập
+                                    </button>
+                                    {showImportDropdown && (
+                                        <div style={dropdownStyle}>
+                                            <button
+                                                onClick={() => handleImport('manager')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Nhập Quản lý
+                                            </button>
+                                            <button
+                                                onClick={() => handleImport('nurse')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Nhập Y tế
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="relative">
+                                    <button
+                                        onClick={() => {
+                                            setShowExportDropdown(!showExportDropdown);
+                                            setShowTemplateDropdown(false);
+                                            setShowImportDropdown(false);
+                                        }}
+                                        className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                        style={{
+                                            backgroundColor: WARNING[600],
+                                            color: 'white',
+                                            borderColor: WARNING[600]
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = WARNING[700]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = WARNING[600]}
+                                    >
+                                        <FiDownload className="h-4 w-4 mr-2" />
+                                        Xuất
+                                    </button>
+                                    {showExportDropdown && (
+                                        <div style={dropdownStyle}>
+                                            <button
+                                                onClick={() => handleExport('manager')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Xuất Quản lý
+                                            </button>
+                                            <button
+                                                onClick={() => handleExport('nurse')}
+                                                style={dropdownItemStyle}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
+                                            >
+                                                Xuất Y tế
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <button
                                     onClick={() => setIsAddStaffModalOpen(true)}
                                     className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
