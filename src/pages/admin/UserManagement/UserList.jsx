@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { FiSearch, FiFilter, FiUsers, FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiSearch, FiFilter, FiUsers, FiEye, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
 import Loading, { SkeletonLoading } from "../../../components/Loading";
 import userApi from "../../../api/userApi";
+import AddStaffModal from "../../../components/modal/AddStaffModal";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -15,6 +16,7 @@ const UserList = () => {
     const [pageSize, setPageSize] = useState(10);
     const [sortColumn, setSortColumn] = useState("fullName");
     const [sortDirection, setSortDirection] = useState("asc");
+    const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -81,16 +83,8 @@ const UserList = () => {
     const formatDate = (dateString) => {
         if (!dateString) return "Chưa đăng nhập";
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        }).format(date);
+        return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(date);
     };
-
-
 
     const getRoleLabel = (role) => {
         switch (role) {
@@ -102,51 +96,26 @@ const UserList = () => {
                 return role;
         }
     };
-
-    const getStatusLabel = (isActive) => {
-        return isActive ? "Đang hoạt động" : "Không hoạt động";
-    };
+    const getStatusLabel = (isActive) => { return isActive ? "Đang hoạt động" : "Không hoạt động" };
 
     const getStatusStyle = (isActive) => {
         if (isActive) {
-            return {
-                backgroundColor: SUCCESS[50],
-                color: SUCCESS[700],
-                borderColor: SUCCESS[200]
-            };
+            return { backgroundColor: SUCCESS[50], color: SUCCESS[700], borderColor: SUCCESS[200] }
         } else {
-            return {
-                backgroundColor: ERROR[50],
-                color: ERROR[700],
-                borderColor: ERROR[200]
-            };
+            return { backgroundColor: ERROR[50], color: ERROR[700], borderColor: ERROR[200] }
         }
     };
 
     const getRoleStyle = (role) => {
         switch (role) {
             case "MANAGER":
-                return {
-                    backgroundColor: WARNING[50],
-                    color: WARNING[700],
-                    borderColor: WARNING[200]
-                };
+                return { backgroundColor: WARNING[50], color: WARNING[700], borderColor: WARNING[200] }
             case "SCHOOLNURSE":
-                return {
-                    backgroundColor: INFO[50],
-                    color: INFO[700],
-                    borderColor: INFO[200]
-                };
+                return { backgroundColor: INFO[50], color: INFO[700], borderColor: INFO[200] }
             default:
-                return {
-                    backgroundColor: GRAY[50],
-                    color: GRAY[700],
-                    borderColor: GRAY[200]
-                };
+                return { backgroundColor: GRAY[50], color: GRAY[700], borderColor: GRAY[200] }
         }
     };
-
-
 
     return (
         <>
@@ -175,6 +144,21 @@ const UserList = () => {
                                 </p>
                             </div>
 
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => setIsAddStaffModalOpen(true)}
+                                    className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                    style={{
+                                        backgroundColor: PRIMARY[600],
+                                        focusRingColor: PRIMARY[500]
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[700]}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                >
+                                    <FiPlus className="h-4 w-4 mr-2" />
+                                    Thêm nhân viên
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -230,7 +214,6 @@ const UserList = () => {
                             boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)`
                         }}
                     >
-                        {/* Mobile View */}
                         <div className="block lg:hidden">
                             {loading ? (
                                 <div className="p-6 text-center">
@@ -284,7 +267,6 @@ const UserList = () => {
                             )}
                         </div>
 
-                        {/* Desktop View */}
                         <div className="hidden lg:block overflow-x-auto">
                             {loading ? (
                                 <table className="min-w-full">
@@ -594,7 +576,7 @@ const UserList = () => {
                                     } else {
                                         pageNumber = currentPage - 2 + i;
                                     }
-                                    
+
                                     return (
                                         <button
                                             key={pageNumber}
@@ -639,10 +621,14 @@ const UserList = () => {
                             </div>
                         </div>
                     )}
-
-
                 </div>
             )}
+
+            <AddStaffModal
+                isOpen={isAddStaffModalOpen}
+                onClose={() => setIsAddStaffModalOpen(false)}
+                onSuccess={() => fetchUsers()}
+            />
         </>
     );
 };
