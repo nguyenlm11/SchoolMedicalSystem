@@ -95,6 +95,42 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
+
+    // Cập nhật thông tin quản lý
+    updateManager: async (managerId, managerData) => {
+        try {
+            const response = await apiClient.put(`/users/managers/${managerId}`, managerData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật thông tin quản lý",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Cập nhật thông tin y tá
+    updateSchoolNurse: async (nurseId, nurseData) => {
+        try {
+            const response = await apiClient.put(`/users/school-nurses/${nurseId}`, nurseData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật thông tin y tá",
+                data: null,
+                errors: []
+            };
+        }
+    },
 };
 
 export default userApi; 

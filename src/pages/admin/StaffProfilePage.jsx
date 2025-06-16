@@ -4,11 +4,16 @@ import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiEdit3, FiCop
 import { PRIMARY, SECONDARY, SUCCESS, TEXT, BACKGROUND, SHADOW, BORDER } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import userApi from '../../api/userApi';
+import AlertModal from '../../components/modal/AlertModal';
 
 const StaffProfilePage = () => {
     const { id } = useParams();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [alertModalOpen, setAlertModalOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertType, setAlertType] = useState("success");
     const [editedProfile, setEditedProfile] = useState({
         fullName: "",
         phoneNumber: "",
@@ -16,6 +21,7 @@ const StaffProfilePage = () => {
         gender: "",
         dateOfBirth: "",
         profileImageUrl: null,
+        staffCode: "",
         licenseNumber: "",
         specialization: ""
     });
@@ -41,6 +47,7 @@ const StaffProfilePage = () => {
                     gender: staffData.gender,
                     dateOfBirth: staffData.dateOfBirth,
                     profileImageUrl: staffData.profileImageUrl,
+                    staffCode: staffData.staffCode,
                     licenseNumber: staffData.licenseNumber || "",
                     specialization: staffData.specialization || ""
                 });
@@ -63,28 +70,54 @@ const StaffProfilePage = () => {
 
     const handleSave = async () => {
         try {
-            // Here you would implement the API call to update the profile
-            console.log('Saving profile:', editedProfile);
-            setIsEditing(false);
-            // After successful update, refresh the profile
-            await fetchStaffProfile();
+            setSaving(true);
+
+            // Chuẩn bị dữ liệu cơ bản cho cả manager và nurse
+            const updateData = {
+                fullName: editedProfile.fullName,
+                phoneNumber: editedProfile.phoneNumber,
+                address: editedProfile.address,
+                gender: editedProfile.gender,
+                dateOfBirth: new Date(editedProfile.dateOfBirth).toISOString(), // Chuyển đổi sang định dạng ISO
+                staffCode: editedProfile.staffCode
+            };
+
+            // Thêm các trường bổ sung cho y tá trường học
+            if (profile.role === 'SCHOOLNURSE') {
+                const nurseData = {
+                    ...updateData,
+                    licenseNumber: editedProfile.licenseNumber,
+                    specialization: editedProfile.specialization
+                };
+                const response = await userApi.updateSchoolNurse(id, nurseData);
+                handleUpdateResponse(response);
+            } else {
+                // Gọi API cập nhật cho manager
+                const response = await userApi.updateManager(id, updateData);
+                handleUpdateResponse(response);
+            }
         } catch (error) {
             console.error('Error saving profile:', error);
+            setAlertType("error");
+            setAlertMessage("Có lỗi xảy ra khi cập nhật thông tin!");
+            setAlertModalOpen(true);
+        } finally {
+            setSaving(false);
         }
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditedProfile(prev => ({
-                    ...prev,
-                    profileImageUrl: reader.result
-                }));
-            };
-            reader.readAsDataURL(file);
+    // Hàm xử lý response từ API
+    const handleUpdateResponse = (response) => {
+        if (response.success) {
+            setAlertType("success");
+            setAlertMessage("Cập nhật thông tin thành công!");
+            setIsEditing(false);
+            fetchStaffProfile(); // Refresh lại dữ liệu
+        } else {
+            setAlertType("error");
+            setAlertMessage(response.message || "Có lỗi xảy ra khi cập nhật thông tin!");
         }
+        setAlertModalOpen(true);
     };
 
     // Style cho các trường có thể edit
@@ -252,9 +285,11 @@ const StaffProfilePage = () => {
             color: SECONDARY[600],
             copyable: true,
             description: "Mã định danh nhân viên",
-            editable: false
+            editable: true,
+            type: "text",
+            field: "staffCode"
         },
-        ...(profile.role === 'NURSE' ? [
+        ...(profile.role === 'SCHOOLNURSE' ? [
             {
                 icon: FiHeart,
                 label: "Số giấy phép",
@@ -354,25 +389,6 @@ const StaffProfilePage = () => {
         backgroundColor: 'white',
     };
 
-    // Style cho button thay đổi ảnh
-    const changeImageButtonStyle = {
-        position: 'absolute',
-        bottom: '0',
-        right: '0',
-        backgroundColor: PRIMARY[600],
-        color: 'white',
-        borderRadius: '50%',
-        width: '40px',
-        height: '40px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        border: '3px solid white',
-        boxShadow: `0 2px 4px ${SHADOW.MEDIUM}`,
-        transition: 'all 0.2s ease-in-out',
-    };
-
     return (
         <div
             className="min-h-screen p-4"
@@ -398,31 +414,10 @@ const StaffProfilePage = () => {
                             <div className="relative mb-8">
                                 <div style={avatarContainerStyle}>
                                     <img
-                                        src={editedProfile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"}
+                                        src={profile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"}
                                         alt="Profile"
                                         style={avatarStyle}
                                     />
-                                    {isEditing && (
-                                        <label htmlFor="profile-image" style={changeImageButtonStyle}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                e.currentTarget.style.transform = 'scale(1.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                e.currentTarget.style.transform = 'scale(1)';
-                                            }}
-                                        >
-                                            <input
-                                                type="file"
-                                                id="profile-image"
-                                                accept="image/*"
-                                                onChange={handleImageChange}
-                                                style={{ display: 'none' }}
-                                            />
-                                            <FiEdit3 size={20} />
-                                        </label>
-                                    )}
                                 </div>
                             </div>
 
@@ -528,6 +523,7 @@ const StaffProfilePage = () => {
                                                 color: TEXT.SECONDARY,
                                                 border: `2px solid ${TEXT.SECONDARY}`
                                             }}
+                                            disabled={saving}
                                         >
                                             <FiX className="w-5 h-5 mr-2" />
                                             <span className="font-semibold">Hủy</span>
@@ -538,18 +534,25 @@ const StaffProfilePage = () => {
                                             style={{
                                                 backgroundColor: PRIMARY[600],
                                                 boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
+                                                opacity: saving ? 0.7 : 1,
+                                                cursor: saving ? 'not-allowed' : 'pointer'
                                             }}
+                                            disabled={saving}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                                if (!saving) {
+                                                    e.currentTarget.style.backgroundColor = PRIMARY[700];
+                                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                                }
                                             }}
                                             onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                if (!saving) {
+                                                    e.currentTarget.style.backgroundColor = PRIMARY[600];
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                }
                                             }}
                                         >
                                             <FiSave className="mr-2" />
-                                            Lưu thay đổi
+                                            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                                         </button>
                                     </div>
                                 ) : (
@@ -637,6 +640,15 @@ const StaffProfilePage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={alertModalOpen}
+                onClose={() => setAlertModalOpen(false)}
+                title={alertType === "success" ? "Thành công" : "Lỗi"}
+                message={alertMessage}
+                type={alertType}
+            />
         </div>
     );
 };
