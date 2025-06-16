@@ -15,7 +15,7 @@ const authApi = {
       }
       return {
         success: false,
-        message: 'Có lỗi xảy ra khi kết nối đến server. Vui lòng thử lại.',
+        message: response.error,
         data: null,
         errors: []
       };
@@ -33,12 +33,52 @@ const authApi = {
       }
       return {
         success: false,
-        message: 'Có lỗi xảy ra khi đăng xuất.',
+        message: response.error,
         data: null,
         errors: []
       };
     }
   },
+
+  // Làm mới token
+  async refreshToken() {
+    try {
+      const accessToken = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      if (!accessToken || !refreshToken) {
+        return {
+          success: false,
+          message: response.error,
+          data: null,
+          errors: []
+        };
+      }
+
+      const response = await apiClient.post('/auth/refresh-token', {
+        accessToken,
+        refreshToken
+      });
+
+      // Lưu token mới vào localStorage nếu làm mới thành công
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+      }
+
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: response.error,
+        data: null,
+        errors: []
+      };
+    }
+  }
 };
 
-export default authApi; 
+export default authApi;

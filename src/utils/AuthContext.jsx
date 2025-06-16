@@ -8,6 +8,7 @@ export const ROLES = { ADMIN: "admin", MANAGER: "manager", STAFF: "staff", PAREN
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [tokenRefreshing, setTokenRefreshing] = useState(false);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -17,11 +18,43 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
+    // Hàm làm mới token
+    const refreshAuthToken = async () => {
+        try {
+            const accessToken = localStorage.getItem('token');
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            if (!accessToken || !refreshToken) {
+                throw new Error("No token or refresh token found");
+            }
+
+            setTokenRefreshing(true);
+            const response = await authApi.refreshToken();
+
+            if (response.success) {
+                const { token, refreshToken: newRefreshToken } = response.data;
+                localStorage.setItem('token', token);
+                localStorage.setItem('refreshToken', newRefreshToken);
+
+                setUser(prevUser => ({ ...prevUser, token }));
+                setTokenRefreshing(false);
+                return true;
+            } else {
+                throw new Error(response.message || "Failed to refresh token");
+            }
+        } catch (error) {
+            setTokenRefreshing(false);
+            return false;
+        }
+    };
+
+    // Đăng nhập
     const login = (userData) => {
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
+    // Đăng xuất
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');
@@ -29,15 +62,18 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('refreshToken');
     };
 
+    // Kiểm tra quyền của người dùng
     const hasRole = (role) => {
         if (!user) return false;
         return user.role === role;
     };
 
+    // Kiểm tra người dùng đã đăng nhập chưa
     const isAuthenticated = () => {
         return !!user;
     };
 
+    // Đăng nhập với thông tin tài khoản
     const loginWithCredentials = async (credentials) => {
         const response = await authApi.login(credentials);
 
@@ -74,6 +110,24 @@ export const AuthProvider = ({ children }) => {
         };
     };
 
+    // Kiểm tra và làm mới token khi cần
+    const checkAndRefreshToken = async () => {
+        if (!user || tokenRefreshing) return;
+
+        const currentTime = Math.floor(Date.now() / 1000); // Lấy thời gian hiện tại dưới dạng giây
+        const tokenExp = JSON.parse(atob(user.token.split('.')[1])).exp; // Lấy thời gian hết hạn token từ payload
+
+        if (tokenExp < currentTime) {
+            console.log('Token đã hết hạn, đang làm mới...');
+            await refreshAuthToken();
+        }
+    };
+
+    // Kiểm tra và làm mới token mỗi khi yêu cầu
+    useEffect(() => {
+        checkAndRefreshToken();
+    }, [user]);
+
     const value = {
         user,
         loading,
@@ -82,8 +136,10 @@ export const AuthProvider = ({ children }) => {
         hasRole,
         isAuthenticated,
         loginWithCredentials,
+        refreshAuthToken,
         ROLES,
     };
+
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
