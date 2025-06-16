@@ -218,6 +218,7 @@ const ManagerLayout = () => {
                             <div
                                 className="h-8 w-8 lg:h-10 lg:w-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
                                 style={{ backgroundColor: PRIMARY[500] }}
+                                onClick={() => navigate('/manager/profile')}
                             >
                                 <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
                                     {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
