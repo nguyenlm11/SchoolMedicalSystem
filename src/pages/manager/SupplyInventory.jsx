@@ -299,7 +299,8 @@ const SupplyInventory = () => {
                                             { key: "id", label: "Mã vật tư" },
                                             { key: "name", label: "Tên vật tư" },
                                             { key: "quantity", label: "Số lượng" },
-                                            { key: "status", label: "Trạng thái" }
+                                            { key: "status", label: "Trạng thái" },
+                                            { key: "priority", label: "Độ ưu tiên" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
@@ -368,11 +369,38 @@ const SupplyInventory = () => {
                                                         {item.statusDisplayName}
                                                     </span>
                                                 </td>
+                                                <td className="py-4 px-6">
+                                                    <span
+                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        style={{
+                                                            backgroundColor: (() => {
+                                                                switch (item.priority) {
+                                                                    case 'CRITICAL': return ERROR[100];
+                                                                    case 'HIGH': return WARNING[100];
+                                                                    case 'NORMAL': return SUCCESS[100];
+                                                                    case 'LOW': return GRAY[100];
+                                                                    default: return GRAY[100];
+                                                                }
+                                                            })(),
+                                                            color: (() => {
+                                                                switch (item.priority) {
+                                                                    case 'CRITICAL': return ERROR[700];
+                                                                    case 'HIGH': return WARNING[700];
+                                                                    case 'NORMAL': return SUCCESS[700];
+                                                                    case 'LOW': return GRAY[700];
+                                                                    default: return GRAY[700];
+                                                                }
+                                                            })()
+                                                        }}
+                                                    >
+                                                        {item.priorityDisplayName}
+                                                    </span>
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="4" className="text-center py-12">
+                                            <td colSpan="5" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
