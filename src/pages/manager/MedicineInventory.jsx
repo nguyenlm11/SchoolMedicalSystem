@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage } from "react-icons/fi";
+import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage, FiFilter } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import MedicineModal from "../../components/modal/AddMedicineModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
+import medicalApi from "../../api/medicalApi";
 
 const MedicineInventory = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const initialFilter = new URLSearchParams(location.search).get("filter") || "all";
+    const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
+    const [filterApprovalStatus, setFilterApprovalStatus] = useState("");
+    const [filterPriority, setFilterPriority] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
@@ -28,7 +31,7 @@ const MedicineInventory = () => {
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [confirmAction, setConfirmAction] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
-    const medicinesPerPage = 5;
+    const [pageSize] = useState(10);
     const [itemForm, setItemForm] = useState({
         id: 0,
         name: "",
@@ -36,28 +39,29 @@ const MedicineInventory = () => {
         isActive: true,
     });
     const [formErrors, setFormErrors] = useState({});
-
-    const mockMedicines = [
-        { medicineId: 1, name: "Paracetamol 500mg", stockQuantity: 120, isActive: true },
-        { medicineId: 2, name: "Ibuprofen 200mg", stockQuantity: 25, isActive: true },
-        { medicineId: 3, name: "Vitamin C 500mg", stockQuantity: 200, isActive: true },
-        { medicineId: 4, name: "Aspirin 100mg", stockQuantity: 5, isActive: false },
-        { medicineId: 5, name: "Amoxicillin 250mg", stockQuantity: 80, isActive: true },
-        { medicineId: 6, name: "Cephalexin 500mg", stockQuantity: 45, isActive: true },
-    ];
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [filters, setFilters] = useState({
+        approvalStatus: '',
+        priority: ''
+    });
 
     useEffect(() => {
-        fetchMedicines();
-    }, []);
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStatus, debouncedSearchTerm]);
+    }, [filterStatus, filterApprovalStatus, filterPriority]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
+        fetchMedicines();
+    }, [filters, sortBy, sortOrder, currentPage, pageSize, searchTerm]);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -65,17 +69,59 @@ const MedicineInventory = () => {
     };
 
     const fetchMedicines = async () => {
-        setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setMedicines(mockMedicines);
-            const total = mockMedicines.length;
-            const inactive = mockMedicines.filter(item => !item.isActive).length;
-            const lowStock = mockMedicines.filter(item => item.stockQuantity < 50).length;
-            setStats({ total, inactive, lowStock });
+            setLoading(true);
+
+            // Xây dựng object params
+            const params = {
+                pageIndex: currentPage,
+                pageSize: pageSize,
+                type: 'Medication'
+            };
+
+            if (filters.approvalStatus) {
+                params.approvalStatus = filters.approvalStatus;
+            }
+
+            if (filters.priority) {
+                params.priority = filters.priority;
+            }
+
+            // Thêm params cho sorting nếu có
+            if (sortBy && sortOrder) {
+                params.orderBy = `${sortBy}_${sortOrder}`;
+            }
+
+            // Thêm param search nếu có
+            if (searchTerm) {
+                params.searchTerm = searchTerm;
+            }
+
+            const response = await medicalApi.getMedicalItems(params);
+
+            if (response.success) {
+                setMedicines(response.data);
+                setTotalCount(response.totalCount);
+                setTotalPages(response.totalPages);
+
+                // Tính toán thống kê
+                const total = response.totalCount;
+                const inactive = response.data.filter(item => item.status === 'Inactive').length;
+                const lowStock = response.data.filter(item => item.isLowStock).length;
+                setStats({ total, inactive, lowStock });
+            } else {
+                console.error('Error fetching medicines:', response.message);
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách thuốc. Vui lòng thử lại.");
+                setMedicines([]);
+                setTotalCount(0);
+                setTotalPages(0);
+            }
         } catch (error) {
-            console.error("Error fetching medicines:", error);
+            console.error('Error fetching medicines:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách thuốc. Vui lòng thử lại.");
+            setMedicines([]);
+            setTotalCount(0);
+            setTotalPages(0);
         } finally {
             setLoading(false);
         }
@@ -85,16 +131,20 @@ const MedicineInventory = () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const newMedicine = {
-                medicineId: Math.max(...medicines.map(m => m.medicineId)) + 1,
+            const medicineData = {
+                type: 'Medication',
                 name: itemForm.name,
-                stockQuantity: parseInt(itemForm.stockQuantity),
-                isActive: itemForm.isActive,
+                quantity: parseInt(itemForm.stockQuantity),
+                status: itemForm.isActive ? 'Active' : 'Inactive'
             };
-            setMedicines([...medicines, newMedicine]);
-            closeModal();
-            showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được thêm thành công.`);
+            const response = await medicalApi.createMedicalItem(medicineData);
+            if (response.success) {
+                closeModal();
+                showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được thêm thành công.`);
+                fetchMedicines();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể thêm thuốc mới. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error creating medicine:", error);
             showAlert("error", "Lỗi", "Không thể thêm thuốc mới. Vui lòng thử lại.");
@@ -107,15 +157,20 @@ const MedicineInventory = () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const updatedMedicines = medicines.map(med =>
-                med.medicineId === itemForm.id
-                    ? { ...med, name: itemForm.name, stockQuantity: parseInt(itemForm.stockQuantity), isActive: itemForm.isActive }
-                    : med
-            );
-            setMedicines(updatedMedicines);
-            closeModal();
-            showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được cập nhật thành công.`);
+            const medicineData = {
+                type: 'Medication',
+                name: itemForm.name,
+                quantity: parseInt(itemForm.stockQuantity),
+                status: itemForm.isActive ? 'Active' : 'Inactive'
+            };
+            const response = await medicalApi.updateMedicalItem(itemForm.id, medicineData);
+            if (response.success) {
+                closeModal();
+                showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được cập nhật thành công.`);
+                fetchMedicines();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể cập nhật thông tin thuốc. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error updating medicine:", error);
             showAlert("error", "Lỗi", "Không thể cập nhật thông tin thuốc. Vui lòng thử lại.");
@@ -127,10 +182,13 @@ const MedicineInventory = () => {
     const deleteMedicine = async (id) => {
         setDeleting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const medicineToDelete = medicines.find(med => med.medicineId === id);
-            setMedicines(medicines.filter(med => med.medicineId !== id));
-            showAlert("success", "Thành công", `Thuốc "${medicineToDelete?.name}" đã được xóa thành công.`);
+            const response = await medicalApi.deleteMedicalItem(id);
+            if (response.success) {
+                showAlert("success", "Thành công", `Thuốc đã được xóa thành công.`);
+                fetchMedicines();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể xóa thuốc. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error deleting medicine:", error);
             showAlert("error", "Lỗi", "Không thể xóa thuốc. Vui lòng thử lại.");
@@ -145,49 +203,49 @@ const MedicineInventory = () => {
         setShowConfirmModal(true);
     };
 
-    const toggleMedicineStatus = (item) => {
+    const toggleMedicineStatus = async (item) => {
         try {
-            const updatedMedicines = medicines.map(med =>
-                med.medicineId === item.medicineId ? { ...med, isActive: !med.isActive } : med
-            );
-            setMedicines(updatedMedicines);
-            const newStatus = !item.isActive;
-            const statusText = newStatus ? "kích hoạt" : "vô hiệu hóa";
-            showAlert("success", "Thành công", `Thuốc "${item.name}" đã được ${statusText} thành công.`);
+            const medicineData = {
+                ...item,
+                status: item.status === 'Active' ? 'Inactive' : 'Active'
+            };
+            const response = await medicalApi.updateMedicalItem(item.id, medicineData);
+            if (response.success) {
+                fetchMedicines();
+                const newStatus = item.status === 'Active';
+                const statusText = newStatus ? "vô hiệu hóa" : "kích hoạt";
+                showAlert("success", "Thành công", `Thuốc "${item.name}" đã được ${statusText} thành công.`);
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể thay đổi trạng thái thuốc. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error toggling medicine status:", error);
             showAlert("error", "Lỗi", "Không thể thay đổi trạng thái thuốc. Vui lòng thử lại.");
         }
     };
 
-    const handleFilterChange = (status) => {
-        setFilterStatus(status);
-        const params = new URLSearchParams(location.search);
-        if (status === "all") {
-            params.delete("filter");
-        } else {
-            params.set("filter", status);
-        }
-        navigate({ search: params.toString() });
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
     };
 
     const resetFilters = () => {
-        setFilterStatus("all");
-        setSearchTerm("");
-        setDebouncedSearchTerm("");
-        setSortBy("name");
-        setSortOrder("asc");
-        setCurrentPage(1);
-        navigate({ search: "" });
+        setFilters({
+            approvalStatus: '',
+            priority: ''
+        });
     };
 
-    const handleSortChange = (column) => {
+    const handleSort = (column) => {
         if (sortBy === column) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
             setSortBy(column);
             setSortOrder("asc");
         }
+        setCurrentPage(1);
     };
 
     const openModal = (item = null) => {
@@ -233,37 +291,7 @@ const MedicineInventory = () => {
         selectedItem ? updateMedicine() : createMedicine();
     };
 
-    const filteredMedicines = medicines.filter((item) => {
-        const searchLower = debouncedSearchTerm.toLowerCase();
-        const matchesSearch = !debouncedSearchTerm ||
-            item.name.toLowerCase().includes(searchLower) ||
-            item.medicineId.toString().includes(searchLower) ||
-            item.stockQuantity.toString().includes(searchLower);
-
-        const matchesStatus =
-            filterStatus === "all" ||
-            (filterStatus === "active" && item.isActive) ||
-            (filterStatus === "inactive" && !item.isActive) ||
-            (filterStatus === "low-stock" && item.stockQuantity < 50);
-
-        return matchesSearch && matchesStatus;
-    });
-
-    const sortedMedicines = [...filteredMedicines].sort((a, b) => {
-        let comparison = 0;
-        switch (sortBy) {
-            case "name": comparison = a.name.localeCompare(b.name); break;
-            case "id": comparison = a.medicineId - b.medicineId; break;
-            case "stock": comparison = a.stockQuantity - b.stockQuantity; break;
-            default: comparison = 0;
-        }
-        return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    const totalPages = Math.ceil(sortedMedicines.length / medicinesPerPage);
-    const indexOfLastMedicine = currentPage * medicinesPerPage;
-    const indexOfFirstMedicine = indexOfLastMedicine - medicinesPerPage;
-    const currentMedicines = sortedMedicines.slice(indexOfFirstMedicine, indexOfLastMedicine);
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     if (loading) {
         return (
@@ -413,21 +441,35 @@ const MedicineInventory = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <select
-                                    className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200 min-w-[180px]"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        focusRingColor: PRIMARY[500] + '40'
-                                    }}
-                                    value={filterStatus}
-                                    onChange={(e) => handleFilterChange(e.target.value)}
-                                >
-                                    <option value="all">Tất cả trạng thái</option>
-                                    <option value="active">Đang sử dụng</option>
-                                    <option value="inactive">Ngừng sử dụng</option>
-                                    <option value="low-stock">Sắp hết hàng</option>
-                                </select>
+                                <div className="flex items-center space-x-2">
+                                    <select
+                                        value={filters.approvalStatus}
+                                        onChange={(e) => handleFilterChange('approvalStatus', e.target.value)}
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                    >
+                                        <option value="">Tất cả trạng thái</option>
+                                        <option value="PENDING">Chờ duyệt</option>
+                                        <option value="APPROVED">Đã duyệt</option>
+                                        <option value="REJECTED">Từ chối</option>
+                                        <option value="DRAFT">Nháp</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <select
+                                        value={filters.priority}
+                                        onChange={(e) => handleFilterChange('priority', e.target.value)}
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                    >
+                                        <option value="">Độ ưu tiên</option>
+                                        <option value="LOW">Thấp</option>
+                                        <option value="NORMAL">Bình thường</option>
+                                        <option value="HIGH">Cao</option>
+                                        <option value="CRITICAL">Khẩn cấp</option>
+                                    </select>
+                                </div>
 
                                 <button
                                     onClick={resetFilters}
@@ -453,15 +495,18 @@ const MedicineInventory = () => {
                                         {[
                                             { key: "id", label: "Mã thuốc" },
                                             { key: "name", label: "Tên thuốc" },
-                                            { key: "stock", label: "Số lượng" },
-                                            { key: null, label: "Trạng thái" },
+                                            { key: "dosage", label: "Liều lượng" },
+                                            { key: "quantity", label: "Số lượng" },
+                                            { key: "expiryDate", label: "Hạn sử dụng" },
+                                            { key: "status", label: "Trạng thái" },
+                                            { key: "priority", label: "Độ ưu tiên" },
                                             { key: null, label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
                                                 className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={col.key ? () => handleSortChange(col.key) : undefined}
+                                                onClick={col.key ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
                                                     {col.label}
@@ -476,38 +521,56 @@ const MedicineInventory = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                                    {currentMedicines.length > 0 ? (
-                                        currentMedicines.map((item, index) => (
+                                    {medicines.length > 0 ? (
+                                        medicines.map((item, index) => (
                                             <tr
-                                                key={item.medicineId}
+                                                key={item.id || index}
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
                                                 style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] || '#fafafa' }}
                                             >
                                                 <td className="py-4 px-6">
                                                     <span className="font-mono text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                        #{item.medicineId.toString().padStart(3, '0')}
+                                                        #{(item.id || '').toString().substring(0, 8)}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <div
                                                             className="h-2 w-2 rounded-full mr-3"
-                                                            style={{ backgroundColor: item.isActive ? SUCCESS[500] : GRAY[400] }}
+                                                            style={{
+                                                                backgroundColor: item.isExpiringSoon ? WARNING[500] :
+                                                                    item.isExpired ? ERROR[500] :
+                                                                        item.isLowStock ? WARNING[500] :
+                                                                            SUCCESS[500]
+                                                            }}
                                                         ></div>
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {item.name}
-                                                        </span>
+                                                        <div>
+                                                            <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
+                                                                {item.name || 'N/A'}
+                                                            </span>
+                                                            <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                                {item.form && item.formDisplayName ? `${item.formDisplayName} (${item.form})` : 'N/A'}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {item.dosage || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
                                                             className="font-bold text-lg"
-                                                            style={{ color: item.stockQuantity < 50 ? ERROR[600] : TEXT.PRIMARY }}
+                                                            style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
-                                                            {item.stockQuantity}
+                                                            {item.quantity || 0}
                                                         </span>
-                                                        {item.stockQuantity < 50 && (
+                                                        <span className="ml-1 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                            {item.unit || 'N/A'}
+                                                        </span>
+                                                        {item.isLowStock && (
                                                             <div className="ml-3 flex items-center">
                                                                 <FiAlertTriangle className="h-4 w-4 mr-1" style={{ color: WARNING[500] }} />
                                                                 <span className="text-xs font-medium" style={{ color: WARNING[600] }}>
@@ -518,14 +581,60 @@ const MedicineInventory = () => {
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
+                                                        </span>
+                                                        {(item.isExpiringSoon || item.isExpired) && (
+                                                            <span
+                                                                className="text-xs font-medium mt-1 px-2 py-1 rounded-full"
+                                                                style={{
+                                                                    backgroundColor: item.isExpired ? ERROR[100] : WARNING[100],
+                                                                    color: item.isExpired ? ERROR[700] : WARNING[700]
+                                                                }}
+                                                            >
+                                                                {item.isExpired ? 'Đã hết hạn' : 'Sắp hết hạn'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: item.isActive ? SUCCESS[100] : GRAY[100],
-                                                            color: item.isActive ? SUCCESS[800] : GRAY[700]
+                                                            backgroundColor:
+                                                                item.status === 'Active' ? SUCCESS[100] :
+                                                                    item.status === 'Pending' ? WARNING[100] :
+                                                                        item.status === 'Rejected' ? ERROR[100] :
+                                                                            GRAY[100],
+                                                            color:
+                                                                item.status === 'Active' ? SUCCESS[700] :
+                                                                    item.status === 'Pending' ? WARNING[700] :
+                                                                        item.status === 'Rejected' ? ERROR[700] :
+                                                                            GRAY[700]
                                                         }}
                                                     >
-                                                        {item.isActive ? "Đang sử dụng" : "Ngừng sử dụng"}
+                                                        {item.statusDisplayName || item.status || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span
+                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        style={{
+                                                            backgroundColor:
+                                                                item.priority === 'High' ? ERROR[100] :
+                                                                    item.priority === 'Medium' ? WARNING[100] :
+                                                                        SUCCESS[100],
+                                                            color:
+                                                                item.priority === 'High' ? ERROR[700] :
+                                                                    item.priority === 'Medium' ? WARNING[700] :
+                                                                        SUCCESS[700]
+                                                        }}
+                                                    >
+                                                        {item.priorityDisplayName || item.priority || 'N/A'}
+                                                        {item.isUrgent && (
+                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
@@ -542,15 +651,15 @@ const MedicineInventory = () => {
                                                             onClick={() => toggleMedicineStatus(item)}
                                                             className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                                                             style={{
-                                                                backgroundColor: item.isActive ? GRAY[50] : SUCCESS[50],
-                                                                color: item.isActive ? GRAY[600] : SUCCESS[600]
+                                                                backgroundColor: item.status === 'Active' ? GRAY[50] : SUCCESS[50],
+                                                                color: item.status === 'Active' ? GRAY[600] : SUCCESS[600]
                                                             }}
-                                                            title={item.isActive ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
+                                                            title={item.status === 'Active' ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
                                                         >
-                                                            {item.isActive ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
+                                                            {item.status === 'Active' ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteClick(item.medicineId)}
+                                                            onClick={() => handleDeleteClick(item.id)}
                                                             className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                                                             style={{
                                                                 backgroundColor: ERROR[50],
@@ -560,13 +669,43 @@ const MedicineInventory = () => {
                                                         >
                                                             <FiTrash2 className="h-4 w-4" />
                                                         </button>
+                                                        {item.canApprove && (
+                                                            <button
+                                                                onClick={() => handleApprove(item.id)}
+                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                                                                style={{ backgroundColor: SUCCESS[50], color: SUCCESS[600] }}
+                                                                title="Phê duyệt"
+                                                            >
+                                                                <FiCheck className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                        {item.canReject && (
+                                                            <button
+                                                                onClick={() => handleReject(item.id)}
+                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                                                                style={{ backgroundColor: ERROR[50], color: ERROR[600] }}
+                                                                title="Từ chối"
+                                                            >
+                                                                <FiX className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                        {item.canUse && (
+                                                            <button
+                                                                onClick={() => handleUse(item.id)}
+                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                                                                style={{ backgroundColor: WARNING[50], color: WARNING[600] }}
+                                                                title="Sử dụng"
+                                                            >
+                                                                <FiPackage className="h-4 w-4" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="text-center py-12">
+                                            <td colSpan="8" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -575,36 +714,25 @@ const MedicineInventory = () => {
                                                         <FiPackage className="h-10 w-10" style={{ color: GRAY[400] }} />
                                                     </div>
                                                     <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
-                                                        {sortedMedicines.length === 0 ? "Không có thuốc nào phù hợp" : "Không có dữ liệu trang này"}
+                                                        {medicines.length === 0 ? "Không có thuốc nào phù hợp" : "Không có dữ liệu trang này"}
                                                     </p>
                                                     <p className="mb-4" style={{ color: TEXT.SECONDARY }}>
-                                                        {sortedMedicines.length === 0 ?
+                                                        {medicines.length === 0 ?
                                                             "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác" :
                                                             "Vui lòng chọn trang khác hoặc điều chỉnh bộ lọc"
                                                         }
                                                     </p>
-                                                    {sortedMedicines.length === 0 ? (
+                                                    {medicines.length === 0 && (
                                                         <button
                                                             onClick={resetFilters}
                                                             className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
                                                             style={{
-                                                                backgroundColor: PRIMARY[100],
-                                                                color: PRIMARY[700]
+                                                                backgroundColor: PRIMARY[50],
+                                                                color: PRIMARY[600]
                                                             }}
                                                         >
                                                             <FiRefreshCw className="mr-2 h-4 w-4" />
                                                             Đặt lại bộ lọc
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => setCurrentPage(1)}
-                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                            style={{
-                                                                backgroundColor: PRIMARY[100],
-                                                                color: PRIMARY[700]
-                                                            }}
-                                                        >
-                                                            Về trang đầu
                                                         </button>
                                                     )}
                                                 </div>
@@ -616,80 +744,101 @@ const MedicineInventory = () => {
                         </div>
 
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
-                                <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
-                                    <span className="text-sm">
-                                        Hiển thị {indexOfFirstMedicine + 1}-{Math.min(indexOfLastMedicine, sortedMedicines.length)} trong tổng số {sortedMedicines.length} thuốc
-                                    </span>
+                            <div
+                                className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
+                                style={{ borderColor: BORDER.DEFAULT, borderRadius: '0 0 0.75rem 0.75rem' }}
+                            >
+                                <div className="mb-4 sm:mb-0">
+                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
+                                        Hiển thị{" "}
+                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                            {((currentPage - 1) * pageSize) + 1}
+                                        </span>{" "}
+                                        -{" "}
+                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                            {Math.min(currentPage * pageSize, totalCount)}
+                                        </span>{" "}
+                                        trong tổng số{" "}
+                                        <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
+                                        thuốc
+                                    </p>
                                 </div>
 
-                                <div>
-                                    <div className="flex items-center space-x-2">
-                                        <button
-                                            onClick={() => setCurrentPage(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
-                                            }}
+                                <div className="flex items-center space-x-1">
+                                    <button
+                                        onClick={() => paginate(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
+                                    >
+                                        <svg
+                                            className="h-4 w-4"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
                                         >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
 
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                        let pageNumber;
+                                        if (totalPages <= 5) {
+                                            pageNumber = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNumber = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNumber = totalPages - 4 + i;
+                                        } else {
+                                            pageNumber = currentPage - 2 + i;
+                                        }
+
+                                        return (
                                             <button
-                                                key={number}
-                                                onClick={() => setCurrentPage(number)}
-                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                                key={pageNumber}
+                                                onClick={() => paginate(pageNumber)}
+                                                className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
                                                 style={{
-                                                    borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
-                                                    backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                    color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
+                                                    borderColor: currentPage === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
+                                                    backgroundColor: currentPage === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                    color: currentPage === pageNumber ? 'white' : TEXT.PRIMARY,
+                                                    boxShadow: currentPage === pageNumber ? `0 2px 4px ${PRIMARY[200]}` : 'none'
                                                 }}
                                             >
-                                                {number}
+                                                {pageNumber}
                                             </button>
-                                        ))}
+                                        );
+                                    })}
 
-                                        <button
-                                            onClick={() => setCurrentPage(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
-                                            }}
+                                    <button
+                                        onClick={() => paginate(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        style={{
+                                            borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
+                                    >
+                                        <svg
+                                            className="h-4 w-4"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
                                         >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                         )}
