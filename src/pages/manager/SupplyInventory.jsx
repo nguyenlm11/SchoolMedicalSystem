@@ -6,11 +6,12 @@ import Loading from "../../components/Loading";
 import SupplyModal from "../../components/modal/AddSupplyModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
+import medicalApi from "../../api/medicalApi";
 
 const SupplyInventory = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const initialFilter = new URLSearchParams(location.search).get("filter") || "all";
+    const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [supplies, setSupplies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -28,40 +29,42 @@ const SupplyInventory = () => {
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [confirmAction, setConfirmAction] = useState(null);
     const [selectedItem, setSelectedItem] = useState(null);
-    const suppliesPerPage = 5;
+    const [pageSize] = useState(10);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
     const [itemForm, setItemForm] = useState({
-        id: 0,
+        id: "",
         name: "",
-        stockQuantity: 0,
-        category: "",
         description: "",
-        isActive: true,
+        quantity: 0,
+        unit: "",
+        justification: "",
+        status: "Pending",
+        priority: "Low",
+        isUrgent: false
     });
     const [formErrors, setFormErrors] = useState({});
-
-    const mockSupplies = [
-        { supplyId: 1, name: "Băng gạc y tế", category: "Băng", description: "Băng gạc vô trùng dùng để băng bó vết thương", stockQuantity: 150, isActive: true },
-        { supplyId: 2, name: "Cồn y tế 70%", category: "Dung dịch", description: "Cồn sát trùng dùng để vệ sinh vết thương", stockQuantity: 35, isActive: true },
-        { supplyId: 3, name: "Bông y tế", category: "Vật liệu", description: "Bông y tế vô trùng dùng để vệ sinh", stockQuantity: 200, isActive: true },
-        { supplyId: 4, name: "Kim tiêm dùng một lần", category: "Dụng cụ", description: "Kim tiêm vô trùng dùng một lần", stockQuantity: 12, isActive: false },
-        { supplyId: 5, name: "Ống nghiệm", category: "Dụng cụ", description: "Ống nghiệm dùng để xét nghiệm", stockQuantity: 80, isActive: true },
-        { supplyId: 6, name: "Găng tay y tế", category: "Bảo hộ", description: "Găng tay cao su y tế dùng một lần", stockQuantity: 45, isActive: true },
-        { supplyId: 7, name: "Khẩu trang y tế", category: "Bảo hộ", description: "Khẩu trang y tế 3 lớp", stockQuantity: 300, isActive: true },
-        { supplyId: 8, name: "Nhiệt kế điện tử", category: "Thiết bị", description: "Nhiệt kế điện tử đo nhiệt độ cơ thể", stockQuantity: 25, isActive: true },
-    ];
+    const [filters, setFilters] = useState({
+        approvalStatus: '',
+        priority: ''
+    });
 
     useEffect(() => {
-        fetchSupplies();
-    }, []);
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStatus, debouncedSearchTerm]);
+    }, [filterStatus, filters.approvalStatus, filters.priority]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
+        fetchSupplies();
+    }, [filters, sortBy, sortOrder, currentPage, pageSize, debouncedSearchTerm]);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -69,17 +72,59 @@ const SupplyInventory = () => {
     };
 
     const fetchSupplies = async () => {
-        setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setSupplies(mockSupplies);
-            const total = mockSupplies.length;
-            const inactive = mockSupplies.filter(item => !item.isActive).length;
-            const lowStock = mockSupplies.filter(item => item.stockQuantity < 50).length;
-            setStats({ total, inactive, lowStock });
+            setLoading(true);
+
+            const params = {
+                pageIndex: currentPage,
+                pageSize: pageSize,
+                type: 'Supply'
+            };
+
+            if (filters.approvalStatus) {
+                params.approvalStatus = filters.approvalStatus;
+            }
+
+            if (filters.priority) {
+                params.priority = filters.priority;
+            }
+
+            if (sortBy && sortOrder) {
+                params.orderBy = `${sortBy}_${sortOrder}`;
+            }
+
+            if (debouncedSearchTerm) {
+                params.searchTerm = debouncedSearchTerm;
+            }
+
+            const response = await medicalApi.getMedicalItems(params);
+            console.log(response);
+
+            if (response.success) {
+                setSupplies(response.data);
+                console.log(response.data);
+                setTotalCount(response.totalCount);
+                setTotalPages(response.totalPages);
+                setCurrentPage(response.currentPage);
+
+                // Tính toán thống kê
+                const total = response.totalCount;
+                const inactive = response.data.filter(item => item.status === 'Inactive').length;
+                const lowStock = response.data.filter(item => item.isLowStock).length;
+                setStats({ total, inactive, lowStock });
+            } else {
+                console.error('Error fetching supplies:', response.message);
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách vật tư y tế. Vui lòng thử lại.");
+                setSupplies([]);
+                setTotalCount(0);
+                setTotalPages(0);
+            }
         } catch (error) {
-            console.error("Error fetching supplies:", error);
+            console.error('Error fetching supplies:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách vật tư y tế. Vui lòng thử lại.");
+            setSupplies([]);
+            setTotalCount(0);
+            setTotalPages(0);
         } finally {
             setLoading(false);
         }
@@ -89,18 +134,25 @@ const SupplyInventory = () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const newSupply = {
-                supplyId: Math.max(...supplies.map(s => s.supplyId)) + 1,
+            const supplyData = {
+                type: 'Supply',
                 name: itemForm.name,
-                category: itemForm.category,
                 description: itemForm.description,
-                stockQuantity: parseInt(itemForm.stockQuantity),
-                isActive: itemForm.isActive,
+                quantity: parseInt(itemForm.quantity),
+                unit: itemForm.unit,
+                justification: itemForm.justification,
+                status: itemForm.status,
+                priority: itemForm.priority,
+                isUrgent: itemForm.isUrgent
             };
-            setSupplies([...supplies, newSupply]);
-            closeModal();
-            showAlert("success", "Thành công", `Vật tư y tế "${itemForm.name}" đã được thêm thành công.`);
+            const response = await medicalApi.createMedicalItem(supplyData);
+            if (response.success) {
+                closeModal();
+                showAlert("success", "Thành công", `Vật tư y tế "${itemForm.name}" đã được thêm thành công.`);
+                fetchSupplies();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể thêm vật tư y tế mới. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error creating supply:", error);
             showAlert("error", "Lỗi", "Không thể thêm vật tư y tế mới. Vui lòng thử lại.");
@@ -113,15 +165,25 @@ const SupplyInventory = () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const updatedSupplies = supplies.map(supply =>
-                supply.supplyId === itemForm.id
-                    ? { ...supply, name: itemForm.name, category: itemForm.category, description: itemForm.description, stockQuantity: parseInt(itemForm.stockQuantity), isActive: itemForm.isActive }
-                    : supply
-            );
-            setSupplies(updatedSupplies);
-            closeModal();
-            showAlert("success", "Thành công", `Vật tư y tế "${itemForm.name}" đã được cập nhật thành công.`);
+            const supplyData = {
+                type: 'Supply',
+                name: itemForm.name,
+                description: itemForm.description,
+                quantity: parseInt(itemForm.quantity),
+                unit: itemForm.unit,
+                justification: itemForm.justification,
+                status: itemForm.status,
+                priority: itemForm.priority,
+                isUrgent: itemForm.isUrgent
+            };
+            const response = await medicalApi.updateMedicalItem(itemForm.id, supplyData);
+            if (response.success) {
+                closeModal();
+                showAlert("success", "Thành công", `Vật tư y tế "${itemForm.name}" đã được cập nhật thành công.`);
+                fetchSupplies();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể cập nhật thông tin vật tư y tế. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error updating supply:", error);
             showAlert("error", "Lỗi", "Không thể cập nhật thông tin vật tư y tế. Vui lòng thử lại.");
@@ -133,10 +195,13 @@ const SupplyInventory = () => {
     const deleteSupply = async (id) => {
         setDeleting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const supplyToDelete = supplies.find(supply => supply.supplyId === id);
-            setSupplies(supplies.filter(supply => supply.supplyId !== id));
-            showAlert("success", "Thành công", `Vật tư y tế "${supplyToDelete?.name}" đã được xóa thành công.`);
+            const response = await medicalApi.deleteMedicalItem(id);
+            if (response.success) {
+                showAlert("success", "Thành công", `Vật tư y tế đã được xóa thành công.`);
+                fetchSupplies();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể xóa vật tư y tế. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error deleting supply:", error);
             showAlert("error", "Lỗi", "Không thể xóa vật tư y tế. Vui lòng thử lại.");
@@ -151,64 +216,77 @@ const SupplyInventory = () => {
         setShowConfirmModal(true);
     };
 
-    const toggleSupplyStatus = (item) => {
+    const toggleSupplyStatus = async (item) => {
         try {
-            const updatedSupplies = supplies.map(supply =>
-                supply.supplyId === item.supplyId ? { ...supply, isActive: !supply.isActive } : supply
-            );
-            setSupplies(updatedSupplies);
-            const newStatus = !item.isActive;
-            const statusText = newStatus ? "kích hoạt" : "vô hiệu hóa";
-            showAlert("success", "Thành công", `Vật tư y tế "${item.name}" đã được ${statusText} thành công.`);
+            const supplyData = {
+                ...item,
+                status: item.status === 'Active' ? 'Inactive' : 'Active'
+            };
+            const response = await medicalApi.updateMedicalItem(item.id, supplyData);
+            if (response.success) {
+                fetchSupplies();
+                const newStatus = item.status === 'Active';
+                const statusText = newStatus ? "vô hiệu hóa" : "kích hoạt";
+                showAlert("success", "Thành công", `Vật tư y tế "${item.name}" đã được ${statusText} thành công.`);
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể thay đổi trạng thái vật tư y tế. Vui lòng thử lại.");
+            }
         } catch (error) {
             console.error("Error toggling supply status:", error);
             showAlert("error", "Lỗi", "Không thể thay đổi trạng thái vật tư y tế. Vui lòng thử lại.");
         }
     };
 
-    const handleFilterChange = (status) => {
-        setFilterStatus(status);
-        const params = new URLSearchParams(location.search);
-        if (status === "all") {
-            params.delete("filter");
-        } else {
-            params.set("filter", status);
-        }
-        navigate({ search: params.toString() });
+    const handleFilterChange = (filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [filterType]: value
+        }));
     };
 
     const resetFilters = () => {
-        setFilterStatus("all");
-        setSearchTerm("");
-        setDebouncedSearchTerm("");
-        setSortBy("name");
-        setSortOrder("asc");
-        setCurrentPage(1);
-        navigate({ search: "" });
+        setFilters({
+            approvalStatus: '',
+            priority: ''
+        });
     };
 
-    const handleSortChange = (column) => {
+    const handleSort = (column) => {
         if (sortBy === column) {
             setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
             setSortBy(column);
             setSortOrder("asc");
         }
+        setCurrentPage(1);
     };
 
     const openModal = (item = null) => {
         if (item) {
             setItemForm({
-                id: item.supplyId,
+                id: item.id,
                 name: item.name,
-                stockQuantity: item.stockQuantity,
-                category: item.category || "",
                 description: item.description || "",
-                isActive: item.isActive,
+                quantity: item.quantity,
+                unit: item.unit || "",
+                justification: item.justification || "",
+                status: item.status,
+                priority: item.priority,
+                isUrgent: item.isUrgent
             });
             setSelectedItem(item);
         } else {
-            setItemForm({ id: 0, name: "", stockQuantity: 0, category: "", description: "", isActive: true });
+            setItemForm({
+                id: "",
+                name: "",
+                description: "",
+                quantity: 0,
+                unit: "",
+                justification: "",
+                status: "Pending",
+                priority: "Low",
+                isUrgent: false
+            });
             setSelectedItem(null);
         }
         setFormErrors({});
@@ -224,9 +302,12 @@ const SupplyInventory = () => {
     const validateForm = () => {
         const errors = {};
         if (!itemForm.name.trim()) errors.name = "Tên vật tư y tế không được để trống";
-        if (isNaN(itemForm.stockQuantity) || itemForm.stockQuantity < 0) {
-            errors.stockQuantity = "Số lượng phải là số dương";
+        if (!itemForm.description.trim()) errors.description = "Mô tả không được để trống";
+        if (isNaN(itemForm.quantity) || itemForm.quantity < 0) {
+            errors.quantity = "Số lượng phải là số dương";
         }
+        if (!itemForm.unit.trim()) errors.unit = "Đơn vị tính không được để trống";
+        if (!itemForm.justification.trim()) errors.justification = "Lý do yêu cầu không được để trống";
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -270,10 +351,39 @@ const SupplyInventory = () => {
         return sortOrder === "asc" ? comparison : -comparison;
     });
 
-    const totalPages = Math.ceil(sortedSupplies.length / suppliesPerPage);
-    const indexOfLastSupply = currentPage * suppliesPerPage;
-    const indexOfFirstSupply = indexOfLastSupply - suppliesPerPage;
+    const indexOfLastSupply = currentPage * pageSize;
+    const indexOfFirstSupply = indexOfLastSupply - pageSize;
     const currentSupplies = sortedSupplies.slice(indexOfFirstSupply, indexOfLastSupply);
+
+    const getStatusClasses = (status) => {
+        switch (status) {
+            case 'Pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'Approved':
+                return 'bg-green-100 text-green-800';
+            case 'Rejected':
+                return 'bg-red-100 text-red-800';
+            case 'Draft':
+                return 'bg-gray-100 text-gray-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getPriorityClasses = (priority) => {
+        switch (priority) {
+            case 'Low':
+                return 'bg-blue-100 text-blue-800';
+            case 'Normal':
+                return 'bg-green-100 text-green-800';
+            case 'High':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'Critical':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
 
     if (loading) {
         return (
@@ -287,26 +397,13 @@ const SupplyInventory = () => {
         <div className="min-h-screen" >
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Quản lý vật tư y tế
-                            </h1>
-                            <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Theo dõi và quản lý danh sách vật tư y tế tại trường
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => openModal()}
-                            className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                            style={{
-                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                color: TEXT.INVERSE
-                            }}
-                        >
-                            <FiPlus className="mr-2 h-5 w-5" />
-                            Thêm vật tư mới
-                        </button>
+                    <div>
+                        <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                            Quản lý vật tư y tế
+                        </h1>
+                        <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
+                            Theo dõi và quản lý danh sách vật tư y tế tại trường
+                        </p>
                     </div>
                 </div>
 
@@ -426,33 +523,46 @@ const SupplyInventory = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <select
-                                    className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200 min-w-[180px]"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        focusRingColor: PRIMARY[500] + '40'
-                                    }}
-                                    value={filterStatus}
-                                    onChange={(e) => handleFilterChange(e.target.value)}
-                                >
-                                    <option value="all">Tất cả trạng thái</option>
-                                    <option value="active">Đang sử dụng</option>
-                                    <option value="inactive">Ngừng sử dụng</option>
-                                    <option value="low-stock">Sắp hết hàng</option>
-                                </select>
+                                <div className="flex items-center space-x-2">
+                                    <select
+                                        value={filters.approvalStatus}
+                                        onChange={(e) => handleFilterChange('approvalStatus', e.target.value)}
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                    >
+                                        <option value="">Tất cả trạng thái</option>
+                                        <option value="PENDING">Chờ duyệt</option>
+                                        <option value="APPROVED">Đã duyệt</option>
+                                        <option value="REJECTED">Từ chối</option>
+                                        <option value="DRAFT">Nháp</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <select
+                                        value={filters.priority}
+                                        onChange={(e) => handleFilterChange('priority', e.target.value)}
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                    >
+                                        <option value="">Độ ưu tiên</option>
+                                        <option value="LOW">Thấp</option>
+                                        <option value="NORMAL">Bình thường</option>
+                                        <option value="HIGH">Cao</option>
+                                        <option value="CRITICAL">Khẩn cấp</option>
+                                    </select>
+                                </div>
 
                                 <button
                                     onClick={resetFilters}
-                                    className="flex items-center px-6 py-3 rounded-xl transition-all duration-200 font-medium border"
+                                    className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
                                     style={{
-                                        color: PRIMARY[600],
-                                        borderColor: PRIMARY[200],
-                                        backgroundColor: PRIMARY[50]
+                                        backgroundColor: PRIMARY[50],
+                                        color: PRIMARY[600]
                                     }}
                                 >
                                     <FiRefreshCw className="mr-2 h-4 w-4" />
-                                    Đặt lại
+                                    Đặt lại bộ lọc
                                 </button>
                             </div>
                         </div>
@@ -466,16 +576,17 @@ const SupplyInventory = () => {
                                         {[
                                             { key: "id", label: "Mã vật tư" },
                                             { key: "name", label: "Tên vật tư" },
-                                            { key: "category", label: "Loại" },
-                                            { key: "stock", label: "Số lượng" },
-                                            { key: null, label: "Trạng thái" },
+                                            { key: "justification", label: "Lý do yêu cầu" },
+                                            { key: "quantity", label: "Số lượng" },
+                                            { key: "status", label: "Trạng thái" },
+                                            { key: "priority", label: "Độ ưu tiên" },
                                             { key: null, label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
                                                 className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={col.key ? () => handleSortChange(col.key) : undefined}
+                                                onClick={col.key ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
                                                     {col.label}
@@ -499,34 +610,44 @@ const SupplyInventory = () => {
                                             >
                                                 <td className="py-4 px-6">
                                                     <span className="font-mono text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                        #{item.supplyId.toString().padStart(3, '0')}
+                                                        #{(item.id || '').toString().substring(0, 8)}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <div
                                                             className="h-2 w-2 rounded-full mr-3"
-                                                            style={{ backgroundColor: item.isActive ? SUCCESS[500] : GRAY[400] }}
+                                                            style={{
+                                                                backgroundColor: item.isExpiringSoon ? WARNING[500] :
+                                                                    item.isExpired ? ERROR[500] :
+                                                                        item.isLowStock ? WARNING[500] :
+                                                                            SUCCESS[500]
+                                                            }}
                                                         ></div>
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {item.name}
-                                                        </span>
+                                                        <div>
+                                                            <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
+                                                                {item.name || 'N/A'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <span style={{ color: TEXT.SECONDARY }}>
-                                                        {item.category || "-"}
+                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {item.justification || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
                                                             className="font-bold text-lg"
-                                                            style={{ color: item.stockQuantity < 50 ? ERROR[600] : TEXT.PRIMARY }}
+                                                            style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
-                                                            {item.stockQuantity}
+                                                            {item.quantity || 0}
                                                         </span>
-                                                        {item.stockQuantity < 50 && (
+                                                        <span className="ml-1 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                            {item.unit || 'N/A'}
+                                                        </span>
+                                                        {item.isLowStock && (
                                                             <div className="ml-3 flex items-center">
                                                                 <FiAlertTriangle className="h-4 w-4 mr-1" style={{ color: WARNING[500] }} />
                                                                 <span className="text-xs font-medium" style={{ color: WARNING[600] }}>
@@ -538,13 +659,19 @@ const SupplyInventory = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                                                        style={{
-                                                            backgroundColor: item.isActive ? SUCCESS[100] : GRAY[100],
-                                                            color: item.isActive ? SUCCESS[800] : GRAY[700]
-                                                        }}
+                                                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusClasses(item.status)}`}
                                                     >
-                                                        {item.isActive ? "Đang sử dụng" : "Ngừng sử dụng"}
+                                                        {item.statusDisplayName || item.status || 'N/A'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span
+                                                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getPriorityClasses(item.priority)}`}
+                                                    >
+                                                        {item.priorityDisplayName || item.priority || 'N/A'}
+                                                        {item.isUrgent && (
+                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
@@ -561,12 +688,12 @@ const SupplyInventory = () => {
                                                             onClick={() => toggleSupplyStatus(item)}
                                                             className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
                                                             style={{
-                                                                backgroundColor: item.isActive ? GRAY[50] : SUCCESS[50],
-                                                                color: item.isActive ? GRAY[600] : SUCCESS[600]
+                                                                backgroundColor: item.status === 'Active' ? GRAY[50] : SUCCESS[50],
+                                                                color: item.status === 'Active' ? GRAY[600] : SUCCESS[600]
                                                             }}
-                                                            title={item.isActive ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
+                                                            title={item.status === 'Active' ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
                                                         >
-                                                            {item.isActive ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
+                                                            {item.status === 'Active' ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteClick(item.supplyId)}
