@@ -24,14 +24,7 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
     specialization: ''
   });
 
-  const generateStaffCode = (role) => {
-    const prefix = role === 'manager' ? 'MNG' : 'NUR';
-    const timestamp = Date.now().toString().slice(-5);
-    return `${prefix}${timestamp}`;
-  };
-
   const resetForm = () => {
-    const initialStaffCode = generateStaffCode('manager');
     setFormData({
       username: '',
       email: '',
@@ -40,7 +33,7 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
       address: '',
       gender: '',
       dateOfBirth: '',
-      staffCode: initialStaffCode,
+      staffCode: '',
       licenseNumber: '',
       specialization: ''
     });
@@ -48,22 +41,22 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
     setFormErrors({});
   };
 
-  useEffect(() => {
-    if (isOpen && !formData.staffCode) {
-      const initialStaffCode = generateStaffCode(staffType);
-      setFormData(prev => ({
-        ...prev,
-        staffCode: initialStaffCode
-      }));
-    }
-  }, [isOpen, staffType]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    if (name === 'staffCode') {
+      const upperValue = value.toUpperCase();
+      const validValue = upperValue.replace(/[^A-Z0-9]/g, '').slice(0, 5);
+      setFormData(prev => ({
+        ...prev,
+        [name]: validValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
 
     if (formErrors[name]) {
       setFormErrors(prev => ({
@@ -76,10 +69,9 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
   const handleStaffTypeChange = (e) => {
     const newStaffType = e.target.value;
     setStaffType(newStaffType);
-    const newStaffCode = generateStaffCode(newStaffType);
     setFormData(prev => ({
       ...prev,
-      staffCode: newStaffCode
+      staffCode: ''
     }));
   };
 
@@ -140,6 +132,18 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
         errors.dateOfBirth = 'Nhân viên phải từ 18 tuổi trở lên';
       } else if (age > 65) {
         errors.dateOfBirth = 'Tuổi không được vượt quá 65';
+      }
+    }
+    if (!formData.staffCode.trim()) {
+      errors.staffCode = 'Mã nhân viên không được để trống';
+    } else {
+      const prefix = staffType === 'manager' ? 'MG' : 'NS';
+      if (!formData.staffCode.startsWith(prefix)) {
+        errors.staffCode = `Mã nhân viên phải bắt đầu bằng ${prefix}`;
+      } else if (formData.staffCode.length !== 5) {
+        errors.staffCode = 'Mã nhân viên phải có đúng 5 ký tự';
+      } else if (!/^[A-Z0-9]+$/.test(formData.staffCode)) {
+        errors.staffCode = 'Mã nhân viên chỉ được chứa chữ cái in hoa và số';
       }
     }
     if (staffType === 'nurse') {
@@ -374,16 +378,20 @@ const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
                 {/* Staff Code */}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
-                    Mã nhân viên (Tự động tạo)
+                    Mã nhân viên * ({staffType === 'manager' ? 'MGxxx' : 'NSxxx'})
                   </label>
                   <input
                     type="text"
                     name="staffCode"
                     value={formData.staffCode}
-                    readOnly
-                    className="w-full p-3 border rounded-lg bg-gray-50 cursor-not-allowed"
-                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: '#f9fafb', color: TEXT.SECONDARY }}
+                    onChange={handleInputChange}
+                    required
+                    maxLength={5}
+                    placeholder={staffType === 'manager' ? 'MGxxx' : 'NSxxx'}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-offset-1 transition-all"
+                    style={getFieldStyle('staffCode')}
                   />
+                  {renderFieldError('staffCode')}
                 </div>
 
                 {/* School Nurse specific fields */}

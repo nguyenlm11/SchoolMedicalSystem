@@ -128,6 +128,7 @@ const Navbar = () => {
                     category: "Nhân viên y tế",
                     links: [
                         { to: "/staff/medication", label: "Quản lý thuốc", desc: "Theo dõi thuốc trong trường" },
+                        { to: "/staff/supply", label: "Quản lý vật tư y tế", desc: "Theo dõi vật tư y tế trong trường" },
                     ],
                 },
                 {
