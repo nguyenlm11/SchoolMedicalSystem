@@ -62,7 +62,6 @@ const UserList = () => {
             setLoading(false);
         }
     };
-
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
@@ -93,15 +92,10 @@ const UserList = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
     const formatDate = (dateString) => {
         if (!dateString) return "Chưa đăng nhập";
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        }).format(date);
+        return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
     };
 
     const getRoleLabel = (role) => {
@@ -115,10 +109,7 @@ const UserList = () => {
         }
     };
 
-    const getStatusLabel = (isActive) => {
-        return isActive ? "Đang hoạt động" : "Không hoạt động"
-    };
-
+    const getStatusLabel = (isActive) => { return isActive ? "Đang hoạt động" : "Không hoạt động" };
     const getStatusStyle = (isActive) => {
         if (isActive) {
             return { backgroundColor: SUCCESS[50], color: SUCCESS[700], borderColor: SUCCESS[200] }
@@ -145,7 +136,6 @@ const UserList = () => {
 
     const handleDeleteConfirm = async () => {
         if (!selectedUser) return;
-
         setDeleteLoading(true);
         try {
             const deleteFunction = selectedUser.role === 'MANAGER'
@@ -153,7 +143,6 @@ const UserList = () => {
                 : userApi.deleteSchoolNurse;
 
             const response = await deleteFunction(selectedUser.id);
-
             if (response.success) {
                 setAlertType("success");
                 setAlertMessage(`Đã xóa người dùng "${selectedUser.fullName}" thành công`);
@@ -175,9 +164,38 @@ const UserList = () => {
         }
     };
 
-    const handleTemplateDownload = (type) => {
+    const handleTemplateDownload = async (type) => {
         setShowTemplateDropdown(false);
-        console.log(`Downloading ${type} template`);
+        try {
+            const response = type === 'manager'
+                ? await userApi.downloadManagerTemplate()
+                : await userApi.downloadSchoolNurseTemplate();
+            if (response.success) {
+                const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                // Lấy tên file từ Content-Disposition header
+                const contentDisposition = response.headers['content-disposition'];
+                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : '';
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                setAlertType("success");
+                setAlertMessage(`Đã tải xuống mẫu ${type === 'manager' ? 'quản lý' : 'y tá'} thành công`);
+                setAlertModalOpen(true);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            setAlertType("error");
+            setAlertMessage(`Không thể tải xuống mẫu. ${error.message || 'Vui lòng thử lại sau.'}`);
+            setAlertModalOpen(true);
+        }
     };
 
     const handleImport = (type) => {
@@ -247,13 +265,7 @@ const UserList = () => {
                                             setShowExportDropdown(false);
                                         }}
                                         className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                        style={{
-                                            backgroundColor: INFO[600],
-                                            color: 'white',
-                                            borderColor: INFO[600]
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = INFO[700]}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = INFO[600]}
+                                        style={{ backgroundColor: INFO[600], color: 'white', borderColor: INFO[600] }}
                                     >
                                         <FiFileText className="h-4 w-4 mr-2" />
                                         Lấy mẫu
@@ -263,16 +275,12 @@ const UserList = () => {
                                             <button
                                                 onClick={() => handleTemplateDownload('manager')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Mẫu Quản lý
                                             </button>
                                             <button
                                                 onClick={() => handleTemplateDownload('nurse')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Mẫu Y tế
                                             </button>
@@ -288,13 +296,7 @@ const UserList = () => {
                                             setShowExportDropdown(false);
                                         }}
                                         className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                        style={{
-                                            backgroundColor: SUCCESS[600],
-                                            color: 'white',
-                                            borderColor: SUCCESS[600]
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = SUCCESS[700]}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = SUCCESS[600]}
+                                        style={{ backgroundColor: SUCCESS[600], color: 'white', borderColor: SUCCESS[600] }}
                                     >
                                         <FiUpload className="h-4 w-4 mr-2" />
                                         Nhập
@@ -304,16 +306,12 @@ const UserList = () => {
                                             <button
                                                 onClick={() => handleImport('manager')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Nhập Quản lý
                                             </button>
                                             <button
                                                 onClick={() => handleImport('nurse')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Nhập Y tế
                                             </button>
@@ -329,13 +327,7 @@ const UserList = () => {
                                             setShowImportDropdown(false);
                                         }}
                                         className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                        style={{
-                                            backgroundColor: WARNING[600],
-                                            color: 'white',
-                                            borderColor: WARNING[600]
-                                        }}
-                                        onMouseEnter={(e) => e.target.style.backgroundColor = WARNING[700]}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = WARNING[600]}
+                                        style={{ backgroundColor: WARNING[600], color: 'white', borderColor: WARNING[600] }}
                                     >
                                         <FiDownload className="h-4 w-4 mr-2" />
                                         Xuất
@@ -345,16 +337,12 @@ const UserList = () => {
                                             <button
                                                 onClick={() => handleExport('manager')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Xuất Quản lý
                                             </button>
                                             <button
                                                 onClick={() => handleExport('nurse')}
                                                 style={dropdownItemStyle}
-                                                onMouseEnter={(e) => e.target.style.backgroundColor = GRAY[50]}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = BACKGROUND.DEFAULT}
                                             >
                                                 Xuất Y tế
                                             </button>
@@ -365,12 +353,7 @@ const UserList = () => {
                                 <button
                                     onClick={() => setIsAddStaffModalOpen(true)}
                                     className="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
-                                    style={{
-                                        backgroundColor: PRIMARY[600],
-                                        focusRingColor: PRIMARY[500]
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[700]}
-                                    onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                    style={{ backgroundColor: PRIMARY[600], focusRingColor: PRIMARY[500] }}
                                 >
                                     <FiPlus className="h-4 w-4 mr-2" />
                                     Thêm nhân viên
@@ -613,10 +596,7 @@ const UserList = () => {
                     {users.length > 0 && (
                         <div
                             className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
-                            style={{
-                                borderColor: BORDER.DEFAULT,
-                                borderRadius: '0 0 0.75rem 0.75rem'
-                            }}
+                            style={{ borderColor: BORDER.DEFAULT, borderRadius: '0 0 0.75rem 0.75rem' }}
                         >
                             <div className="mb-4 sm:mb-0">
                                 <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
@@ -639,11 +619,7 @@ const UserList = () => {
                                     onClick={() => paginate(currentPage - 1)}
                                     disabled={currentPage === 1}
                                     className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
-                                    style={{
-                                        borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                        color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                        backgroundColor: BACKGROUND.DEFAULT
-                                    }}
+                                    style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                 >
                                     <svg
                                         className="h-4 w-4"
@@ -721,10 +697,7 @@ const UserList = () => {
 
             <ConfirmModal
                 isOpen={deleteModalOpen}
-                onClose={() => {
-                    setDeleteModalOpen(false);
-                    setSelectedUser(null);
-                }}
+                onClose={() => { setDeleteModalOpen(false); setSelectedUser(null) }}
                 onConfirm={handleDeleteConfirm}
                 title="Xác nhận xóa"
                 message={`Bạn có chắc chắn muốn xóa người dùng "${selectedUser?.fullName}"? Hành động này không thể hoàn tác.`}
