@@ -451,15 +451,10 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    <div
-                        className="rounded-xl p-4 lg:p-6 mb-6 shadow-sm border"
-                        style={{ backgroundColor: BACKGROUND.DEFAULT, borderColor: BORDER.DEFAULT, boxShadow: `0 1px 3px ${SHADOW.LIGHT}` }}
-                    >
+                    <div className=" mb-6" >
                         <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="w-full lg:w-1/2 xl:w-1/3 relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <FiSearch style={{ color: GRAY[400] }} />
-                                </span>
+                            <div className="w-full relative">
+                                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                 <input
                                     type="text"
                                     value={searchTerm}
@@ -470,25 +465,17 @@ const UserList = () => {
                                 />
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4">
-                                <div className="flex items-center space-x-2">
-                                    <div className="flex items-center space-x-1">
-                                        <FiFilter style={{ color: GRAY[400] }} className="w-4 h-4" />
-                                        <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                            Vai trò:
-                                        </span>
-                                    </div>
-                                    <select
-                                        value={filterRole}
-                                        onChange={(e) => { setFilterRole(e.target.value) }}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
-                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
-                                    >
-                                        <option value="">Tất cả</option>
-                                        <option value="MANAGER">Quản lý</option>
-                                        <option value="SCHOOLNURSE">Y tá trường học</option>
-                                    </select>
-                                </div>
+                            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 ml-4">
+                                <select
+                                    value={filterRole}
+                                    onChange={(e) => { setFilterRole(e.target.value) }}
+                                    className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
+                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                >
+                                    <option value="">Tất cả</option>
+                                    <option value="MANAGER">Quản lý</option>
+                                    <option value="SCHOOLNURSE">Y tá trường học</option>
+                                </select>
                             </div>
                         </div>
                     </div>
