@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage, FiFilter } from "react-icons/fi";
+import { useLocation } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -8,35 +8,19 @@ import medicalApi from "../../api/medicalApi";
 
 const MedicineInventory = () => {
     const location = useLocation();
-    const navigate = useNavigate();
     const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [deleting, setDeleting] = useState(false);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
-    const [filterApprovalStatus, setFilterApprovalStatus] = useState("");
-    const [filterPriority, setFilterPriority] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
     const [sortOrder, setSortOrder] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1);
     const [stats, setStats] = useState({ total: 0, inactive: 0, lowStock: 0 });
-    const [showItemModal, setShowItemModal] = useState(false);
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
-    const [confirmAction, setConfirmAction] = useState(null);
-    const [selectedItem, setSelectedItem] = useState(null);
     const [pageSize] = useState(10);
-    const [itemForm, setItemForm] = useState({
-        id: 0,
-        name: "",
-        stockQuantity: 0,
-        isActive: true,
-    });
-    const [formErrors, setFormErrors] = useState({});
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [filters, setFilters] = useState({
@@ -55,7 +39,7 @@ const MedicineInventory = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStatus, filterApprovalStatus, filterPriority]);
+    }, [filterStatus]);
 
     useEffect(() => {
         fetchMedicines();
@@ -69,40 +53,28 @@ const MedicineInventory = () => {
     const fetchMedicines = async () => {
         try {
             setLoading(true);
-
-            // Xây dựng object params
             const params = {
                 pageIndex: currentPage,
                 pageSize: pageSize,
                 type: 'Medication'
             };
-
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
             }
-
             if (filters.priority) {
                 params.priority = filters.priority;
             }
-
-            // Thêm params cho sorting nếu có
             if (sortBy && sortOrder) {
                 params.orderBy = `${sortBy}_${sortOrder}`;
             }
-
-            // Thêm param search nếu có
             if (searchTerm) {
                 params.searchTerm = searchTerm;
             }
-
             const response = await medicalApi.getMedicalItems(params);
-
             if (response.success) {
                 setMedicines(response.data);
                 setTotalCount(response.totalCount);
                 setTotalPages(response.totalPages);
-
-                // Tính toán thống kê
                 const total = response.totalCount;
                 const inactive = response.data.filter(item => item.status === 'Inactive').length;
                 const lowStock = response.data.filter(item => item.isLowStock).length;
@@ -122,103 +94,6 @@ const MedicineInventory = () => {
             setTotalPages(0);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const createMedicine = async () => {
-        if (!validateForm()) return;
-        setSubmitting(true);
-        try {
-            const medicineData = {
-                type: 'Medication',
-                name: itemForm.name,
-                quantity: parseInt(itemForm.stockQuantity),
-                status: itemForm.isActive ? 'Active' : 'Inactive'
-            };
-            const response = await medicalApi.createMedicalItem(medicineData);
-            if (response.success) {
-                closeModal();
-                showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được thêm thành công.`);
-                fetchMedicines();
-            } else {
-                showAlert("error", "Lỗi", response.message || "Không thể thêm thuốc mới. Vui lòng thử lại.");
-            }
-        } catch (error) {
-            console.error("Error creating medicine:", error);
-            showAlert("error", "Lỗi", "Không thể thêm thuốc mới. Vui lòng thử lại.");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const updateMedicine = async () => {
-        if (!validateForm()) return;
-        setSubmitting(true);
-        try {
-            const medicineData = {
-                type: 'Medication',
-                name: itemForm.name,
-                quantity: parseInt(itemForm.stockQuantity),
-                status: itemForm.isActive ? 'Active' : 'Inactive'
-            };
-            const response = await medicalApi.updateMedicalItem(itemForm.id, medicineData);
-            if (response.success) {
-                closeModal();
-                showAlert("success", "Thành công", `Thuốc "${itemForm.name}" đã được cập nhật thành công.`);
-                fetchMedicines();
-            } else {
-                showAlert("error", "Lỗi", response.message || "Không thể cập nhật thông tin thuốc. Vui lòng thử lại.");
-            }
-        } catch (error) {
-            console.error("Error updating medicine:", error);
-            showAlert("error", "Lỗi", "Không thể cập nhật thông tin thuốc. Vui lòng thử lại.");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    const deleteMedicine = async (id) => {
-        setDeleting(true);
-        try {
-            const response = await medicalApi.deleteMedicalItem(id);
-            if (response.success) {
-                showAlert("success", "Thành công", `Thuốc đã được xóa thành công.`);
-                fetchMedicines();
-            } else {
-                showAlert("error", "Lỗi", response.message || "Không thể xóa thuốc. Vui lòng thử lại.");
-            }
-        } catch (error) {
-            console.error("Error deleting medicine:", error);
-            showAlert("error", "Lỗi", "Không thể xóa thuốc. Vui lòng thử lại.");
-        } finally {
-            setDeleting(false);
-            setShowConfirmModal(false);
-        }
-    };
-
-    const handleDeleteClick = (id) => {
-        setConfirmAction(() => () => deleteMedicine(id));
-        setShowConfirmModal(true);
-    };
-
-    const toggleMedicineStatus = async (item) => {
-        try {
-            const medicineData = {
-                ...item,
-                status: item.status === 'Active' ? 'Inactive' : 'Active'
-            };
-            const response = await medicalApi.updateMedicalItem(item.id, medicineData);
-            if (response.success) {
-                fetchMedicines();
-                const newStatus = item.status === 'Active';
-                const statusText = newStatus ? "vô hiệu hóa" : "kích hoạt";
-                showAlert("success", "Thành công", `Thuốc "${item.name}" đã được ${statusText} thành công.`);
-            } else {
-                showAlert("error", "Lỗi", response.message || "Không thể thay đổi trạng thái thuốc. Vui lòng thử lại.");
-            }
-        } catch (error) {
-            console.error("Error toggling medicine status:", error);
-            showAlert("error", "Lỗi", "Không thể thay đổi trạng thái thuốc. Vui lòng thử lại.");
         }
     };
 
@@ -246,51 +121,7 @@ const MedicineInventory = () => {
         setCurrentPage(1);
     };
 
-    const openModal = (item = null) => {
-        if (item) {
-            setItemForm({
-                id: item.medicineId,
-                name: item.name,
-                stockQuantity: item.stockQuantity,
-                isActive: item.isActive,
-            });
-            setSelectedItem(item);
-        } else {
-            setItemForm({ id: 0, name: "", stockQuantity: 0, isActive: true });
-            setSelectedItem(null);
-        }
-        setFormErrors({});
-        setShowItemModal(true);
-    };
-
-    const closeModal = () => {
-        setShowItemModal(false);
-        setSelectedItem(null);
-        setFormErrors({});
-    };
-
-    const validateForm = () => {
-        const errors = {};
-        if (!itemForm.name.trim()) errors.name = "Tên thuốc không được để trống";
-        if (isNaN(itemForm.stockQuantity) || itemForm.stockQuantity < 0) {
-            errors.stockQuantity = "Số lượng phải là số dương";
-        }
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setItemForm({ ...itemForm, [name]: type === "checkbox" ? checked : value });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        selectedItem ? updateMedicine() : createMedicine();
-    };
-
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -305,9 +136,7 @@ const MedicineInventory = () => {
                 <div className="mb-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Quản lý thuốc
-                            </h1>
+                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý thuốc</h1>
                             <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
                                 Quản lý danh sách thuốc và vật tư y tế
                             </p>
@@ -409,13 +238,9 @@ const MedicineInventory = () => {
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo tên, mã thuốc hoặc số lượng..."
+                                        placeholder="Tìm kiếm theo tên thuốc..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                        style={{
-                                            borderColor: BORDER.DEFAULT,
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            focusRingColor: PRIMARY[500] + '40'
-                                        }}
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
@@ -439,7 +264,6 @@ const MedicineInventory = () => {
                                         <option value="PENDING">Chờ duyệt</option>
                                         <option value="APPROVED">Đã duyệt</option>
                                         <option value="REJECTED">Từ chối</option>
-                                        <option value="DRAFT">Nháp</option>
                                     </select>
                                 </div>
 
@@ -461,10 +285,7 @@ const MedicineInventory = () => {
                                 <button
                                     onClick={resetFilters}
                                     className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
-                                    style={{
-                                        backgroundColor: PRIMARY[50],
-                                        color: PRIMARY[600]
-                                    }}
+                                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                 >
                                     <FiRefreshCw className="mr-2 h-4 w-4" />
                                     Đặt lại bộ lọc
@@ -485,8 +306,7 @@ const MedicineInventory = () => {
                                             { key: "quantity", label: "Số lượng" },
                                             { key: "expiryDate", label: "Hạn sử dụng" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" },
-                                            { key: null, label: "Thao tác" }
+                                            { key: "priority", label: "Độ ưu tiên" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
@@ -521,15 +341,6 @@ const MedicineInventory = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
-                                                        <div
-                                                            className="h-2 w-2 rounded-full mr-3"
-                                                            style={{
-                                                                backgroundColor: item.isExpiringSoon ? WARNING[500] :
-                                                                    item.isExpired ? ERROR[500] :
-                                                                        item.isLowStock ? WARNING[500] :
-                                                                            SUCCESS[500]
-                                                            }}
-                                                        ></div>
                                                         <div>
                                                             <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
                                                                 {item.name || 'N/A'}
@@ -600,7 +411,7 @@ const MedicineInventory = () => {
                                                                             GRAY[700]
                                                         }}
                                                     >
-                                                        {item.statusDisplayName || item.status || 'N/A'}
+                                                        {item.statusDisplayName}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
@@ -623,45 +434,11 @@ const MedicineInventory = () => {
                                                         )}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
-                                                    <div className="flex items-center space-x-3">
-                                                        <button
-                                                            onClick={() => openModal(item)}
-                                                            className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                            style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
-                                                            title="Chỉnh sửa"
-                                                        >
-                                                            <FiEdit className="h-4 w-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => toggleMedicineStatus(item)}
-                                                            className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                            style={{
-                                                                backgroundColor: item.status === 'Active' ? GRAY[50] : SUCCESS[50],
-                                                                color: item.status === 'Active' ? GRAY[600] : SUCCESS[600]
-                                                            }}
-                                                            title={item.status === 'Active' ? "Đánh dấu ngừng sử dụng" : "Đánh dấu đang sử dụng"}
-                                                        >
-                                                            {item.status === 'Active' ? <FiX className="h-4 w-4" /> : <FiCheck className="h-4 w-4" />}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteClick(item.id)}
-                                                            className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                            style={{
-                                                                backgroundColor: ERROR[50],
-                                                                color: ERROR[600]
-                                                            }}
-                                                            title="Xóa"
-                                                        >
-                                                            <FiTrash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="text-center py-12">
+                                            <td colSpan="7" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -802,42 +579,12 @@ const MedicineInventory = () => {
                 </div>
 
                 <AlertModal
-                    isOpen={showConfirmModal}
-                    onClose={() => setShowConfirmModal(false)}
-                    title="Xác nhận xóa thuốc"
-                    message="Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác."
-                    type="warning"
-                    confirmText="Xóa"
-                    cancelText="Hủy"
-                    onConfirm={() => {
-                        confirmAction && confirmAction();
-                        setShowConfirmModal(false);
-                    }}
-                />
-
-                <AlertModal
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
                 />
-
-                {deleting && (
-                    <div
-                        className="fixed inset-0 flex items-center justify-center z-50"
-                        style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)' }}
-                    >
-                        <div
-                            className="rounded-2xl shadow-2xl p-8 transform transition-all duration-300"
-                            style={{ backgroundColor: BACKGROUND.DEFAULT }}
-                        >
-                            <div className="text-center">
-                                <Loading type="medical" size="large" color="primary" text="Đang xóa thuốc..." />
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div >
     );
