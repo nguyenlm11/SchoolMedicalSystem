@@ -6,7 +6,7 @@ import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import medicalApi from "../../api/medicalApi";
 
-const SupplyInventory = () => {
+const NurseSupplyPage = () => {
     const location = useLocation();
     const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [supplies, setSupplies] = useState([]);
@@ -56,7 +56,8 @@ const SupplyInventory = () => {
             const params = {
                 pageIndex: currentPage,
                 pageSize: pageSize,
-                type: 'Supply'
+                type: 'Supply',
+                role: 'SCHOOLNURSE'
             };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
@@ -136,10 +137,34 @@ const SupplyInventory = () => {
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý vật tư y tế</h1>
-                        <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                            Theo dõi và quản lý danh sách vật tư y tế tại trường
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý vật tư y tế</h1>
+                                <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
+                                    Theo dõi và quản lý danh sách vật tư y tế tại trường
+                                </p>
+                            </div>
+                            <button
+                                className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
+                                style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                            >
+                                <svg
+                                    className="mr-2 h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
+                                </svg>
+                                Thêm vật tư y tế
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -542,4 +567,4 @@ const SupplyInventory = () => {
     );
 };
 
-export default SupplyInventory;
+export default NurseSupplyPage;

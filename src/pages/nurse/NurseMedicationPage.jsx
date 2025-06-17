@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import medicalApi from "../../api/medicalApi";
 
-const SupplyInventory = () => {
+const NurseMedicationPage = () => {
     const location = useLocation();
     const initialFilter = new URLSearchParams(location.search).get("filter") || "";
-    const [supplies, setSupplies] = useState([]);
+    const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
@@ -17,7 +17,7 @@ const SupplyInventory = () => {
     const [sortBy, setSortBy] = useState("name");
     const [sortOrder, setSortOrder] = useState("asc");
     const [currentPage, setCurrentPage] = useState(1);
-    const [stats, setStats] = useState({ total: 0, inactive: 0, lowStock: 0 });
+    const [stats, setStats] = useState({ total: 0, dispensed: 0, pending: 0 });
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [pageSize] = useState(10);
@@ -39,24 +39,24 @@ const SupplyInventory = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filterStatus, filters.approvalStatus, filters.priority]);
+    }, [filterStatus]);
 
     useEffect(() => {
-        fetchSupplies();
-    }, [filters, sortBy, sortOrder, currentPage, pageSize, debouncedSearchTerm]);
+        fetchMedicines();
+    }, [filters, sortBy, sortOrder, currentPage, pageSize, searchTerm]);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
         setShowAlertModal(true);
     };
 
-    const fetchSupplies = async () => {
+    const fetchMedicines = async () => {
         try {
             setLoading(true);
             const params = {
                 pageIndex: currentPage,
                 pageSize: pageSize,
-                type: 'Supply'
+                type: 'Medication'
             };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
@@ -72,25 +72,24 @@ const SupplyInventory = () => {
             }
             const response = await medicalApi.getMedicalItems(params);
             if (response.success) {
-                const items = response.data || [];
-                setSupplies(items);
-                setTotalCount(response.totalCount || 0);
-                setTotalPages(response.totalPages || 1);
-                const total = items.length;
-                const inactive = items.filter(item => item.status === 'Inactive').length;
-                const lowStock = items.filter(item => item.isLowStock).length;
-                setStats({ total, inactive, lowStock });
+                setMedicines(response.data);
+                setTotalCount(response.totalCount);
+                setTotalPages(response.totalPages);
+                const total = response.totalCount;
+                const dispensed = response.data.filter(item => item.status === 'Dispensed').length;
+                const pending = response.data.filter(item => item.status === 'Pending').length;
+                setStats({ total, dispensed, pending });
             } else {
-                console.error('Error fetching supplies:', response.message);
-                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách vật tư. Vui lòng thử lại.");
-                setSupplies([]);
+                console.error('Error fetching medicines:', response.message);
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách thuốc. Vui lòng thử lại.");
+                setMedicines([]);
                 setTotalCount(0);
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching supplies:', error);
-            showAlert("error", "Lỗi", "Không thể tải danh sách vật tư. Vui lòng thử lại.");
-            setSupplies([]);
+            console.error('Error fetching medicines:', error);
+            showAlert("error", "Lỗi", "Không thể tải danh sách thuốc. Vui lòng thử lại.");
+            setMedicines([]);
             setTotalCount(0);
             setTotalPages(0);
         } finally {
@@ -123,10 +122,11 @@ const SupplyInventory = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải vật tư..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải thuốc..." />
             </div>
         );
     }
@@ -134,12 +134,41 @@ const SupplyInventory = () => {
     return (
         <div className="min-h-screen">
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý vật tư y tế</h1>
-                        <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                            Theo dõi và quản lý danh sách vật tư y tế tại trường
-                        </p>
+                <div className="mb-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý cấp phát thuốc</h1>
+                            <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
+                                Quản lý việc cấp phát thuốc cho học sinh
+                            </p>
+                        </div>
+                        <div>
+                            <button
+                                className="inline-flex items-center px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style={{
+                                    backgroundColor: PRIMARY[500],
+                                    color: 'white',
+                                    borderColor: PRIMARY[600],
+                                    boxShadow: `0 1px 2px ${PRIMARY[900]}20`,
+                                }}
+                            >
+                                <svg
+                                    className="mr-2 h-5 w-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    />
+                                </svg>
+                                Thêm thuốc mới
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -155,7 +184,7 @@ const SupplyInventory = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Tổng số vật tư
+                                        Tổng số thuốc
                                     </p>
                                     <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
                                         {stats.total}
@@ -165,7 +194,34 @@ const SupplyInventory = () => {
                                     className="h-16 w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiBox className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiTablet className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        style={{
+                            background: `linear-gradient(135deg, ${SUCCESS[400]} 0%, ${SUCCESS[500]} 100%)`,
+                            borderColor: SUCCESS[200]
+                        }}
+                    >
+                        <div className="p-6 relative z-10">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
+                                        Đã cấp phát
+                                    </p>
+                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+                                        {stats.dispensed}
+                                    </p>
+                                </div>
+                                <div
+                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                >
+                                    <FiClock className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
@@ -182,10 +238,10 @@ const SupplyInventory = () => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Sắp hết hàng
+                                        Chờ cấp phát
                                     </p>
                                     <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.lowStock}
+                                        {stats.pending}
                                     </p>
                                 </div>
                                 <div
@@ -197,36 +253,12 @@ const SupplyInventory = () => {
                             </div>
                         </div>
                     </div>
-
-                    <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{
-                            background: `linear-gradient(135deg, ${GRAY[500]} 0%, ${GRAY[600]} 100%)`,
-                            borderColor: GRAY[200]
-                        }}
-                    >
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Ngừng sử dụng
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.inactive}
-                                    </p>
-                                </div>
-                                <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                                >
-                                    <FiX className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
+                <div
+                    className="rounded-2xl shadow-xl border backdrop-blur-sm"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}
+                >
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                             <div className="flex-1">
@@ -234,7 +266,7 @@ const SupplyInventory = () => {
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo tên vật tư..."
+                                        placeholder="Tìm kiếm theo tên thuốc hoặc tên học sinh..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
                                         value={searchTerm}
@@ -296,9 +328,11 @@ const SupplyInventory = () => {
                                 <thead>
                                     <tr style={{ backgroundColor: GRAY[50] }}>
                                         {[
-                                            { key: "id", label: "Mã vật tư" },
-                                            { key: "name", label: "Tên vật tư" },
+                                            { key: "id", label: "Mã thuốc" },
+                                            { key: "name", label: "Tên thuốc" },
+                                            { key: "dosage", label: "Liều lượng" },
                                             { key: "quantity", label: "Số lượng" },
+                                            { key: "expiryDate", label: "Hạn sử dụng" },
                                             { key: "status", label: "Trạng thái" },
                                             { key: "priority", label: "Độ ưu tiên" }
                                         ].map((col, idx) => (
@@ -321,8 +355,8 @@ const SupplyInventory = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                                    {supplies.length > 0 ? (
-                                        supplies.map((item, index) => (
+                                    {medicines.length > 0 ? (
+                                        medicines.map((item, index) => (
                                             <tr
                                                 key={item.id || index}
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
@@ -335,10 +369,20 @@ const SupplyInventory = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {item.name}
-                                                        </span>
+                                                        <div>
+                                                            <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
+                                                                {item.name || 'N/A'}
+                                                            </span>
+                                                            <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                                {item.form && item.formDisplayName ? `${item.formDisplayName} (${item.form})` : 'N/A'}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {item.dosage || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
@@ -347,6 +391,9 @@ const SupplyInventory = () => {
                                                             style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
                                                             {item.quantity || 0}
+                                                        </span>
+                                                        <span className="ml-1 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                            {item.unit || 'N/A'}
                                                         </span>
                                                         {item.isLowStock && (
                                                             <div className="ml-3 flex items-center">
@@ -359,48 +406,65 @@ const SupplyInventory = () => {
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
+                                                        </span>
+                                                        {(item.isExpiringSoon || item.isExpired) && (
+                                                            <span
+                                                                className="text-xs font-medium mt-1 px-2 py-1 rounded-full"
+                                                                style={{
+                                                                    backgroundColor: item.isExpired ? ERROR[100] : WARNING[100],
+                                                                    color: item.isExpired ? ERROR[700] : WARNING[700]
+                                                                }}
+                                                            >
+                                                                {item.isExpired ? 'Đã hết hạn' : 'Sắp hết hạn'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: item.status === 'Active' ? SUCCESS[100] : GRAY[100],
-                                                            color: item.status === 'Active' ? SUCCESS[700] : GRAY[700]
+                                                            backgroundColor:
+                                                                item.status === 'Dispensed' ? SUCCESS[100] :
+                                                                    item.status === 'Pending' ? WARNING[100] :
+                                                                        ERROR[100],
+                                                            color:
+                                                                item.status === 'Dispensed' ? SUCCESS[700] :
+                                                                    item.status === 'Pending' ? WARNING[700] :
+                                                                        ERROR[700]
                                                         }}
                                                     >
-                                                        {item.statusDisplayName}
+                                                        {item.statusDisplayName || item.status}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[100];
-                                                                    case 'HIGH': return WARNING[100];
-                                                                    case 'NORMAL': return SUCCESS[100];
-                                                                    case 'LOW': return GRAY[100];
-                                                                    default: return GRAY[100];
-                                                                }
-                                                            })(),
-                                                            color: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[700];
-                                                                    case 'HIGH': return WARNING[700];
-                                                                    case 'NORMAL': return SUCCESS[700];
-                                                                    case 'LOW': return GRAY[700];
-                                                                    default: return GRAY[700];
-                                                                }
-                                                            })()
+                                                            backgroundColor:
+                                                                item.priority === 'High' ? ERROR[100] :
+                                                                    item.priority === 'Medium' ? WARNING[100] :
+                                                                        SUCCESS[100],
+                                                            color:
+                                                                item.priority === 'High' ? ERROR[700] :
+                                                                    item.priority === 'Medium' ? WARNING[700] :
+                                                                        SUCCESS[700]
                                                         }}
                                                     >
-                                                        {item.priorityDisplayName}
+                                                        {item.priorityDisplayName || item.priority || 'N/A'}
+                                                        {item.isUrgent && (
+                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
+                                                        )}
                                                     </span>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="text-center py-12">
+                                            <td colSpan="7" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -409,19 +473,27 @@ const SupplyInventory = () => {
                                                         <FiPackage className="h-10 w-10" style={{ color: GRAY[400] }} />
                                                     </div>
                                                     <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
-                                                        Không có vật tư nào phù hợp
+                                                        {medicines.length === 0 ? "Không có thuốc nào cần cấp phát" : "Không có dữ liệu trang này"}
                                                     </p>
                                                     <p className="mb-4" style={{ color: TEXT.SECONDARY }}>
-                                                        Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác
+                                                        {medicines.length === 0 ?
+                                                            "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác" :
+                                                            "Vui lòng chọn trang khác hoặc điều chỉnh bộ lọc"
+                                                        }
                                                     </p>
-                                                    <button
-                                                        onClick={resetFilters}
-                                                        className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
-                                                    >
-                                                        <FiRefreshCw className="mr-2 h-4 w-4" />
-                                                        Đặt lại bộ lọc
-                                                    </button>
+                                                    {medicines.length === 0 && (
+                                                        <button
+                                                            onClick={resetFilters}
+                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
+                                                            style={{
+                                                                backgroundColor: PRIMARY[50],
+                                                                color: PRIMARY[600]
+                                                            }}
+                                                        >
+                                                            <FiRefreshCw className="mr-2 h-4 w-4" />
+                                                            Đặt lại bộ lọc
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -431,31 +503,32 @@ const SupplyInventory = () => {
                         </div>
 
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
-                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                    Hiển thị{" "}
-                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {((currentPage - 1) * pageSize) + 1}
-                                    </span>{" "}
-                                    -{" "}
-                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {Math.min(currentPage * pageSize, totalCount)}
-                                    </span>{" "}
-                                    trong tổng số{" "}
-                                    <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
-                                    vật tư
+                            <div
+                                className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
+                                style={{ borderColor: BORDER.DEFAULT }}
+                            >
+                                <div className="mb-4 sm:mb-0">
+                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
+                                        Hiển thị{" "}
+                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                            {((currentPage - 1) * pageSize) + 1}
+                                        </span>{" "}
+                                        -{" "}
+                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                            {Math.min(currentPage * pageSize, totalCount)}
+                                        </span>{" "}
+                                        trong tổng số{" "}
+                                        <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
+                                        thuốc cần cấp phát
+                                    </p>
                                 </div>
 
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-1">
                                     <button
                                         onClick={() => paginate(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
+                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                     >
                                         <svg
                                             className="h-4 w-4"
@@ -483,15 +556,17 @@ const SupplyInventory = () => {
                                         } else {
                                             pageNumber = currentPage - 2 + i;
                                         }
+
                                         return (
                                             <button
                                                 key={pageNumber}
                                                 onClick={() => paginate(pageNumber)}
-                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                                className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
                                                 style={{
                                                     borderColor: currentPage === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
                                                     backgroundColor: currentPage === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                    color: currentPage === pageNumber ? TEXT.INVERSE : TEXT.PRIMARY
+                                                    color: currentPage === pageNumber ? 'white' : TEXT.PRIMARY,
+                                                    boxShadow: currentPage === pageNumber ? `0 2px 4px ${PRIMARY[200]}` : 'none'
                                                 }}
                                             >
                                                 {pageNumber}
@@ -502,7 +577,7 @@ const SupplyInventory = () => {
                                     <button
                                         onClick={() => paginate(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
                                         style={{
                                             borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
                                             color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
@@ -535,11 +610,10 @@ const SupplyInventory = () => {
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
-                    okText="OK"
                 />
             </div>
         </div>
     );
 };
 
-export default SupplyInventory;
+export default NurseMedicationPage;
