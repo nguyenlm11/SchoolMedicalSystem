@@ -98,8 +98,8 @@ const Navbar = () => {
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/staff/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
-                        { to: "/staff/vaccination/flow", label: "Quy trình tiêm chủng", desc: "Hướng dẫn quy trình" },
+                        { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
+                        { to: "/schoolnurse/vaccination/flow", label: "Quy trình tiêm chủng", desc: "Hướng dẫn quy trình" },
                     ],
                 },
             ],
@@ -127,8 +127,8 @@ const Navbar = () => {
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/staff/medication", label: "Quản lý thuốc", desc: "Theo dõi thuốc trong trường" },
-                        { to: "/staff/supply", label: "Quản lý vật tư y tế", desc: "Theo dõi vật tư y tế trong trường" },
+                        { to: "/schoolnurse/medication", label: "Quản lý thuốc", desc: "Theo dõi thuốc trong trường" },
+                        { to: "/schoolnurse/supply", label: "Quản lý vật tư y tế", desc: "Theo dõi vật tư y tế trong trường" },
                     ],
                 },
                 {
@@ -154,8 +154,8 @@ const Navbar = () => {
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/staff/health-events", label: "Danh sách sự kiện y tế", desc: "Xem tất cả sự kiện" },
-                        { to: "/staff/health-events/new", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
+                        { to: "/schoolnurse/health-events", label: "Danh sách sự kiện y tế", desc: "Xem tất cả sự kiện" },
+                        { to: "/schoolnurse/health-events/new", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
                     ],
                 },
                 {
@@ -188,8 +188,8 @@ const Navbar = () => {
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/staff/health-check", label: "Quản lý kiểm tra", desc: "Theo dõi lịch khám" },
-                        { to: "/staff/health-check/new", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
+                        { to: "/schoolnurse/health-check", label: "Quản lý kiểm tra", desc: "Theo dõi lịch khám" },
+                        { to: "/schoolnurse/health-check/new", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
                     ],
                 },
             ],

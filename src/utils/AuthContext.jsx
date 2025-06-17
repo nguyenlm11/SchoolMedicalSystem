@@ -3,7 +3,7 @@ import authApi from "../api/authApi";
 
 const AuthContext = createContext(null);
 
-export const ROLES = { ADMIN: "admin", MANAGER: "manager", STAFF: "staff", PARENT: "parent", STUDENT: "student" };
+export const ROLES = { ADMIN: "admin", MANAGER: "manager", SCHOOLNURSE: "schoolnurse", PARENT: "parent", STUDENT: "student" };
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const accessToken = localStorage.getItem('token');
             const refreshToken = localStorage.getItem('refreshToken');
-            
+
             if (!accessToken || !refreshToken) {
                 throw new Error("No token or refresh token found");
             }
