@@ -32,7 +32,7 @@ const userApi = {
             }
             return {
                 success: false,
-                message: response.error,
+                message: error.message,
                 data: []
             };
         }
@@ -54,7 +54,6 @@ const userApi = {
             };
         }
     },
-
     // Create Manager
     createManager: async (managerData) => {
         try {
@@ -64,7 +63,6 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
-
     // Create School Nurse
     createSchoolNurse: async (nurseData) => {
         try {
@@ -74,7 +72,6 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
-
     // Delete Manager
     deleteManager: async (managerId) => {
         try {
@@ -84,7 +81,6 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
-
     // Delete School Nurse
     deleteSchoolNurse: async (nurseId) => {
         try {
@@ -94,7 +90,6 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
-
     // Cập nhật thông tin quản lý
     updateManager: async (managerId, managerData) => {
         try {
@@ -112,7 +107,6 @@ const userApi = {
             };
         }
     },
-
     // Cập nhật thông tin y tá
     updateSchoolNurse: async (nurseId, nurseData) => {
         try {
@@ -130,7 +124,6 @@ const userApi = {
             };
         }
     },
-
     // Download Manager Template
     downloadManagerTemplate: async () => {
         try {
@@ -150,7 +143,6 @@ const userApi = {
             };
         }
     },
-
     // Download School Nurse Template
     downloadSchoolNurseTemplate: async () => {
         try {
@@ -166,6 +158,84 @@ const userApi = {
             return {
                 success: false,
                 message: "Không thể tải mẫu y tá",
+                error: error.response?.data || error
+            };
+        }
+    },
+    // Export Manager List
+    exportManagerList: async () => {
+        try {
+            const response = await apiClient.get('/users/managers/export', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể xuất danh sách quản lý",
+                error: error.response?.data || error
+            };
+        }
+    },
+    // Export School Nurse List
+    exportSchoolNurseList: async () => {
+        try {
+            const response = await apiClient.get('/users/school-nurses/export', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể xuất danh sách y tá",
+                error: error.response?.data || error
+            };
+        }
+    },
+    // Import Manager List
+    importManagerList: async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await apiClient.post('/users/managers/import', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể nhập danh sách quản lý",
+                error: error.response?.data || error
+            };
+        }
+    },
+    // Import School Nurse List
+    importSchoolNurseList: async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await apiClient.post('/users/school-nurses/import', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể nhập danh sách y tá",
                 error: error.response?.data || error
             };
         }

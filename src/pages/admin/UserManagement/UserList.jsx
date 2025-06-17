@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus, FiEye, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
@@ -29,6 +29,8 @@ const UserList = () => {
     const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
     const [showImportDropdown, setShowImportDropdown] = useState(false);
     const [showExportDropdown, setShowExportDropdown] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
+    const [importResult, setImportResult] = useState(null);
     const navigate = useNavigate();
 
     const fetchUsers = async () => {
@@ -40,21 +42,24 @@ const UserList = () => {
                 pageSize: pageSize,
                 searchTerm: debouncedSearchTerm,
                 orderBy: orderBy,
-                role: filterRole
+                role: filterRole,
+                timestamp: Date.now()
             };
+
             const response = await userApi.getUsers(params);
             if (response.success && response.data) {
                 setUsers(response.data);
                 setTotalCount(response.totalCount);
                 setTotalPages(response.totalPages);
             } else {
-                console.error('Error fetching users:', response.message);
                 setUsers([]);
                 setTotalCount(0);
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching users:', error);
+            if (error.name === 'AbortError') {
+                return;
+            }
             setUsers([]);
             setTotalCount(0);
             setTotalPages(0);
@@ -62,6 +67,7 @@ const UserList = () => {
             setLoading(false);
         }
     };
+
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
@@ -198,14 +204,84 @@ const UserList = () => {
         }
     };
 
-    const handleImport = (type) => {
+    const handleImport = async (type) => {
         setShowImportDropdown(false);
-        console.log(`Importing ${type} data`);
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx';
+        input.style.display = 'none';
+
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            setImportLoading(true);
+            try {
+                const response = type === 'manager'
+                    ? await userApi.importManagerList(file)
+                    : await userApi.importSchoolNurseList(file);
+                if (response.success) {
+                    const resultData = response.data;
+                    setImportResult({
+                        totalRows: resultData.totalRows,
+                        successRows: resultData.successRows,
+                        errorRows: resultData.errorRows,
+                        validData: resultData.validData,
+                        invalidData: resultData.invalidData,
+                        errors: resultData.errors
+                    });
+                    setAlertType("success");
+                    setAlertMessage(`Nhập file thành công!`);
+                    setAlertModalOpen(true)
+                    if (resultData.successRows > 0) { fetchUsers() }
+                } else {
+                    throw new Error(response.message || 'Có lỗi xảy ra khi nhập file');
+                }
+            } catch (error) {
+                setAlertType("error");
+                setAlertMessage(`Lỗi nhập file: ${error.message || 'Vui lòng thử lại sau'}`);
+                setAlertModalOpen(true);
+            } finally {
+                setImportLoading(false);
+            }
+        };
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
     };
 
-    const handleExport = (type) => {
+    const handleExport = async (type) => {
         setShowExportDropdown(false);
-        console.log(`Exporting ${type} data`);
+        try {
+            const response = type === 'manager'
+                ? await userApi.exportManagerList()
+                : await userApi.exportSchoolNurseList();
+
+            if (response.success) {
+                const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                // Lấy tên file từ Content-Disposition header
+                const contentDisposition = response.headers['content-disposition'];
+                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : '';
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                setAlertType("success");
+                setAlertMessage(`Đã xuất danh sách ${type === 'manager' ? 'quản lý' : 'y tá'} thành công`);
+                setAlertModalOpen(true);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            setAlertType("error");
+            setAlertMessage(`Không thể xuất danh sách. ${error.message || 'Vui lòng thử lại sau.'}`);
+            setAlertModalOpen(true);
+        }
     };
 
     const dropdownStyle = {
@@ -297,9 +373,22 @@ const UserList = () => {
                                         }}
                                         className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
                                         style={{ backgroundColor: SUCCESS[600], color: 'white', borderColor: SUCCESS[600] }}
+                                        disabled={importLoading}
                                     >
-                                        <FiUpload className="h-4 w-4 mr-2" />
-                                        Nhập
+                                        {importLoading ? (
+                                            <>
+                                                <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Đang nhập...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FiUpload className="h-4 w-4 mr-2" />
+                                                Nhập
+                                            </>
+                                        )}
                                     </button>
                                     {showImportDropdown && (
                                         <div style={dropdownStyle}>
