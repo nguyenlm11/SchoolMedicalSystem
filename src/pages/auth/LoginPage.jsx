@@ -363,6 +363,16 @@ const LoginPage = () => {
                                 </button>
                             </div>
                         </form>
+
+                        <div className="mt-4 text-center">
+                            <Link
+                                to="/forgot-password"
+                                className="text-sm text-primary hover:underline"
+                                style={{ color: PRIMARY[600] }}
+                            >
+                                Quên mật khẩu?
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

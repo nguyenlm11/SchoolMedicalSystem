@@ -43,20 +43,13 @@ const authApi = {
   // Làm mới token
   async refreshToken() {
     try {
-      const accessToken = localStorage.getItem('token');
       const refreshToken = localStorage.getItem('refreshToken');
 
-      if (!accessToken || !refreshToken) {
-        return {
-          success: false,
-          message: response.error,
-          data: null,
-          errors: []
-        };
+      if (!refreshToken) {
+        throw new Error("Không tìm thấy token hoặc refresh token");
       }
 
       const response = await apiClient.post('/auth/refresh-token', {
-        accessToken,
         refreshToken
       });
 
@@ -68,12 +61,73 @@ const authApi = {
 
       return response.data;
     } catch (error) {
+      console.error("Lỗi khi làm mới token:", error);
+      return {
+        success: false,
+        message: error.message || "Không thể làm mới token",
+        data: null,
+        errors: []
+      };
+    }
+  },
+  // gửi yêu cầu để nhận otp
+  async requestOtp(email) {
+    try {
+      const response = await apiClient.post('/auth/forgot-password', {
+        email: email
+      });
+      return response.data;
+    } catch (error) {
       if (error.response && error.response.data) {
         return error.response.data;
       }
       return {
         success: false,
-        message: response.error,
+        message: error.message || 'Có lỗi xảy ra khi gửi OTP',
+        data: null,
+        errors: []
+      };
+    }
+  },
+
+  // xác thực otp email
+  async verifyOtp(email, otp) {
+    try {
+      const response = await apiClient.post('/auth/forgot-password/otp', {
+        email: email,
+        otp: otp
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: error.message || 'Có lỗi xảy ra khi xác nhận OTP',
+        data: null,
+        errors: []
+      };
+    }
+  },
+
+  // đặt lại mật khẩu
+  async resetPassword(email, otp, newPassword, confirmPassword) {
+    try {
+      const response = await apiClient.post('/auth/forgot-password/reset', {
+        email: email,
+        otp: otp,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: error.message || 'Có lỗi xảy ra khi đặt lại mật khẩu',
         data: null,
         errors: []
       };
