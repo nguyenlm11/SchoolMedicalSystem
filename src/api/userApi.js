@@ -37,7 +37,6 @@ const userApi = {
             };
         }
     },
-
     // Lấy thông tin chi tiết của nhân viên
     getStaffProfile: async (staffId) => {
         try {
@@ -128,6 +127,46 @@ const userApi = {
                 message: "Không thể cập nhật thông tin y tá",
                 data: null,
                 errors: []
+            };
+        }
+    },
+
+    // Download Manager Template
+    downloadManagerTemplate: async () => {
+        try {
+            const response = await apiClient.get('/users/managers/template', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể tải mẫu quản lý",
+                error: error.response?.data || error
+            };
+        }
+    },
+
+    // Download School Nurse Template
+    downloadSchoolNurseTemplate: async () => {
+        try {
+            const response = await apiClient.get('/users/school-nurses/template', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể tải mẫu y tá",
+                error: error.response?.data || error
             };
         }
     },
