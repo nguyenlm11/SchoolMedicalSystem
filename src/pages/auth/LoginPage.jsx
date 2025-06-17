@@ -332,41 +332,51 @@ const LoginPage = () => {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full py-3 px-4 rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg"
-                                        style={{
-                                            backgroundColor: PRIMARY[500],
-                                            focusRingColor: PRIMARY[500]
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            if (!isLoading) {
-                                                e.target.style.backgroundColor = PRIMARY[600];
-                                            }
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            if (!isLoading) {
-                                                e.target.style.backgroundColor = PRIMARY[500];
-                                            }
-                                        }}
-                                    >
-                                        {isLoading ? (
-                                            <span className="flex items-center justify-center">
-                                                <FiLoader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                                Đang xử lý...
-                                            </span>
-                                        ) : (
-                                            "Đăng nhập"
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
+                            <div>
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full py-3 px-4 rounded-xl shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg"
+                                    style={{
+                                        backgroundColor: PRIMARY[500],
+                                        focusRingColor: PRIMARY[500]
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isLoading) {
+                                            e.target.style.backgroundColor = PRIMARY[600];
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isLoading) {
+                                            e.target.style.backgroundColor = PRIMARY[500];
+                                        }
+                                    }}
+                                >
+                                    {isLoading ? (
+                                        <span className="flex items-center justify-center">
+                                            <FiLoader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                                            Đang xử lý...
+                                        </span>
+                                    ) : (
+                                        "Đăng nhập"
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+
+                        <div className="mt-4 text-center">
+                            <Link
+                                to="/forgot-password"
+                                className="text-sm text-primary hover:underline"
+                                style={{ color: PRIMARY[600] }}
+                            >
+                                Quên mật khẩu?
+                            </Link>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
             {/* Alert Modal */}
             <AlertModal

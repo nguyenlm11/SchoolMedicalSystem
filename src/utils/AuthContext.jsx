@@ -21,10 +21,9 @@ export const AuthProvider = ({ children }) => {
     // Hàm làm mới token
     const refreshAuthToken = async () => {
         try {
-            const accessToken = localStorage.getItem('token');
             const refreshToken = localStorage.getItem('refreshToken');
-
-            if (!accessToken || !refreshToken) {
+            
+            if (!refreshToken) {
                 throw new Error("No token or refresh token found");
             }
 
@@ -114,8 +113,8 @@ export const AuthProvider = ({ children }) => {
     const checkAndRefreshToken = async () => {
         if (!user || tokenRefreshing) return;
 
-        const currentTime = Math.floor(Date.now() / 1000); // Lấy thời gian hiện tại dưới dạng giây
-        const tokenExp = JSON.parse(atob(user.token.split('.')[1])).exp; // Lấy thời gian hết hạn token từ payload
+        const currentTime = Math.floor(Date.now() / 1000);
+        const tokenExp = JSON.parse(atob(user.token.split('.')[1])).exp;
 
         if (tokenExp < currentTime) {
             console.log('Token đã hết hạn, đang làm mới...');
