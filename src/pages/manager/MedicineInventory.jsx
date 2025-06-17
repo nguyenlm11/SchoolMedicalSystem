@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiTablet, FiAlertTriangle, FiPackage, FiFilter } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
-import MedicineModal from "../../components/modal/AddMedicineModal";
-import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
 import medicalApi from "../../api/medicalApi";
 
@@ -304,27 +302,16 @@ const MedicineInventory = () => {
     return (
         <div className="min-h-screen" >
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
+                <div className="mb-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Quản lý kho thuốc
+                            <h1 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                                Quản lý thuốc
                             </h1>
-                            <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Theo dõi và quản lý danh sách thuốc tại trường
+                            <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
+                                Quản lý danh sách thuốc và vật tư y tế
                             </p>
                         </div>
-                        <button
-                            onClick={() => openModal()}
-                            className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                            style={{
-                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                color: TEXT.INVERSE
-                            }}
-                        >
-                            <FiPlus className="mr-2 h-5 w-5" />
-                            Thêm thuốc mới
-                        </button>
                     </div>
                 </div>
 
@@ -445,7 +432,7 @@ const MedicineInventory = () => {
                                     <select
                                         value={filters.approvalStatus}
                                         onChange={(e) => handleFilterChange('approvalStatus', e.target.value)}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                     >
                                         <option value="">Tất cả trạng thái</option>
@@ -460,7 +447,7 @@ const MedicineInventory = () => {
                                     <select
                                         value={filters.priority}
                                         onChange={(e) => handleFilterChange('priority', e.target.value)}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]"
+                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                     >
                                         <option value="">Độ ưu tiên</option>
@@ -473,15 +460,14 @@ const MedicineInventory = () => {
 
                                 <button
                                     onClick={resetFilters}
-                                    className="flex items-center px-6 py-3 rounded-xl transition-all duration-200 font-medium border"
+                                    className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
                                     style={{
-                                        color: PRIMARY[600],
-                                        borderColor: PRIMARY[200],
-                                        backgroundColor: PRIMARY[50]
+                                        backgroundColor: PRIMARY[50],
+                                        color: PRIMARY[600]
                                     }}
                                 >
                                     <FiRefreshCw className="mr-2 h-4 w-4" />
-                                    Đặt lại
+                                    Đặt lại bộ lọc
                                 </button>
                             </div>
                         </div>
@@ -669,36 +655,6 @@ const MedicineInventory = () => {
                                                         >
                                                             <FiTrash2 className="h-4 w-4" />
                                                         </button>
-                                                        {item.canApprove && (
-                                                            <button
-                                                                onClick={() => handleApprove(item.id)}
-                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                                style={{ backgroundColor: SUCCESS[50], color: SUCCESS[600] }}
-                                                                title="Phê duyệt"
-                                                            >
-                                                                <FiCheck className="h-4 w-4" />
-                                                            </button>
-                                                        )}
-                                                        {item.canReject && (
-                                                            <button
-                                                                onClick={() => handleReject(item.id)}
-                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                                style={{ backgroundColor: ERROR[50], color: ERROR[600] }}
-                                                                title="Từ chối"
-                                                            >
-                                                                <FiX className="h-4 w-4" />
-                                                            </button>
-                                                        )}
-                                                        {item.canUse && (
-                                                            <button
-                                                                onClick={() => handleUse(item.id)}
-                                                                className="p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                                style={{ backgroundColor: WARNING[50], color: WARNING[600] }}
-                                                                title="Sử dụng"
-                                                            >
-                                                                <FiPackage className="h-4 w-4" />
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -845,27 +801,18 @@ const MedicineInventory = () => {
                     </div>
                 </div>
 
-                <MedicineModal
-                    isOpen={showItemModal}
-                    onClose={closeModal}
-                    onSubmit={handleSubmit}
-                    itemForm={itemForm}
-                    selectedItem={selectedItem}
-                    formErrors={formErrors}
-                    submitting={submitting}
-                    onInputChange={handleInputChange}
-                />
-
-                <ConfirmModal
+                <AlertModal
                     isOpen={showConfirmModal}
                     onClose={() => setShowConfirmModal(false)}
-                    onConfirm={confirmAction}
                     title="Xác nhận xóa thuốc"
                     message="Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác."
+                    type="warning"
                     confirmText="Xóa"
                     cancelText="Hủy"
-                    type="error"
-                    isLoading={deleting}
+                    onConfirm={() => {
+                        confirmAction && confirmAction();
+                        setShowConfirmModal(false);
+                    }}
                 />
 
                 <AlertModal
@@ -874,7 +821,6 @@ const MedicineInventory = () => {
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
-                    okText="OK"
                 />
 
                 {deleting && (
