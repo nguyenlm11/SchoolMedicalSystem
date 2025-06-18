@@ -124,10 +124,10 @@ const NurseSupplyPage = () => {
         }
         setCurrentPage(1);
     };
+
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
     const handleAddSuccess = () => {
         fetchSupplies();
-        showAlert("success", "Thành công", "Thêm vật tư y tế mới thành công");
     };
 
     if (loading) {
@@ -438,7 +438,7 @@ const NurseSupplyPage = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="text-center py-12">
+                                            <td colSpan="6" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -567,19 +567,18 @@ const NurseSupplyPage = () => {
                     </div>
                 </div>
 
+                <AddSupplyModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
+                />
+
                 <AlertModal
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
-                    okText="OK"
-                />
-
-                <AddSupplyModal
-                    isOpen={showAddModal}
-                    onClose={() => setShowAddModal(false)}
-                    onSuccess={handleAddSuccess}
                 />
             </div>
         </div>
