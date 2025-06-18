@@ -36,7 +36,7 @@ const UserList = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const orderBy = sortColumn && sortDirection ? `${sortColumn}_${sortDirection}` : '';
+            const orderBy = sortColumn;
             const params = {
                 pageIndex: currentPage,
                 pageSize: pageSize,
@@ -669,7 +669,7 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    {users.length > 0 && (
+                    {totalPages > 1 && (
                         <div
                             className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
                             style={{ borderColor: BORDER.DEFAULT, borderRadius: '0 0 0.75rem 0.75rem' }}

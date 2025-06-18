@@ -4,6 +4,7 @@ import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX } from "r
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import AddSupplyModal from "../../components/modal/AddSupplyModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseSupplyPage = () => {
@@ -23,6 +24,7 @@ const NurseSupplyPage = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [filters, setFilters] = useState({
         approvalStatus: '',
         priority: ''
@@ -122,13 +124,14 @@ const NurseSupplyPage = () => {
         }
         setCurrentPage(1);
     };
-
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    const handleAddSuccess = () => {
+        fetchSupplies();
+        showAlert("success", "Thành công", "Thêm vật tư y tế mới thành công");
+    };
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải vật tư..." />
-            </div>
+            <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải vật tư..." />
         );
     }
 
@@ -145,6 +148,7 @@ const NurseSupplyPage = () => {
                                 </p>
                             </div>
                             <button
+                                onClick={() => setShowAddModal(true)}
                                 className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                                 style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                             >
@@ -561,6 +565,12 @@ const NurseSupplyPage = () => {
                     message={alertConfig.message}
                     type={alertConfig.type}
                     okText="OK"
+                />
+
+                <AddSupplyModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
                 />
             </div>
         </div>
