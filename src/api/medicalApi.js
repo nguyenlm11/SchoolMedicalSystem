@@ -70,9 +70,9 @@ const medicalApi = {
         }
     },
 
-    approveMedicalItem: async (id) => {
+    approveMedicalItem: async (id, data) => {
         try {
-            const response = await apiClient.post(`/medical-items/${id}/approve`);
+            const response = await apiClient.put(`/medical-items/${id}/approve`, data);
             return response.data;
         } catch (error) {
             console.error('Error approving medical item:', error);
