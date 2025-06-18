@@ -129,9 +129,12 @@ const NurseSupplyPage = () => {
         fetchSupplies();
         showAlert("success", "Thành công", "Thêm vật tư y tế mới thành công");
     };
+
     if (loading) {
         return (
-            <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải vật tư..." />
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải danh sách vật tư..." />
+            </div>
         );
     }
 
