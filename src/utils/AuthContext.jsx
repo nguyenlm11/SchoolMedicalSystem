@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import authApi from "../api/authApi";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
@@ -9,6 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [tokenRefreshing, setTokenRefreshing] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -71,6 +73,29 @@ export const AuthProvider = ({ children }) => {
     const isAuthenticated = () => {
         return !!user;
     };
+    
+    //role
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        
+        if (storedUser && storedToken && storedRefreshToken) {
+            const user = JSON.parse(storedUser);
+            setUser(user);
+            setLoading(false);
+
+            if (user.role === ROLES.ADMIN) {
+                navigate('/admin/dashboard'); // dashboard admin
+            } else if (user.role === ROLES.MANAGER) {
+                navigate('/manager/dashboard'); // dashboard manager
+            } else {
+                navigate('/'); // trang chủ
+            }
+        } else {
+            setLoading(false);
+        }
+    }, []);
 
     // Đăng nhập với thông tin tài khoản
     const loginWithCredentials = async (credentials) => {
@@ -100,6 +125,15 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', responseData.token);
             localStorage.setItem('refreshToken', responseData.refreshToken);
             login(userData);
+
+            // if (serverRole === ROLES.ADMIN) {
+            //     navigate('/admin/dashboard');
+            // } else if (serverRole === ROLES.MANAGER) {
+            //     navigate('/manager/dashboard');
+            // } else {
+            //     navigate('/');
+            // }
+            
             return { success: true, data: userData, message: response.message };
         }
         return {
