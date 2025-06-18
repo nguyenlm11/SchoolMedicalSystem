@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock } from "react-icons/fi";
+import { Link, useLocation } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -337,7 +337,8 @@ const NurseMedicationPage = () => {
                                             { key: "quantity", label: "Số lượng" },
                                             { key: "expiryDate", label: "Hạn sử dụng" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" }
+                                            { key: "priority", label: "Độ ưu tiên" },
+                                            { key: "action", label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
@@ -459,6 +460,13 @@ const NurseMedicationPage = () => {
                                                     >
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
                                                     </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <>
+                                                        <Link to={`/schoolnurse/medical-items/${item.id}`} className="text-blue-500 hover:text-blue-700">
+                                                            <FiEye className="h-4 w-4" />
+                                                        </Link>
+                                                    </>
                                                 </td>
                                             </tr>
                                         ))
@@ -618,7 +626,7 @@ const NurseMedicationPage = () => {
                     type={alertConfig.type}
                 />
             </div>
-        </div>
+        </div >
     );
 };
 
