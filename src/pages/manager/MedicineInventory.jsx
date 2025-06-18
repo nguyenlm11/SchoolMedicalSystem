@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiCheck, FiInfo, FiEye, FiMoreVertical } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -14,8 +14,10 @@ const MedicineInventory = () => {
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [sortBy, setSortBy] = useState("name");
-    const [sortOrder, setSortOrder] = useState("asc");
+    const [sortConfig, setSortConfig] = useState({
+        key: null,
+        direction: 'asc'
+    });
     const [currentPage, setCurrentPage] = useState(1);
     const [stats, setStats] = useState({ total: 0, inactive: 0, lowStock: 0 });
     const [showAlertModal, setShowAlertModal] = useState(false);
@@ -27,6 +29,8 @@ const MedicineInventory = () => {
         approvalStatus: '',
         priority: ''
     });
+    const [openActionId, setOpenActionId] = useState(null);
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -43,7 +47,19 @@ const MedicineInventory = () => {
 
     useEffect(() => {
         fetchMedicines();
-    }, [filters, sortBy, sortOrder, currentPage, pageSize, searchTerm]);
+    }, [filters, currentPage, pageSize, searchTerm]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpenActionId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -63,9 +79,6 @@ const MedicineInventory = () => {
             }
             if (filters.priority) {
                 params.priority = filters.priority;
-            }
-            if (sortBy && sortOrder) {
-                params.orderBy = `${sortBy}_${sortOrder}`;
             }
             if (searchTerm) {
                 params.searchTerm = searchTerm;
@@ -111,17 +124,76 @@ const MedicineInventory = () => {
         });
     };
 
-    const handleSort = (column) => {
-        if (sortBy === column) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-        } else {
-            setSortBy(column);
-            setSortOrder("asc");
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
         }
-        setCurrentPage(1);
+        setSortConfig({ key, direction });
+    };
+
+    const sortData = (data) => {
+        if (!sortConfig.key) return data;
+
+        return [...data].sort((a, b) => {
+            let aValue = a[sortConfig.key];
+            let bValue = b[sortConfig.key];
+
+            // Xử lý các trường hợp đặc biệt
+            if (sortConfig.key === 'expiryDate') {
+                aValue = new Date(a.expiryDate).getTime();
+                bValue = new Date(b.expiryDate).getTime();
+            } else if (typeof aValue === 'string') {
+                aValue = aValue.toLowerCase();
+                bValue = bValue.toLowerCase();
+            }
+
+            if (aValue < bValue) {
+                return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const handleApprove = async (id) => {
+        try {
+            const response = await medicalApi.approveMedicalItem(id, {
+                approvalNotes: "Đã phê duyệt"
+            });
+
+            if (response.success) {
+                setMedicines(prevMedicines =>
+                    prevMedicines.map(item =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                status: 'Approved',
+                                statusDisplayName: 'Đã duyệt'
+                            }
+                            : item
+                    )
+                );
+
+                await fetchMedicines(); // Đảm bảo fetch data mới hoàn tất
+                showAlert("success", "Thành công", "Phê duyệt thuốc thành công");
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể phê duyệt thuốc. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error approving medicine:', error);
+            showAlert("error", "Lỗi", "Không thể phê duyệt thuốc. Vui lòng thử lại.");
+        }
+    };
+
+    const toggleDropdown = (id) => {
+        setOpenActionId(openActionId === id ? null : id);
+    };
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -132,95 +204,95 @@ const MedicineInventory = () => {
 
     return (
         <div className="min-h-screen" >
-            <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
+            <div className="h-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 <div className="mb-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý thuốc</h1>
-                            <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
+                            <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý thuốc</h1>
+                            <p className="mt-1 text-sm sm:text-base" style={{ color: TEXT.SECONDARY }}>
                                 Quản lý danh sách thuốc và vật tư y tế
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                         style={{
                             background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
                             borderColor: PRIMARY[200]
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-4 sm:p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-sm sm:text-base font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
                                         Tổng số thuốc
                                     </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-2xl sm:text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
                                         {stats.total}
                                     </p>
                                 </div>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 sm:h-16 w-12 sm:w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiTablet className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiTablet className="h-6 sm:h-8 w-6 sm:w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                         style={{
                             background: `linear-gradient(135deg, ${WARNING[400]} 0%, ${WARNING[500]} 100%)`,
                             borderColor: WARNING[200]
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-4 sm:p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-sm sm:text-base font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
                                         Sắp hết hàng
                                     </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-2xl sm:text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
                                         {stats.lowStock}
                                     </p>
                                 </div>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 sm:h-16 w-12 sm:w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiAlertTriangle className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiAlertTriangle className="h-6 sm:h-8 w-6 sm:w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 md:col-span-2 lg:col-span-1"
                         style={{
                             background: `linear-gradient(135deg, ${GRAY[500]} 0%, ${GRAY[600]} 100%)`,
                             borderColor: GRAY[200]
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-4 sm:p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-sm sm:text-base font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
                                         Ngừng sử dụng
                                     </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-2xl sm:text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
                                         {stats.inactive}
                                     </p>
                                 </div>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 sm:h-16 w-12 sm:w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiX className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiX className="h-6 sm:h-8 w-6 sm:w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
@@ -228,36 +300,36 @@ const MedicineInventory = () => {
                 </div>
 
                 <div
-                    className="rounded-2xl shadow-xl border backdrop-blur-sm"
+                    className="rounded-xl sm:rounded-2xl shadow-xl border backdrop-blur-sm"
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}
                 >
-                    <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+                    <div className="p-4 sm:p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                        <div className="flex flex-col lg:flex-row gap-4">
                             <div className="flex-1">
                                 <div className="relative">
-                                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
+                                    <FiSearch className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 sm:h-5 w-4 sm:w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
                                         placeholder="Tìm kiếm theo tên thuốc..."
-                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        className="w-full pl-10 sm:pl-12 pr-10 py-2 sm:py-3 border rounded-lg sm:rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                     {searchTerm !== debouncedSearchTerm && (
-                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                        <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <div className="flex items-center space-x-2">
                                     <select
                                         value={filters.approvalStatus}
                                         onChange={(e) => handleFilterChange('approvalStatus', e.target.value)}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
+                                        className="border rounded-lg px-3 py-2 text-sm sm:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[160px] sm:min-w-[200px]"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                     >
                                         <option value="">Tất cả trạng thái</option>
@@ -271,7 +343,7 @@ const MedicineInventory = () => {
                                     <select
                                         value={filters.priority}
                                         onChange={(e) => handleFilterChange('priority', e.target.value)}
-                                        className="border rounded-lg px-3 py-2 text-sm lg:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[200px]"
+                                        className="border rounded-lg px-3 py-2 text-sm sm:text-base transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[160px] sm:min-w-[200px]"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                     >
                                         <option value="">Độ ưu tiên</option>
@@ -284,7 +356,7 @@ const MedicineInventory = () => {
 
                                 <button
                                     onClick={resetFilters}
-                                    className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
+                                    className="px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300 text-sm sm:text-base"
                                     style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                 >
                                     <FiRefreshCw className="mr-2 h-4 w-4" />
@@ -300,25 +372,26 @@ const MedicineInventory = () => {
                                 <thead>
                                     <tr style={{ backgroundColor: GRAY[50] }}>
                                         {[
-                                            { key: "id", label: "Mã thuốc" },
+                                            { key: "id", label: "Mã thuốc", className: "hidden sm:table-cell" },
                                             { key: "name", label: "Tên thuốc" },
-                                            { key: "dosage", label: "Liều lượng" },
+                                            { key: "dosage", label: "Liều lượng", className: "hidden lg:table-cell" },
                                             { key: "quantity", label: "Số lượng" },
-                                            { key: "expiryDate", label: "Hạn sử dụng" },
+                                            { key: "expiryDate", label: "Hạn sử dụng", className: "hidden md:table-cell" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" }
+                                            { key: "priority", label: "Độ ưu tiên", className: "hidden md:table-cell" },
+                                            { key: "actions", label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
-                                                className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
+                                                className={`py-3 sm:py-4 px-4 sm:px-6 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider ${col.className || ''} ${col.key !== 'actions' ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={col.key ? () => handleSort(col.key) : undefined}
+                                                onClick={col.key !== 'actions' ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
                                                     {col.label}
-                                                    {col.key && sortBy === col.key && (
-                                                        <span className="ml-2 text-xs">
-                                                            {sortOrder === "asc" ? "↑" : "↓"}
+                                                    {col.key !== 'actions' && sortConfig.key === col.key && (
+                                                        <span className="ml-2">
+                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -328,48 +401,51 @@ const MedicineInventory = () => {
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {medicines.length > 0 ? (
-                                        medicines.map((item, index) => (
+                                        sortData(medicines).map((item, index) => (
                                             <tr
                                                 key={item.id || index}
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
                                                 style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] || '#fafafa' }}
                                             >
-                                                <td className="py-4 px-6">
-                                                    <span className="font-mono text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden sm:table-cell">
+                                                    <span className="font-mono text-xs sm:text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                         #{(item.id || '').toString().substring(0, 8)}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
                                                     <div className="flex items-center">
                                                         <div>
-                                                            <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
+                                                            <span className="font-semibold block text-sm sm:text-base" style={{ color: TEXT.PRIMARY }}>
                                                                 {item.name || 'N/A'}
                                                             </span>
-                                                            <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                                {item.form && item.formDisplayName ? `${item.formDisplayName} (${item.form})` : 'N/A'}
+                                                            <span className="text-xs sm:text-sm mt-0.5 block md:hidden" style={{ color: TEXT.SECONDARY }}>
+                                                                {item.dosage || 'N/A'}
+                                                            </span>
+                                                            <span className="text-xs sm:text-sm mt-0.5 block sm:hidden" style={{ color: TEXT.SECONDARY }}>
+                                                                HSD: {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6">
-                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden lg:table-cell">
+                                                    <span className="text-sm sm:text-base font-medium" style={{ color: TEXT.PRIMARY }}>
                                                         {item.dosage || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
                                                     <div className="flex items-center">
                                                         <span
-                                                            className="font-bold text-lg"
+                                                            className="font-bold text-base sm:text-lg"
                                                             style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
                                                             {item.quantity || 0}
                                                         </span>
-                                                        <span className="ml-1 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                        <span className="ml-1 text-xs sm:text-sm" style={{ color: TEXT.SECONDARY }}>
                                                             {item.unit || 'N/A'}
                                                         </span>
                                                         {item.isLowStock && (
-                                                            <div className="ml-3 flex items-center">
-                                                                <FiAlertTriangle className="h-4 w-4 mr-1" style={{ color: WARNING[500] }} />
+                                                            <div className="ml-2 sm:ml-3 flex items-center">
+                                                                <FiAlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 mr-1" style={{ color: WARNING[500] }} />
                                                                 <span className="text-xs font-medium" style={{ color: WARNING[600] }}>
                                                                     Sắp hết
                                                                 </span>
@@ -377,14 +453,14 @@ const MedicineInventory = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden md:table-cell">
                                                     <div className="flex flex-col">
-                                                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        <span className="text-sm sm:text-base font-medium" style={{ color: TEXT.PRIMARY }}>
                                                             {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
                                                         </span>
                                                         {(item.isExpiringSoon || item.isExpired) && (
                                                             <span
-                                                                className="text-xs font-medium mt-1 px-2 py-1 rounded-full"
+                                                                className="text-xs font-medium mt-1 px-2 py-1 rounded-full inline-block"
                                                                 style={{
                                                                     backgroundColor: item.isExpired ? ERROR[100] : WARNING[100],
                                                                     color: item.isExpired ? ERROR[700] : WARNING[700]
@@ -395,17 +471,17 @@ const MedicineInventory = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
                                                     <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor:
-                                                                item.status === 'Active' ? SUCCESS[100] :
-                                                                    item.status === 'Pending' ? WARNING[100] :
-                                                                        item.status === 'Rejected' ? ERROR[100] :
-                                                                            GRAY[100],
+                                                                item.status === 'Approved' ? SUCCESS[50] :
+                                                                    item.status === 'Pending' ? WARNING[50] :
+                                                                        item.status === 'Rejected' ? ERROR[50] :
+                                                                            GRAY[50],
                                                             color:
-                                                                item.status === 'Active' ? SUCCESS[700] :
+                                                                item.status === 'Approved' ? SUCCESS[700] :
                                                                     item.status === 'Pending' ? WARNING[700] :
                                                                         item.status === 'Rejected' ? ERROR[700] :
                                                                             GRAY[700]
@@ -414,9 +490,9 @@ const MedicineInventory = () => {
                                                         {item.statusDisplayName}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden md:table-cell">
                                                     <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor:
                                                                 item.priority === 'High' ? ERROR[100] :
@@ -429,27 +505,89 @@ const MedicineInventory = () => {
                                                         }}
                                                     >
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
-                                                        {item.isUrgent && (
-                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
-                                                        )}
                                                     </span>
+                                                </td>
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                    <div className="relative" ref={dropdownRef}>
+                                                        <button
+                                                            onClick={() => toggleDropdown(item.id)}
+                                                            className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
+                                                            style={{
+                                                                backgroundColor: GRAY[100],
+                                                                color: TEXT.PRIMARY
+                                                            }}
+                                                        >
+                                                            <FiMoreVertical className="w-4 sm:w-5 h-4 sm:h-5" />
+                                                        </button>
+
+                                                        {openActionId === item.id && (
+                                                            <div
+                                                                className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border z-50"
+                                                                style={{
+                                                                    borderColor: BORDER.DEFAULT,
+                                                                    right: 'calc(100% + 0.5rem)',
+                                                                    bottom: index >= medicines.length - 2 ? '0' : 'auto', // Nếu là 2 hàng cuối thì hiển thị từ dưới lên
+                                                                    top: index >= medicines.length - 2 ? 'auto' : '50%',
+                                                                    transform: index >= medicines.length - 2 ? 'none' : 'translateY(-50%)'
+                                                                }}
+                                                            >
+                                                                {item.status === 'Pending' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleApprove(item.id);
+                                                                                setOpenActionId(null);
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                            style={{ color: SUCCESS[600] }}
+                                                                        >
+                                                                            <FiCheck className="w-4 h-4 flex-shrink-0" />
+                                                                            <span>Duyệt</span>
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleReject(item.id);
+                                                                                setOpenActionId(null);
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                            style={{ color: ERROR[600] }}
+                                                                        >
+                                                                            <FiX className="w-4 h-4 flex-shrink-0" />
+                                                                            <span>Từ chối</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        handleViewDetails(item);
+                                                                        setOpenActionId(null);
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                    style={{ color: PRIMARY[600] }}
+                                                                >
+                                                                    <FiEye className="w-4 h-4 flex-shrink-0" />
+                                                                    <span>Xem chi tiết</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="text-center py-12">
+                                            <td colSpan="8" className="text-center py-8 sm:py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
-                                                        className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
+                                                        className="h-16 sm:h-20 w-16 sm:w-20 rounded-full flex items-center justify-center mb-4"
                                                         style={{ backgroundColor: GRAY[100] }}
                                                     >
-                                                        <FiPackage className="h-10 w-10" style={{ color: GRAY[400] }} />
+                                                        <FiPackage className="h-8 sm:h-10 w-8 sm:w-10" style={{ color: GRAY[400] }} />
                                                     </div>
-                                                    <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
+                                                    <p className="text-lg sm:text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
                                                         {medicines.length === 0 ? "Không có thuốc nào phù hợp" : "Không có dữ liệu trang này"}
                                                     </p>
-                                                    <p className="mb-4" style={{ color: TEXT.SECONDARY }}>
+                                                    <p className="text-sm sm:text-base mb-4" style={{ color: TEXT.SECONDARY }}>
                                                         {medicines.length === 0 ?
                                                             "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác" :
                                                             "Vui lòng chọn trang khác hoặc điều chỉnh bộ lọc"
@@ -458,7 +596,7 @@ const MedicineInventory = () => {
                                                     {medicines.length === 0 && (
                                                         <button
                                                             onClick={resetFilters}
-                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
+                                                            className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl flex items-center transition-all duration-300 font-medium text-sm sm:text-base"
                                                             style={{
                                                                 backgroundColor: PRIMARY[50],
                                                                 color: PRIMARY[600]
@@ -478,11 +616,11 @@ const MedicineInventory = () => {
 
                         {totalPages > 1 && (
                             <div
-                                className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
-                                style={{ borderColor: BORDER.DEFAULT, borderRadius: '0 0 0.75rem 0.75rem' }}
+                                className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t bg-gray-50/50"
+                                style={{ borderColor: BORDER.DEFAULT }}
                             >
                                 <div className="mb-4 sm:mb-0">
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
+                                    <p className="text-xs sm:text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                         Hiển thị{" "}
                                         <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
                                             {((currentPage - 1) * pageSize) + 1}
@@ -501,11 +639,11 @@ const MedicineInventory = () => {
                                     <button
                                         onClick={() => paginate(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        className="p-1 sm:p-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
                                         style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                     >
                                         <svg
-                                            className="h-4 w-4"
+                                            className="h-4 w-4 sm:h-5 sm:w-5"
                                             xmlns="http://www.w3.org/2000/svg"
                                             viewBox="0 0 20 20"
                                             fill="currentColor"
@@ -535,7 +673,7 @@ const MedicineInventory = () => {
                                             <button
                                                 key={pageNumber}
                                                 onClick={() => paginate(pageNumber)}
-                                                className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
+                                                className="p-1 sm:p-2 min-w-[28px] sm:min-w-[32px] text-xs sm:text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
                                                 style={{
                                                     borderColor: currentPage === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
                                                     backgroundColor: currentPage === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
@@ -551,7 +689,7 @@ const MedicineInventory = () => {
                                     <button
                                         onClick={() => paginate(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        className="p-1 sm:p-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
                                         style={{
                                             borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
                                             color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
@@ -559,7 +697,7 @@ const MedicineInventory = () => {
                                         }}
                                     >
                                         <svg
-                                            className="h-4 w-4"
+                                            className="h-4 w-4 sm:h-5 sm:w-5"
                                             xmlns="http://www.w3.org/2000/svg"
                                             viewBox="0 0 20 20"
                                             fill="currentColor"
