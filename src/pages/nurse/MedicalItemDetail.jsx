@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiPackage, FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiBox, FiUser, FiFileText } from 'react-icons/fi';
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from '../../constants/colors';
+import { FiPackage, FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiBox, FiUser, FiFileText, FiThermometer, FiShield, FiActivity, FiInfo, FiBarChart2 } from 'react-icons/fi';
+import { PRIMARY, TEXT, BACKGROUND, BORDER, ERROR, WARNING } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import medicalApi from '../../api/medicalApi';
 
@@ -10,6 +10,12 @@ const MedicalItemDetail = () => {
     const [loading, setLoading] = useState(true);
     const [item, setItem] = useState(null);
     const [error, setError] = useState(null);
+    const stats = {
+        totalQuantity: 100,
+        currentQuantity: item?.quantity || 0,
+        usageRate: 65,
+        daysUntilExpiry: item?.expiryDate ? Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0
+    };
 
     useEffect(() => {
         const fetchItemDetail = async () => {
@@ -28,28 +34,31 @@ const MedicalItemDetail = () => {
                 setLoading(false);
             }
         };
-
         fetchItemDetail();
     }, [id]);
 
     if (loading) {
-        return <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải thông tin..." />;
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải thông tin..." />
+            </div>
+        );
     }
 
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <div className="text-center">
-                    <FiAlertCircle className="mx-auto h-12 w-12 mb-4" style={{ color: ERROR[500] }} />
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                <div className="text-center bg-white p-8 rounded-2xl shadow-sm border" style={{ borderColor: PRIMARY[200] }}>
+                    <FiAlertCircle className="mx-auto h-12 w-12 mb-4" style={{ color: PRIMARY[500] }} />
+                    <h3 className="text-lg font-semibold mb-4" style={{ color: TEXT.PRIMARY }}>
                         {error}
                     </h3>
                     <button
                         onClick={() => window.history.back()}
-                        className="mt-4 px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105"
-                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
+                        className="px-6 py-2 rounded-xl font-medium inline-flex items-center"
+                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                     >
-                        <FiArrowLeft className="inline-block mr-2 h-4 w-4" />
+                        <FiArrowLeft className="mr-2 h-5 w-5" />
                         Quay lại
                     </button>
                 </div>
@@ -58,77 +67,121 @@ const MedicalItemDetail = () => {
     }
 
     if (!item) return null;
-
     const getStatusColor = (status) => {
         switch (status) {
             case 'Approved':
-                return { bg: SUCCESS[50], text: SUCCESS[700], icon: <FiCheckCircle className="h-5 w-5" /> };
+                return { bg: PRIMARY[50], text: PRIMARY[700], icon: <FiCheckCircle className="h-5 w-5" /> };
             case 'Rejected':
                 return { bg: ERROR[50], text: ERROR[700], icon: <FiXCircle className="h-5 w-5" /> };
             case 'Pending':
-                return { bg: WARNING[50], text: WARNING[700], icon: <FiClock className="h-5 w-5" /> };
+                return { bg: PRIMARY[50], text: PRIMARY[700], icon: <FiClock className="h-5 w-5" /> };
             default:
-                return { bg: GRAY[50], text: GRAY[700], icon: <FiPackage className="h-5 w-5" /> };
+                return { bg: PRIMARY[50], text: PRIMARY[700], icon: <FiPackage className="h-5 w-5" /> };
         }
     };
 
     const getPriorityColor = (priority) => {
         switch (priority) {
             case 'Critical':
-                return { bg: ERROR[50], text: ERROR[700] };
+                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
             case 'High':
-                return { bg: WARNING[50], text: WARNING[700] };
+                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
             case 'Normal':
-                return { bg: SUCCESS[50], text: SUCCESS[700] };
+                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
             case 'Low':
-                return { bg: GRAY[50], text: GRAY[700] };
+                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
             default:
-                return { bg: GRAY[50], text: GRAY[700] };
+                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
         }
     };
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        return new Date(dateString).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
-    const InfoItem = ({ label, value, icon, badge, error }) => (
-        <div className="flex items-start space-x-3 bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: BORDER.DEFAULT }}>
-            <div className="mt-0.5">
-                {icon}
-            </div>
-            <div className="flex-1">
+    const InfoItem = ({ label, value, icon, badge, error, className = '', important = false }) => (
+        <div className={`bg-white p-5 rounded-xl border ${className}`}
+            style={{
+                borderColor: error ? ERROR[200] : important ? PRIMARY[200] : BORDER.DEFAULT,
+                backgroundColor: important ? PRIMARY[50] : 'white'
+            }}>
+            <div className="flex items-center mb-2">
+                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[100] }}>
+                    {React.cloneElement(icon, { style: { color: PRIMARY[600] } })}
+                </div>
                 <label className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                     {label}
                 </label>
-                <div className="flex items-center mt-1">
-                    <span className="font-medium" style={{ color: error ? ERROR[700] : TEXT.PRIMARY }}>
-                        {value}
-                    </span>
-                    {badge}
-                </div>
+            </div>
+            <div className="flex items-center mt-1">
+                <span className="text-lg font-medium" style={{ color: error ? ERROR[700] : TEXT.PRIMARY }}>
+                    {value}
+                </span>
+                {badge && <div className="ml-3">{badge}</div>}
             </div>
         </div>
     );
 
+    const FillBar = ({ label, value, maxValue, icon, unit = '', color = PRIMARY[500] }) => (
+        <div className="bg-white p-5 rounded-xl border" style={{ borderColor: PRIMARY[200] }}>
+            <div className="flex items-center mb-3">
+                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[100] }}>
+                    {React.cloneElement(icon, { style: { color: PRIMARY[600] } })}
+                </div>
+                <div className="flex-1">
+                    <label className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
+                        {label}
+                    </label>
+                    <div className="flex items-baseline">
+                        <span className="text-2xl font-semibold mr-1" style={{ color: TEXT.PRIMARY }}>
+                            {value}
+                        </span>
+                        {unit && <span className="text-sm" style={{ color: TEXT.SECONDARY }}>{unit}</span>}
+                    </div>
+                </div>
+            </div>
+            <div className="h-2 rounded-full" style={{ backgroundColor: PRIMARY[100] }}>
+                <div
+                    className="h-full rounded-full"
+                    style={{
+                        backgroundColor: color,
+                        width: `${Math.min((value / maxValue) * 100, 100)}%`
+                    }}
+                />
+            </div>
+        </div>
+    );
     const statusColor = getStatusColor(item.status);
     const priorityColor = getPriorityColor(item.priority);
 
+    const StatusBadge = ({ icon, text, bgColor, textColor }) => (
+        <span className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium"
+            style={{ backgroundColor: bgColor, color: textColor }}>
+            {icon}
+            <span className="ml-2">{text}</span>
+        </span>
+    );
+
+    const ActionButton = ({ onClick, color, children }) => (
+        <button
+            onClick={onClick}
+            className="px-6 py-3 rounded-xl font-medium inline-flex items-center"
+            style={{ backgroundColor: color, color: TEXT.INVERSE }}
+        >
+            {children}
+        </button>
+    );
+
     return (
-        <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            {/* Header */}
-            <div className="w-full bg-white border-b shadow-sm sticky top-0 z-10" style={{ borderColor: BORDER.DEFAULT }}>
-                <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="min-h-screen pb-8" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+            <div className="w-full bg-white border-b shadow-sm sticky top-0 z-10"
+                style={{ borderColor: BORDER.DEFAULT }}>
+                <div className="max-w-[1920px] mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
                         <button
                             onClick={() => window.history.back()}
-                            className="px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:scale-105 inline-flex items-center"
+                            className="px-4 py-2 rounded-xl font-medium inline-flex items-center"
                             style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                         >
                             <FiArrowLeft className="mr-2 h-5 w-5" />
@@ -136,30 +189,24 @@ const MedicalItemDetail = () => {
                         </button>
 
                         {(item.canApprove || item.canReject || item.canUse) && (
-                            <div className="flex gap-3">
+                            <div className="flex gap-4">
                                 {item.canUse && (
-                                    <button
-                                        className="px-6 py-2 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-sm"
-                                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                                    >
-                                        Sử dụng
-                                    </button>
+                                    <ActionButton color={PRIMARY[500]}>
+                                        <FiActivity className="h-5 w-5 mr-2" />
+                                        <span>Sử dụng</span>
+                                    </ActionButton>
                                 )}
                                 {item.canApprove && (
-                                    <button
-                                        className="px-6 py-2 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-sm"
-                                        style={{ backgroundColor: SUCCESS[500], color: TEXT.INVERSE }}
-                                    >
-                                        Phê duyệt
-                                    </button>
+                                    <ActionButton color={PRIMARY[500]}>
+                                        <FiCheckCircle className="h-5 w-5 mr-2" />
+                                        <span>Phê duyệt</span>
+                                    </ActionButton>
                                 )}
                                 {item.canReject && (
-                                    <button
-                                        className="px-6 py-2 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-sm"
-                                        style={{ backgroundColor: ERROR[500], color: TEXT.INVERSE }}
-                                    >
-                                        Từ chối
-                                    </button>
+                                    <ActionButton color={PRIMARY[500]}>
+                                        <FiXCircle className="h-5 w-5 mr-2" />
+                                        <span>Từ chối</span>
+                                    </ActionButton>
                                 )}
                             </div>
                         )}
@@ -168,76 +215,95 @@ const MedicalItemDetail = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* Title Card */}
-                <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6" style={{ borderColor: BORDER.DEFAULT }}>
-                    <div className="flex items-center">
-                        <div
-                            className="h-16 w-16 rounded-2xl flex items-center justify-center mr-6"
-                            style={{ backgroundColor: PRIMARY[50] }}
-                        >
-                            <FiBox className="h-8 w-8" style={{ color: PRIMARY[600] }} />
+            <div className="max-w-[1920px] mx-auto px-6 py-6">
+                <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6"
+                    style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[50] }}>
+                    <div className="flex items-start">
+                        <div className="h-16 w-16 rounded-xl flex items-center justify-center mr-6"
+                            style={{ backgroundColor: PRIMARY[100] }}>
+                            {item.type === 'Supply' ? (
+                                <FiBox className="h-8 w-8" style={{ color: PRIMARY[600] }} />
+                            ) : (
+                                <FiThermometer className="h-8 w-8" style={{ color: PRIMARY[600] }} />
+                            )}
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold mb-3" style={{ color: TEXT.PRIMARY }}>
-                                {item.name}
-                            </h1>
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium"
-                                    style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
-                                >
-                                    {statusColor.icon}
-                                    <span className="ml-2">{item.statusDisplayName}</span>
+                        <div className="flex-1">
+                            <div className="flex items-center space-x-4 mb-4">
+                                <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                                    {item.name}
+                                </h1>
+                                <span className="px-4 py-1 rounded-lg text-sm font-medium"
+                                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
+                                    {item.type === 'Supply' ? 'Vật tư y tế' : 'Thuốc'}
                                 </span>
-                                <span
-                                    className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium"
-                                    style={{ backgroundColor: priorityColor.bg, color: priorityColor.text }}
-                                >
-                                    {item.priorityDisplayName}
-                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <StatusBadge
+                                    icon={statusColor.icon}
+                                    text={item.statusDisplayName}
+                                    bgColor={statusColor.bg}
+                                    textColor={statusColor.text}
+                                />
+                                <StatusBadge
+                                    icon={<FiShield className="h-5 w-5" />}
+                                    text={item.priorityDisplayName}
+                                    bgColor={priorityColor.bg}
+                                    textColor={priorityColor.text}
+                                />
                                 {item.isUrgent && (
-                                    <span
-                                        className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium"
-                                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}
-                                    >
-                                        <FiAlertTriangle className="mr-2 h-4 w-4" />
-                                        Khẩn cấp
-                                    </span>
+                                    <StatusBadge
+                                        icon={<FiAlertTriangle className="h-5 w-5" />}
+                                        text="Khẩn cấp"
+                                        bgColor={ERROR[50]}
+                                        textColor={ERROR[700]}
+                                    />
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Statistics Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <FillBar
+                        label="Số lượng hiện tại"
+                        value={stats.currentQuantity}
+                        maxValue={stats.totalQuantity}
+                        icon={<FiBox className="h-5 w-5" />}
+                        unit={item.unit}
+                        color={item.isLowStock ? WARNING[500] : PRIMARY[500]}
+                    />
+                    <FillBar
+                        label="Tỷ lệ sử dụng"
+                        value={stats.usageRate}
+                        maxValue={100}
+                        icon={<FiBarChart2 className="h-5 w-5" />}
+                        unit="%"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Info */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: BORDER.DEFAULT }}>
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-2xl shadow-sm border p-6"
+                            style={{ borderColor: BORDER.DEFAULT }}>
                             <h2 className="text-xl font-semibold mb-6 flex items-center" style={{ color: TEXT.PRIMARY }}>
-                                <FiBox className="mr-3 h-6 w-6" style={{ color: PRIMARY[500] }} />
-                                Thông tin chung
+                                <FiInfo className="mr-3 h-6 w-6" style={{ color: PRIMARY[500] }} />
+                                Thông tin chi tiết
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <InfoItem
-                                    label="Loại"
-                                    value={item.type === 'Supply' ? 'Vật tư y tế' : 'Thuốc'}
-                                    icon={<FiPackage className="h-5 w-5" style={{ color: GRAY[400] }} />}
-                                />
-
-                                <InfoItem
                                     label="Số lượng"
                                     value={`${item.quantity} ${item.unit}`}
-                                    icon={<FiBox className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                    icon={<FiBox className="h-5 w-5" />}
                                     badge={item.isLowStock && (
-                                        <span
-                                            className="ml-2 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                            style={{ backgroundColor: WARNING[50], color: WARNING[700] }}
-                                        >
-                                            <FiAlertTriangle className="mr-1 h-3 w-3" />
+                                        <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                            style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                                            <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
                                             Tồn kho thấp
                                         </span>
                                     )}
+                                    important={item.isLowStock}
                                 />
 
                                 {item.type === 'Medication' && (
@@ -245,12 +311,12 @@ const MedicalItemDetail = () => {
                                         <InfoItem
                                             label="Dạng thuốc"
                                             value={item.formDisplayName || 'N/A'}
-                                            icon={<FiPackage className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiPackage className="h-5 w-5" />}
                                         />
                                         <InfoItem
                                             label="Liều lượng"
                                             value={item.dosage || 'N/A'}
-                                            icon={<FiPackage className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiThermometer className="h-5 w-5" />}
                                         />
                                     </>
                                 )}
@@ -259,29 +325,26 @@ const MedicalItemDetail = () => {
                                     <InfoItem
                                         label="Hạn sử dụng"
                                         value={formatDate(item.expiryDate)}
-                                        icon={<FiCalendar className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                        icon={<FiCalendar className="h-5 w-5" />}
                                         badge={
                                             <>
                                                 {item.isExpiringSoon && (
-                                                    <span
-                                                        className="ml-2 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                                        style={{ backgroundColor: WARNING[50], color: WARNING[700] }}
-                                                    >
-                                                        <FiCalendar className="mr-1 h-3 w-3" />
+                                                    <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                                                        <FiCalendar className="inline-block mr-1 h-4 w-4" />
                                                         Sắp hết hạn
                                                     </span>
                                                 )}
                                                 {item.isExpired && (
-                                                    <span
-                                                        className="ml-2 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                                                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}
-                                                    >
-                                                        <FiAlertTriangle className="mr-1 h-3 w-3" />
+                                                    <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
+                                                        <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
                                                         Đã hết hạn
                                                     </span>
                                                 )}
                                             </>
                                         }
+                                        important={item.isExpiringSoon || item.isExpired}
                                     />
                                 )}
                             </div>
@@ -291,7 +354,8 @@ const MedicalItemDetail = () => {
                                     <InfoItem
                                         label="Mô tả"
                                         value={item.description}
-                                        icon={<FiFileText className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                        icon={<FiFileText className="h-5 w-5" />}
+                                        className="col-span-2"
                                     />
                                 </div>
                             )}
@@ -300,7 +364,8 @@ const MedicalItemDetail = () => {
 
                     {/* Side Info */}
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl shadow-sm border p-6" style={{ borderColor: BORDER.DEFAULT }}>
+                        <div className="bg-white rounded-2xl shadow-sm border p-6"
+                            style={{ borderColor: BORDER.DEFAULT }}>
                             <h2 className="text-xl font-semibold mb-6 flex items-center" style={{ color: TEXT.PRIMARY }}>
                                 <FiFileText className="mr-3 h-6 w-6" style={{ color: PRIMARY[500] }} />
                                 Thông tin yêu cầu
@@ -309,7 +374,8 @@ const MedicalItemDetail = () => {
                                 <InfoItem
                                     label="Lý do yêu cầu"
                                     value={item.justification}
-                                    icon={<FiFileText className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                    icon={<FiFileText className="h-5 w-5" />}
+                                    important={true}
                                 />
 
                                 <InfoItem
@@ -326,13 +392,13 @@ const MedicalItemDetail = () => {
                                             'N/A'
                                         )
                                     }
-                                    icon={<FiUser className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                    icon={<FiUser className="h-5 w-5" />}
                                 />
 
                                 <InfoItem
                                     label="Ngày yêu cầu"
                                     value={formatDate(item.createdDate)}
-                                    icon={<FiClock className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                    icon={<FiClock className="h-5 w-5" />}
                                 />
 
                                 {item.status === 'Approved' && (
@@ -351,13 +417,14 @@ const MedicalItemDetail = () => {
                                                     'N/A'
                                                 )
                                             }
-                                            icon={<FiUser className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiUser className="h-5 w-5" />}
+                                            important={true}
                                         />
 
                                         <InfoItem
                                             label="Ngày duyệt"
                                             value={formatDate(item.approvedAt)}
-                                            icon={<FiClock className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiClock className="h-5 w-5" />}
                                         />
                                     </>
                                 )}
@@ -367,13 +434,14 @@ const MedicalItemDetail = () => {
                                         <InfoItem
                                             label="Ngày từ chối"
                                             value={formatDate(item.rejectedAt)}
-                                            icon={<FiClock className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiClock className="h-5 w-5" />}
                                         />
                                         <InfoItem
                                             label="Lý do từ chối"
                                             value={item.rejectionReason || 'Không có lý do'}
-                                            icon={<FiFileText className="h-5 w-5" style={{ color: GRAY[400] }} />}
+                                            icon={<FiFileText className="h-5 w-5" />}
                                             error={true}
+                                            important={true}
                                         />
                                     </>
                                 )}

@@ -127,9 +127,12 @@ const NurseMedicationPage = () => {
         fetchMedicines();
     };
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     if (loading) {
         return (
-            <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải thuốc..." />
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải danh sách thuốc..." />
+            </div>
         );
     }
 
