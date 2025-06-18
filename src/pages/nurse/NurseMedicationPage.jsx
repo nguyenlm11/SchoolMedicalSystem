@@ -4,6 +4,7 @@ import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClo
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import AddMedicineModal from "../../components/modal/AddMedicineModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseMedicationPage = () => {
@@ -23,6 +24,7 @@ const NurseMedicationPage = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [filters, setFilters] = useState({
         approvalStatus: '',
         priority: ''
@@ -121,13 +123,13 @@ const NurseMedicationPage = () => {
         setCurrentPage(1);
     };
 
+    const handleAddSuccess = () => {
+        fetchMedicines();
+    };
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải thuốc..." />
-            </div>
+            <Loading type="medical" size="large" color="primary" fullScreen={true} text="Đang tải thuốc..." />
         );
     }
 
@@ -144,6 +146,7 @@ const NurseMedicationPage = () => {
                         </div>
                         <div>
                             <button
+                                onClick={() => setShowAddModal(true)}
                                 className="inline-flex items-center px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
                                 style={{
                                     backgroundColor: PRIMARY[500],
@@ -428,11 +431,11 @@ const NurseMedicationPage = () => {
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor:
-                                                                item.status === 'Dispensed' ? SUCCESS[100] :
+                                                                item.status === 'Approved' ? SUCCESS[100] :
                                                                     item.status === 'Pending' ? WARNING[100] :
                                                                         ERROR[100],
                                                             color:
-                                                                item.status === 'Dispensed' ? SUCCESS[700] :
+                                                                item.status === 'Approved' ? SUCCESS[700] :
                                                                     item.status === 'Pending' ? WARNING[700] :
                                                                         ERROR[700]
                                                         }}
@@ -455,9 +458,6 @@ const NurseMedicationPage = () => {
                                                         }}
                                                     >
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
-                                                        {item.isUrgent && (
-                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
-                                                        )}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -603,6 +603,12 @@ const NurseMedicationPage = () => {
                         )}
                     </div>
                 </div>
+
+                <AddMedicineModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
+                />
 
                 <AlertModal
                     isOpen={showAlertModal}
