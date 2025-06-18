@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiCheck, FiInfo, FiEye, FiMoreVertical } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
@@ -187,6 +187,36 @@ const MedicineInventory = () => {
         } catch (error) {
             console.error('Error approving medicine:', error);
             showAlert("error", "Lỗi", "Không thể phê duyệt thuốc. Vui lòng thử lại.");
+        }
+    };
+
+    const handleReject = async (id) => {
+        try {
+            const response = await medicalApi.rejectMedicalItem(id, {
+                rejectionReason: "Từ chối phê duyệt"
+            });
+
+            if (response.success) {
+                setMedicines(prevMedicines =>
+                    prevMedicines.map(item =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                status: 'Rejected',
+                                statusDisplayName: 'Bị từ chối'
+                            }
+                            : item
+                    )
+                );
+
+                await fetchMedicines(); // Đảm bảo fetch data mới hoàn tất
+                showAlert("success", "Thành công", "Đã từ chối phê duyệt thuốc");
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể từ chối phê duyệt thuốc. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error rejecting medicine:', error);
+            showAlert("error", "Lỗi", "Không thể từ chối phê duyệt thuốc. Vui lòng thử lại.");
         }
     };
 
@@ -508,7 +538,7 @@ const MedicineInventory = () => {
                                                     </span>
                                                 </td>
                                                 <td className="py-3 sm:py-4 px-4 sm:px-6">
-                                                    <div className="relative" ref={dropdownRef}>
+                                                    <div className="relative">
                                                         <button
                                                             onClick={() => toggleDropdown(item.id)}
                                                             className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
@@ -522,13 +552,12 @@ const MedicineInventory = () => {
 
                                                         {openActionId === item.id && (
                                                             <div
-                                                                className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border z-50"
+                                                                className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
                                                                 style={{
                                                                     borderColor: BORDER.DEFAULT,
-                                                                    right: 'calc(100% + 0.5rem)',
-                                                                    bottom: index >= medicines.length - 2 ? '0' : 'auto', // Nếu là 2 hàng cuối thì hiển thị từ dưới lên
-                                                                    top: index >= medicines.length - 2 ? 'auto' : '50%',
-                                                                    transform: index >= medicines.length - 2 ? 'none' : 'translateY(-50%)'
+                                                                    left: '-200px',
+                                                                    top: 0,
+                                                                    pointerEvents: 'auto'
                                                                 }}
                                                             >
                                                                 {item.status === 'Pending' && (
@@ -566,7 +595,9 @@ const MedicineInventory = () => {
                                                                     style={{ color: PRIMARY[600] }}
                                                                 >
                                                                     <FiEye className="w-4 h-4 flex-shrink-0" />
-                                                                    <span>Xem chi tiết</span>
+                                                                    <Link to={`/manager/medical-items/${item.id}`}>
+                                                                        Xem chi tiết
+                                                                    </Link>
                                                                 </button>
                                                             </div>
                                                         )}
