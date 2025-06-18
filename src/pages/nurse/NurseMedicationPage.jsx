@@ -475,7 +475,7 @@ const NurseMedicationPage = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="text-center py-12">
+                                            <td colSpan="8" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
