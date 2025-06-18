@@ -83,9 +83,9 @@ const medicalApi = {
         }
     },
 
-    rejectMedicalItem: async (id, rejectionReason) => {
+    rejectMedicalItem: async (id, data) => {
         try {
-            const response = await apiClient.post(`/medical-items/${id}/reject`, { rejectionReason });
+            const response = await apiClient.put(`/medical-items/${id}/reject`, data);
             return response.data;
         } catch (error) {
             console.error('Error rejecting medical item:', error);
