@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock } from "react-icons/fi";
+import { Link, useLocation } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import AddMedicineModal from "../../components/modal/AddMedicineModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseMedicationPage = () => {
@@ -23,6 +24,7 @@ const NurseMedicationPage = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [filters, setFilters] = useState({
         approvalStatus: '',
         priority: ''
@@ -121,12 +123,15 @@ const NurseMedicationPage = () => {
         setCurrentPage(1);
     };
 
+    const handleAddSuccess = () => {
+        fetchMedicines();
+    };
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải thuốc..." />
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách thuốc..." />
             </div>
         );
     }
@@ -144,6 +149,7 @@ const NurseMedicationPage = () => {
                         </div>
                         <div>
                             <button
+                                onClick={() => setShowAddModal(true)}
                                 className="inline-flex items-center px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
                                 style={{
                                     backgroundColor: PRIMARY[500],
@@ -334,7 +340,8 @@ const NurseMedicationPage = () => {
                                             { key: "quantity", label: "Số lượng" },
                                             { key: "expiryDate", label: "Hạn sử dụng" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" }
+                                            { key: "priority", label: "Độ ưu tiên" },
+                                            { key: "action", label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
@@ -428,11 +435,11 @@ const NurseMedicationPage = () => {
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor:
-                                                                item.status === 'Dispensed' ? SUCCESS[100] :
+                                                                item.status === 'Approved' ? SUCCESS[100] :
                                                                     item.status === 'Pending' ? WARNING[100] :
                                                                         ERROR[100],
                                                             color:
-                                                                item.status === 'Dispensed' ? SUCCESS[700] :
+                                                                item.status === 'Approved' ? SUCCESS[700] :
                                                                     item.status === 'Pending' ? WARNING[700] :
                                                                         ERROR[700]
                                                         }}
@@ -455,16 +462,20 @@ const NurseMedicationPage = () => {
                                                         }}
                                                     >
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
-                                                        {item.isUrgent && (
-                                                            <FiAlertTriangle className="ml-1 h-3 w-3" />
-                                                        )}
                                                     </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <>
+                                                        <Link to={`/schoolnurse/medical-items/${item.id}`} className="text-blue-500 hover:text-blue-700">
+                                                            <FiEye className="h-4 w-4" />
+                                                        </Link>
+                                                    </>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="7" className="text-center py-12">
+                                            <td colSpan="8" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -604,6 +615,12 @@ const NurseMedicationPage = () => {
                     </div>
                 </div>
 
+                <AddMedicineModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
+                />
+
                 <AlertModal
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
@@ -612,7 +629,7 @@ const NurseMedicationPage = () => {
                     type={alertConfig.type}
                 />
             </div>
-        </div>
+        </div >
     );
 };
 

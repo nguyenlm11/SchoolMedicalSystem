@@ -7,6 +7,7 @@ import MedicineInventory from "../pages/manager/MedicineInventory";
 import SupplyInventory from "../pages/manager/SupplyInventory";
 import UserProfilePage from "../pages/auth/UserProfilePage";
 import ClassManagement from "../pages/manager/ClassManagement";
+import MedicalItemDetail from "../pages/nurse/MedicalItemDetail";
 
 const PlaceholderPage = ({ title }) => (
   <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
@@ -23,6 +24,7 @@ const managerRoutes = (
     <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />
     <Route path="/manager/supply-inventory" element={<SupplyInventory />} />
     <Route path="/manager/profile" element={<UserProfilePage />} />
+    <Route path="/manager/medical-items/:id" element={<MedicalItemDetail />} />
   </Route>
 );
 

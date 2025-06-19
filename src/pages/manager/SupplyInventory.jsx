@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiCheck, FiEye, FiMoreVertical } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import medicalApi from "../../api/medicalApi";
 
 const SupplyInventory = () => {
@@ -27,6 +28,13 @@ const SupplyInventory = () => {
         approvalStatus: '',
         priority: ''
     });
+    const [openActionId, setOpenActionId] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState({
+        type: 'approve',
+        itemId: null
+    });
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -44,6 +52,17 @@ const SupplyInventory = () => {
     useEffect(() => {
         fetchSupplies();
     }, [filters, sortBy, sortOrder, currentPage, pageSize, debouncedSearchTerm]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpenActionId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -123,6 +142,75 @@ const SupplyInventory = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const handleApprove = async (reason) => {
+        try {
+            const response = await medicalApi.approveMedicalItem(confirmAction.itemId, {
+                approvalNotes: reason
+            });
+
+            if (response.success) {
+                setSupplies(prevSupplies =>
+                    prevSupplies.map(item =>
+                        item.id === confirmAction.itemId
+                            ? {
+                                ...item,
+                                status: 'Approved',
+                                statusDisplayName: 'Đã duyệt'
+                            }
+                            : item
+                    )
+                );
+
+                await fetchSupplies();
+                showAlert("success", "Thành công", "Phê duyệt vật tư thành công");
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể phê duyệt vật tư. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error approving supply:', error);
+            showAlert("error", "Lỗi", "Không thể phê duyệt vật tư. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
+        }
+    };
+
+    const handleReject = async (reason) => {
+        try {
+            const response = await medicalApi.rejectMedicalItem(confirmAction.itemId, {
+                rejectionReason: reason
+            });
+
+            if (response.success) {
+                setSupplies(prevSupplies =>
+                    prevSupplies.map(item =>
+                        item.id === confirmAction.itemId
+                            ? {
+                                ...item,
+                                status: 'Rejected',
+                                statusDisplayName: 'Bị từ chối'
+                            }
+                            : item
+                    )
+                );
+
+                await fetchSupplies();
+                showAlert("success", "Thành công", "Đã từ chối phê duyệt vật tư");
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể từ chối phê duyệt vật tư. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error rejecting supply:', error);
+            showAlert("error", "Lỗi", "Không thể từ chối phê duyệt vật tư. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
+        }
+    };
+
+    const toggleDropdown = (id) => {
+        setOpenActionId(openActionId === id ? null : id);
+    };
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -300,17 +388,18 @@ const SupplyInventory = () => {
                                             { key: "name", label: "Tên vật tư" },
                                             { key: "quantity", label: "Số lượng" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" }
+                                            { key: "priority", label: "Độ ưu tiên" },
+                                            { key: "actions", label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
-                                                className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
+                                                className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key !== 'actions' ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
                                                 style={{ color: TEXT.SECONDARY }}
-                                                onClick={col.key ? () => handleSort(col.key) : undefined}
+                                                onClick={col.key !== 'actions' ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
                                                     {col.label}
-                                                    {col.key && sortBy === col.key && (
+                                                    {col.key !== 'actions' && sortBy === col.key && (
                                                         <span className="ml-2 text-xs">
                                                             {sortOrder === "asc" ? "↑" : "↓"}
                                                         </span>
@@ -360,41 +449,133 @@ const SupplyInventory = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: item.status === 'Active' ? SUCCESS[100] : GRAY[100],
-                                                            color: item.status === 'Active' ? SUCCESS[700] : GRAY[700]
+                                                            backgroundColor:
+                                                                item.status === 'Approved' ? SUCCESS[50] :
+                                                                    item.status === 'Pending' ? WARNING[50] :
+                                                                        item.status === 'Rejected' ? ERROR[50] :
+                                                                            GRAY[50],
+                                                            color:
+                                                                item.status === 'Approved' ? SUCCESS[700] :
+                                                                    item.status === 'Pending' ? WARNING[700] :
+                                                                        item.status === 'Rejected' ? ERROR[700] :
+                                                                            GRAY[700]
                                                         }}
                                                     >
                                                         {item.statusDisplayName}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
+                                                    {console.log('Priority:', item.priority)}
                                                     <span
-                                                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                                                        className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[100];
-                                                                    case 'HIGH': return WARNING[100];
-                                                                    case 'NORMAL': return SUCCESS[100];
-                                                                    case 'LOW': return GRAY[100];
-                                                                    default: return GRAY[100];
+                                                                console.log('Priority value:', item.priority);
+                                                                switch (item.priority?.toUpperCase()) {
+                                                                    case 'CRITICAL':
+                                                                        return ERROR[100];
+                                                                    case 'HIGH':
+                                                                        return WARNING[100];
+                                                                    case 'NORMAL':
+                                                                        return SUCCESS[200];
+                                                                    case 'LOW':
+                                                                        return SUCCESS[100];
+                                                                    default:
+                                                                        return GRAY[100];
                                                                 }
                                                             })(),
                                                             color: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[700];
-                                                                    case 'HIGH': return WARNING[700];
-                                                                    case 'NORMAL': return SUCCESS[700];
-                                                                    case 'LOW': return GRAY[700];
-                                                                    default: return GRAY[700];
+                                                                switch (item.priority?.toUpperCase()) {
+                                                                    case 'CRITICAL':
+                                                                        return ERROR[700];
+                                                                    case 'HIGH':
+                                                                        return WARNING[700];
+                                                                    case 'NORMAL':
+                                                                        return SUCCESS[700];
+                                                                    case 'LOW':
+                                                                        return GRAY[700];
+                                                                    default:
+                                                                        return GRAY[700];
                                                                 }
                                                             })()
                                                         }}
                                                     >
                                                         {item.priorityDisplayName}
                                                     </span>
+                                                </td>
+                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => toggleDropdown(item.id)}
+                                                            className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
+                                                            style={{
+                                                                backgroundColor: GRAY[100],
+                                                                color: TEXT.PRIMARY
+                                                            }}
+                                                        >
+                                                            <FiMoreVertical className="w-4 sm:w-5 h-4 sm:h-5" />
+                                                        </button>
+
+                                                        {openActionId === item.id && (
+                                                            <div
+                                                                className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
+                                                                style={{
+                                                                    borderColor: BORDER.DEFAULT,
+                                                                    left: '-200px',
+                                                                    top: 0
+                                                                }}
+                                                            >
+                                                                {item.status === 'Pending' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setConfirmAction({
+                                                                                    type: 'approve',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
+                                                                                setOpenActionId(null);
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                            style={{ color: SUCCESS[600] }}
+                                                                        >
+                                                                            <FiCheck className="w-4 h-4 flex-shrink-0" />
+                                                                            <span>Duyệt</span>
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setConfirmAction({
+                                                                                    type: 'reject',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
+                                                                                setOpenActionId(null);
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                            style={{ color: ERROR[600] }}
+                                                                        >
+                                                                            <FiX className="w-4 h-4 flex-shrink-0" />
+                                                                            <span>Từ chối</span>
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setOpenActionId(null);
+                                                                    }}
+                                                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                    style={{ color: PRIMARY[600] }}
+                                                                >
+                                                                    <FiEye className="w-4 h-4 flex-shrink-0" />
+                                                                    <Link to={`/manager/medical-items/${item.id}`}>
+                                                                        Xem chi tiết
+                                                                    </Link>
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -536,6 +717,19 @@ const SupplyInventory = () => {
                     message={alertConfig.message}
                     type={alertConfig.type}
                     okText="OK"
+                />
+
+                <ConfirmActionModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={confirmAction.type === 'approve' ? handleApprove : handleReject}
+                    title={confirmAction.type === 'approve' ? "Phê duyệt vật tư" : "Từ chối vật tư"}
+                    message={confirmAction.type === 'approve' 
+                        ? "Bạn có chắc chắn muốn phê duyệt vật tư này? Vui lòng nhập lý do phê duyệt."
+                        : "Bạn có chắc chắn muốn từ chối vật tư này? Vui lòng nhập lý do từ chối."
+                    }
+                    type={confirmAction.type}
+                    confirmText={confirmAction.type === 'approve' ? "Phê duyệt" : "Từ chối"}
                 />
             </div>
         </div>

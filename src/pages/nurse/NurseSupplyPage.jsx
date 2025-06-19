@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX } from "react-icons/fi";
+import { Link, useLocation } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import AddSupplyModal from "../../components/modal/AddSupplyModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseSupplyPage = () => {
@@ -23,6 +24,7 @@ const NurseSupplyPage = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [showAddModal, setShowAddModal] = useState(false);
     const [filters, setFilters] = useState({
         approvalStatus: '',
         priority: ''
@@ -124,10 +126,14 @@ const NurseSupplyPage = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    const handleAddSuccess = () => {
+        fetchSupplies();
+    };
+
     if (loading) {
         return (
-            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải vật tư..." />
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách vật tư..." />
             </div>
         );
     }
@@ -145,6 +151,7 @@ const NurseSupplyPage = () => {
                                 </p>
                             </div>
                             <button
+                                onClick={() => setShowAddModal(true)}
                                 className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                                 style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                             >
@@ -325,7 +332,8 @@ const NurseSupplyPage = () => {
                                             { key: "name", label: "Tên vật tư" },
                                             { key: "quantity", label: "Số lượng" },
                                             { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" }
+                                            { key: "priority", label: "Độ ưu tiên" },
+                                            { key: "action", label: "Thao tác" }
                                         ].map((col, idx) => (
                                             <th
                                                 key={idx}
@@ -421,11 +429,16 @@ const NurseSupplyPage = () => {
                                                         {item.priorityDisplayName}
                                                     </span>
                                                 </td>
+                                                <td className="py-4 px-6">
+                                                    <Link to={`/schoolnurse/medical-items/${item.id}`} className="text-blue-500 hover:text-blue-700">
+                                                        <FiEye className="h-4 w-4" />
+                                                    </Link>
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="5" className="text-center py-12">
+                                            <td colSpan="6" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -554,13 +567,18 @@ const NurseSupplyPage = () => {
                     </div>
                 </div>
 
+                <AddSupplyModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
+                />
+
                 <AlertModal
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
-                    okText="OK"
                 />
             </div>
         </div>
