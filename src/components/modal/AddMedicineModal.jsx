@@ -32,13 +32,13 @@ const MedicineModal = ({ isOpen, onClose, onSuccess }) => {
     ];
 
     const formOptions = [
-        { value: "Tablet", label: "Viên nén" },
-        { value: "Syrup", label: "Siro" },
-        { value: "Injection", label: "Tiêm" },
-        { value: "Cream", label: "Kem" },
-        { value: "Drops", label: "Nhỏ giọt" },
-        { value: "Inhaler", label: "Hít" },
-        { value: "Other", label: "Khác" }
+        { value: "Tablet", label: "Viên nén", unit: "Viên" },
+        { value: "Syrup", label: "Siro", unit: "Chai" },
+        { value: "Injection", label: "Tiêm", unit: "Chai" },
+        { value: "Cream", label: "Kem", unit: "Tuýp" },
+        { value: "Drops", label: "Nhỏ giọt", unit: "Chai" },
+        { value: "Inhaler", label: "Hít", unit: "Bình" },
+        { value: "Other", label: "Khác", unit: "Đơn vị" }
     ];
 
     const resetForm = () => {
@@ -60,10 +60,20 @@ const MedicineModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
+        let updates = {
+            [name]: type === 'checkbox' ? checked : value
+        };
+        if (name === 'form') {
+            const selectedForm = formOptions.find(option => option.value === value);
+            if (selectedForm) {
+                updates.unit = selectedForm.unit;
+            }
+        }
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            ...updates
         }));
+
         if (formErrors[name]) {
             setFormErrors(prev => ({
                 ...prev,
@@ -101,9 +111,6 @@ const MedicineModal = ({ isOpen, onClose, onSuccess }) => {
         }
         if (!formData.quantity || formData.quantity <= 0) {
             errors.quantity = "Số lượng phải lớn hơn 0";
-        }
-        if (!formData.unit?.trim()) {
-            errors.unit = "Đơn vị không được để trống";
         }
         if (!formData.expiryDate) {
             errors.expiryDate = "Hạn sử dụng không được để trống";
@@ -270,23 +277,17 @@ const MedicineModal = ({ isOpen, onClose, onSuccess }) => {
 
                                 <div>
                                     <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                        Đơn vị *
+                                        Đơn vị
                                     </label>
                                     <input
                                         type="text"
                                         name="unit"
                                         value={formData.unit}
-                                        onChange={handleInputChange}
-                                        disabled={loading}
-                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                        style={{ borderColor: formErrors.unit ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                        placeholder="Ví dụ: viên, hộp..."
+                                        disabled={true}
+                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 bg-gray-100"
+                                        style={{ borderColor: BORDER.DEFAULT }}
+                                        readOnly
                                     />
-                                    {formErrors.unit && (
-                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                            {formErrors.unit}
-                                        </p>
-                                    )}
                                 </div>
                             </div>
 
