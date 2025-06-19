@@ -4,6 +4,7 @@ import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiChe
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import medicalApi from "../../api/medicalApi";
 
 const MedicineInventory = () => {
@@ -31,6 +32,11 @@ const MedicineInventory = () => {
     });
     const [openActionId, setOpenActionId] = useState(null);
     const dropdownRef = useRef(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState({
+        type: 'approve',
+        itemId: null
+    });
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -160,16 +166,16 @@ const MedicineInventory = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const handleApprove = async (id) => {
+    const handleApprove = async (reason) => {
         try {
-            const response = await medicalApi.approveMedicalItem(id, {
-                approvalNotes: "Đã phê duyệt"
+            const response = await medicalApi.approveMedicalItem(confirmAction.itemId, {
+                approvalNotes: reason
             });
 
             if (response.success) {
                 setMedicines(prevMedicines =>
                     prevMedicines.map(item =>
-                        item.id === id
+                        item.id === confirmAction.itemId
                             ? {
                                 ...item,
                                 status: 'Approved',
@@ -179,7 +185,7 @@ const MedicineInventory = () => {
                     )
                 );
 
-                await fetchMedicines(); // Đảm bảo fetch data mới hoàn tất
+                await fetchMedicines();
                 showAlert("success", "Thành công", "Phê duyệt thuốc thành công");
             } else {
                 showAlert("error", "Lỗi", response.message || "Không thể phê duyệt thuốc. Vui lòng thử lại.");
@@ -187,19 +193,21 @@ const MedicineInventory = () => {
         } catch (error) {
             console.error('Error approving medicine:', error);
             showAlert("error", "Lỗi", "Không thể phê duyệt thuốc. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
         }
     };
 
-    const handleReject = async (id) => {
+    const handleReject = async (reason) => {
         try {
-            const response = await medicalApi.rejectMedicalItem(id, {
-                rejectionReason: "Từ chối phê duyệt"
+            const response = await medicalApi.rejectMedicalItem(confirmAction.itemId, {
+                rejectionReason: reason
             });
 
             if (response.success) {
                 setMedicines(prevMedicines =>
                     prevMedicines.map(item =>
-                        item.id === id
+                        item.id === confirmAction.itemId
                             ? {
                                 ...item,
                                 status: 'Rejected',
@@ -209,7 +217,7 @@ const MedicineInventory = () => {
                     )
                 );
 
-                await fetchMedicines(); // Đảm bảo fetch data mới hoàn tất
+                await fetchMedicines();
                 showAlert("success", "Thành công", "Đã từ chối phê duyệt thuốc");
             } else {
                 showAlert("error", "Lỗi", response.message || "Không thể từ chối phê duyệt thuốc. Vui lòng thử lại.");
@@ -217,6 +225,8 @@ const MedicineInventory = () => {
         } catch (error) {
             console.error('Error rejecting medicine:', error);
             showAlert("error", "Lỗi", "Không thể từ chối phê duyệt thuốc. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
         }
     };
 
@@ -564,7 +574,11 @@ const MedicineInventory = () => {
                                                                     <>
                                                                         <button
                                                                             onClick={() => {
-                                                                                handleApprove(item.id);
+                                                                                setConfirmAction({
+                                                                                    type: 'approve',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
                                                                                 setOpenActionId(null);
                                                                             }}
                                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -575,7 +589,11 @@ const MedicineInventory = () => {
                                                                         </button>
                                                                         <button
                                                                             onClick={() => {
-                                                                                handleReject(item.id);
+                                                                                setConfirmAction({
+                                                                                    type: 'reject',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
                                                                                 setOpenActionId(null);
                                                                             }}
                                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -753,6 +771,19 @@ const MedicineInventory = () => {
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
+                />
+
+                <ConfirmActionModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={confirmAction.type === 'approve' ? handleApprove : handleReject}
+                    title={confirmAction.type === 'approve' ? "Phê duyệt thuốc" : "Từ chối thuốc"}
+                    message={confirmAction.type === 'approve' 
+                        ? "Bạn có chắc chắn muốn phê duyệt thuốc này? Vui lòng nhập lý do phê duyệt."
+                        : "Bạn có chắc chắn muốn từ chối thuốc này? Vui lòng nhập lý do từ chối."
+                    }
+                    type={confirmAction.type}
+                    confirmText={confirmAction.type === 'approve' ? "Phê duyệt" : "Từ chối"}
                 />
             </div>
         </div >
