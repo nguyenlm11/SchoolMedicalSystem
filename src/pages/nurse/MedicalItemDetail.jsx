@@ -1,15 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiPackage, FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiBox, FiUser, FiFileText, FiThermometer, FiShield, FiActivity, FiInfo, FiBarChart2 } from 'react-icons/fi';
+import { FiPackage, FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiXCircle, FiAlertCircle, FiArrowLeft, FiBox, FiUser, FiFileText, FiThermometer, FiShield, FiActivity, FiInfo, FiBarChart2, FiEdit, FiSave, FiX } from 'react-icons/fi';
 import { PRIMARY, TEXT, BACKGROUND, BORDER, ERROR, WARNING } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import medicalApi from '../../api/medicalApi';
+import AlertModal from '../../components/modal/AlertModal';
 
 const MedicalItemDetail = () => {
     const { id } = useParams();
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [item, setItem] = useState(null);
     const [error, setError] = useState(null);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ type: 'info', title: '', message: '' });
+    const [formErrors, setFormErrors] = useState({});
+    const [editedData, setEditedData] = useState({
+        type: '',
+        name: '',
+        description: '',
+        dosage: '',
+        form: '',
+        expiryDate: '',
+        quantity: '',
+        unit: '',
+        justification: '',
+        priority: '',
+        isUrgent: false
+    });
     const stats = {
         totalQuantity: 100,
         currentQuantity: item?.quantity || 0,
@@ -17,25 +36,183 @@ const MedicalItemDetail = () => {
         daysUntilExpiry: item?.expiryDate ? Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0
     };
 
+    const priorityOptions = [
+        { value: "Low", label: "Thấp" },
+        { value: "Normal", label: "Bình thường" },
+        { value: "High", label: "Cao" },
+        { value: "Critical", label: "Khẩn cấp" }
+    ];
+
+    const formOptions = [
+        { value: "Tablet", label: "Viên nén", unit: "Viên" },
+        { value: "Syrup", label: "Siro", unit: "Chai" },
+        { value: "Injection", label: "Tiêm", unit: "Chai" },
+        { value: "Cream", label: "Kem", unit: "Tuýp" },
+        { value: "Drops", label: "Nhỏ giọt", unit: "Chai" },
+        { value: "Inhaler", label: "Hít", unit: "Bình" },
+        { value: "Other", label: "Khác", unit: "Đơn vị" }
+    ];
+
     useEffect(() => {
-        const fetchItemDetail = async () => {
-            try {
-                setLoading(true);
-                const response = await medicalApi.getMedicalItem(id);
-                if (response.success) {
-                    setItem(response.data);
-                } else {
-                    setError(response.message || 'Không thể tải thông tin chi tiết');
-                }
-            } catch (err) {
-                setError('Có lỗi xảy ra khi tải thông tin chi tiết');
-                console.error('Error fetching item detail:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchItemDetail();
     }, [id]);
+
+    useEffect(() => {
+        if (item && isEditing) {
+            setEditedData({
+                type: item.type || '',
+                name: item.name || '',
+                description: item.description || '',
+                dosage: item.dosage || null,
+                form: item.form || null,
+                expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : null,
+                quantity: item.quantity || '',
+                unit: item.unit || '',
+                justification: '',  // Để trống vì đây là lý do cho lần chỉnh sửa mới
+                priority: item.priority || '',
+                isUrgent: item.isUrgent || false
+            });
+        }
+    }, [item, isEditing]);
+
+    const fetchItemDetail = async () => {
+        try {
+            setLoading(true);
+            const response = await medicalApi.getMedicalItem(id);
+            if (response.success) {
+                setItem(response.data);
+            } else {
+                setError(response.message || 'Không thể tải thông tin chi tiết');
+            }
+        } catch (err) {
+            setError('Có lỗi xảy ra khi tải thông tin chi tiết');
+            console.error('Error fetching item detail:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : value;
+
+        if (name === 'form') {
+            const selectedForm = formOptions.find(option => option.value === value);
+            setEditedData({
+                ...editedData,
+                [name]: newValue,
+                unit: selectedForm ? selectedForm.unit : editedData.unit
+            });
+        } else {
+            setEditedData({
+                ...editedData,
+                [name]: newValue
+            });
+        }
+
+        if (formErrors[name]) {
+            setFormErrors({
+                ...formErrors,
+                [name]: ''
+            });
+        }
+    };
+
+    const validateForm = () => {
+        const errors = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (!editedData.name?.trim()) {
+            errors.name = "Tên không được để trống";
+        }
+        if (editedData.type === 'Medication') {
+            if (!editedData.form) {
+                errors.form = "Vui lòng chọn dạng thuốc/vật tư";
+            }
+            if (!editedData.dosage?.trim()) {
+                errors.dosage = "Liều lượng không được để trống";
+            }
+            if (!editedData.expiryDate) {
+                errors.expiryDate = "Hạn sử dụng không được để trống";
+            } else {
+                const expiryDate = new Date(editedData.expiryDate);
+                expiryDate.setHours(0, 0, 0, 0);
+                if (expiryDate <= today) {
+                    errors.expiryDate = "Hạn sử dụng phải lớn hơn ngày hiện tại";
+                }
+            }
+        }
+        if (!editedData.quantity || editedData.quantity <= 0) {
+            errors.quantity = "Số lượng phải lớn hơn 0";
+        }
+        if (!editedData.priority) {
+            errors.priority = "Vui lòng chọn độ ưu tiên";
+        }
+        if (!editedData.justification?.trim() || editedData.justification.length < 1) {
+            errors.justification = "Lý do chỉnh sửa phải có ít nhất 1 ký tự";
+        }
+        if (editedData.isUrgent && !['High', 'Critical'].includes(editedData.priority)) {
+            errors.isUrgent = "Yêu cầu khẩn cấp phải có độ ưu tiên Cao hoặc Khẩn cấp";
+        }
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleSave = async () => {
+        if (!validateForm()) {
+            showAlertMessage('error', 'Lỗi', 'Vui lòng kiểm tra lại thông tin đã nhập');
+            return;
+        }
+        setSaving(true);
+        try {
+            const response = await medicalApi.updateMedicalItem(id, editedData);
+            if (response.success) {
+                showAlertMessage('success', 'Thành công', 'Cập nhật thông tin thành công');
+                await fetchItemDetail();
+                setIsEditing(false);
+            } else {
+                showAlertMessage('error', 'Lỗi', response.message || 'Không thể cập nhật thông tin. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            showAlertMessage('error', 'Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const showAlertMessage = (type, title, message) => {
+        setAlertConfig({ type, title, message });
+        setShowAlert(true);
+    };
+
+    const handleAlertClose = () => {
+        setShowAlert(false);
+    };
+
+    const handleEditClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setFormErrors({});
+        // Reset lại editedData về giá trị ban đầu của item
+        if (item) {
+            setEditedData({
+                type: item.type || '',
+                name: item.name || '',
+                description: item.description || '',
+                dosage: item.dosage || '',
+                form: item.form || '',
+                expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
+                quantity: item.quantity || '',
+                unit: item.unit || '',
+                justification: '',
+                priority: item.priority || '',
+                isUrgent: item.isUrgent || false
+            });
+        }
+    };
 
     if (loading) {
         return (
@@ -83,11 +260,11 @@ const MedicalItemDetail = () => {
     const getPriorityColor = (priority) => {
         switch (priority) {
             case 'Critical':
-                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
+                return { bg: ERROR[100], text: ERROR[700], border: ERROR[200] };
             case 'High':
-                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
+                return { bg: WARNING[100], text: WARNING[700], border: WARNING[200] };
             case 'Normal':
-                return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
+                return { bg: PRIMARY[100], text: PRIMARY[700], border: PRIMARY[200] };
             case 'Low':
                 return { bg: PRIMARY[50], text: PRIMARY[700], border: PRIMARY[200] };
             default:
@@ -152,6 +329,7 @@ const MedicalItemDetail = () => {
             </div>
         </div>
     );
+
     const statusColor = getStatusColor(item.status);
     const priorityColor = getPriorityColor(item.priority);
 
@@ -162,6 +340,52 @@ const MedicalItemDetail = () => {
             <span className="ml-2">{text}</span>
         </span>
     );
+
+    const InputField = ({ label, name, value, onChange, type = "text", error, disabled = false, required = false, options = null }) => {
+        const inputClasses = "w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50";
+        const inputStyles = { borderColor: error ? ERROR[500] : BORDER.DEFAULT };
+
+        return (
+            <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                    {label} {required && <span style={{ color: ERROR[500] }}>*</span>}
+                </label>
+                {options ? (
+                    <select
+                        name={name}
+                        value={value}
+                        onChange={onChange}
+                        disabled={disabled}
+                        className={inputClasses}
+                        style={inputStyles}
+                    >
+                        <option value="">Chọn {label.toLowerCase()}...</option>
+                        {options.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                ) : (
+                    <input
+                        type={type}
+                        name={name}
+                        value={value}
+                        onChange={onChange}
+                        disabled={disabled}
+                        className={inputClasses}
+                        style={inputStyles}
+                        min={type === "number" ? "1" : undefined}
+                    />
+                )}
+                {error && (
+                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                        {error}
+                    </p>
+                )}
+            </div>
+        );
+    };
 
     const ActionButton = ({ onClick, color, children }) => (
         <button
@@ -188,28 +412,39 @@ const MedicalItemDetail = () => {
                             Quay lại
                         </button>
 
-                        {(item.canApprove || item.canReject || item.canUse) && (
-                            <div className="flex gap-4">
-                                {item.canUse && (
-                                    <ActionButton color={PRIMARY[500]}>
-                                        <FiActivity className="h-5 w-5 mr-2" />
-                                        <span>Sử dụng</span>
-                                    </ActionButton>
-                                )}
-                                {item.canApprove && (
-                                    <ActionButton color={PRIMARY[500]}>
-                                        <FiCheckCircle className="h-5 w-5 mr-2" />
-                                        <span>Phê duyệt</span>
-                                    </ActionButton>
-                                )}
-                                {item.canReject && (
-                                    <ActionButton color={PRIMARY[500]}>
-                                        <FiXCircle className="h-5 w-5 mr-2" />
-                                        <span>Từ chối</span>
-                                    </ActionButton>
-                                )}
-                            </div>
-                        )}
+                        <div className="flex gap-4">
+                            {!isEditing ? (
+                                <button
+                                    onClick={handleEditClick}
+                                    className="px-6 py-2 rounded-xl font-medium inline-flex items-center"
+                                    style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                >
+                                    <FiEdit className="mr-2 h-5 w-5" />
+                                    Chỉnh sửa
+                                </button>
+                            ) : (
+                                <>
+                                    <button
+                                        onClick={handleCancelEdit}
+                                        className="px-6 py-2 rounded-xl font-medium inline-flex items-center border"
+                                        style={{ borderColor: BORDER.DEFAULT, color: TEXT.SECONDARY }}
+                                        disabled={saving}
+                                    >
+                                        <FiX className="mr-2 h-5 w-5" />
+                                        Hủy
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        className="px-6 py-2 rounded-xl font-medium inline-flex items-center"
+                                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                        disabled={saving}
+                                    >
+                                        <FiSave className="mr-2 h-5 w-5" />
+                                        {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -229,10 +464,33 @@ const MedicalItemDetail = () => {
                         </div>
                         <div className="flex-1">
                             <div className="flex items-center space-x-4 mb-4">
-                                <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                    {item.name}
-                                </h1>
-                                <span className="px-4 py-1 rounded-lg text-sm font-medium"
+                                {isEditing ? (
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={editedData.name}
+                                            onChange={handleInputChange}
+                                            className="w-full p-3 border rounded-xl text-3xl font-bold focus:outline-none focus:ring-2 transition-all duration-200"
+                                            style={{
+                                                borderColor: formErrors.name ? ERROR[500] : BORDER.DEFAULT,
+                                                color: TEXT.PRIMARY
+                                            }}
+                                            disabled={saving}
+                                            placeholder="Nhập tên..."
+                                        />
+                                        {formErrors.name && (
+                                            <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                {formErrors.name}
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {item.name}
+                                    </h1>
+                                )}
+                                <span className="px-4 py-1 rounded-lg text-sm font-medium shrink-0"
                                     style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
                                     {item.type === 'Supply' ? 'Vật tư y tế' : 'Thuốc'}
                                 </span>
@@ -244,13 +502,28 @@ const MedicalItemDetail = () => {
                                     bgColor={statusColor.bg}
                                     textColor={statusColor.text}
                                 />
-                                <StatusBadge
-                                    icon={<FiShield className="h-5 w-5" />}
-                                    text={item.priorityDisplayName}
-                                    bgColor={priorityColor.bg}
-                                    textColor={priorityColor.text}
-                                />
-                                {item.isUrgent && (
+                                {isEditing ? (
+                                    <div className="flex-1">
+                                        <InputField
+                                            label="Độ ưu tiên"
+                                            name="priority"
+                                            value={editedData.priority}
+                                            onChange={handleInputChange}
+                                            error={formErrors.priority}
+                                            disabled={saving}
+                                            required
+                                            options={priorityOptions}
+                                        />
+                                    </div>
+                                ) : (
+                                    <StatusBadge
+                                        icon={<FiShield className="h-5 w-5" />}
+                                        text={item.priorityDisplayName}
+                                        bgColor={priorityColor.bg}
+                                        textColor={priorityColor.text}
+                                    />
+                                )}
+                                {(item.isUrgent || editedData.isUrgent) && (
                                     <StatusBadge
                                         icon={<FiAlertTriangle className="h-5 w-5" />}
                                         text="Khẩn cấp"
@@ -292,71 +565,205 @@ const MedicalItemDetail = () => {
                                 Thông tin chi tiết
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <InfoItem
-                                    label="Số lượng"
-                                    value={`${item.quantity} ${item.unit}`}
-                                    icon={<FiBox className="h-5 w-5" />}
-                                    badge={item.isLowStock && (
-                                        <span className="px-3 py-1 rounded-lg text-sm font-medium"
-                                            style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                                            <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
-                                            Tồn kho thấp
-                                        </span>
-                                    )}
-                                    important={item.isLowStock}
-                                />
+                                {isEditing ? (
+                                    <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                    Số lượng *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    name="quantity"
+                                                    value={editedData.quantity}
+                                                    onChange={handleInputChange}
+                                                    min="0"
+                                                    step="1"
+                                                    className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                    style={{ borderColor: formErrors.quantity ? ERROR[500] : BORDER.DEFAULT }}
+                                                    disabled={saving}
+                                                    placeholder="Nhập số lượng..."
+                                                />
+                                                {formErrors.quantity && (
+                                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                        {formErrors.quantity}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            {editedData.type === 'Medication' && (
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Đơn vị
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name="unit"
+                                                        value={editedData.unit}
+                                                        disabled
+                                                        className="w-full p-3 border rounded-xl bg-gray-100"
+                                                        style={{ borderColor: BORDER.DEFAULT }}
+                                                        readOnly
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
 
-                                {item.type === 'Medication' && (
+                                        {editedData.type === 'Medication' && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Dạng thuốc *
+                                                    </label>
+                                                    <select
+                                                        name="form"
+                                                        value={editedData.form}
+                                                        onChange={handleInputChange}
+                                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                        style={{ borderColor: formErrors.form ? ERROR[500] : BORDER.DEFAULT }}
+                                                        disabled={saving}
+                                                    >
+                                                        <option value="">Chọn dạng thuốc...</option>
+                                                        {formOptions.map(option => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {formErrors.form && (
+                                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                            {formErrors.form}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Liều lượng *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name="dosage"
+                                                        value={editedData.dosage}
+                                                        onChange={handleInputChange}
+                                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                        style={{ borderColor: formErrors.dosage ? ERROR[500] : BORDER.DEFAULT }}
+                                                        disabled={saving}
+                                                        placeholder="Nhập liều lượng..."
+                                                    />
+                                                    {formErrors.dosage && (
+                                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                            {formErrors.dosage}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Hạn sử dụng *
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        name="expiryDate"
+                                                        value={editedData.expiryDate}
+                                                        onChange={handleInputChange}
+                                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                        style={{ borderColor: formErrors.expiryDate ? ERROR[500] : BORDER.DEFAULT }}
+                                                        disabled={saving}
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                    />
+                                                    {formErrors.expiryDate && (
+                                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                            {formErrors.expiryDate}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                ) : (
                                     <>
                                         <InfoItem
-                                            label="Dạng thuốc"
-                                            value={item.formDisplayName || 'N/A'}
-                                            icon={<FiPackage className="h-5 w-5" />}
+                                            label="Số lượng"
+                                            value={item.type === 'Supply' ? item.quantity : `${item.quantity} ${item.unit}`}
+                                            icon={<FiBox className="h-5 w-5" />}
+                                            badge={item.isLowStock && (
+                                                <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                                    style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
+                                                    <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
+                                                    Tồn kho thấp
+                                                </span>
+                                            )}
+                                            important={item.isLowStock}
                                         />
-                                        <InfoItem
-                                            label="Liều lượng"
-                                            value={item.dosage || 'N/A'}
-                                            icon={<FiThermometer className="h-5 w-5" />}
-                                        />
-                                    </>
-                                )}
 
-                                {item.expiryDate && (
-                                    <InfoItem
-                                        label="Hạn sử dụng"
-                                        value={formatDate(item.expiryDate)}
-                                        icon={<FiCalendar className="h-5 w-5" />}
-                                        badge={
+                                        {item.type === 'Medication' && (
                                             <>
-                                                {item.isExpiringSoon && (
-                                                    <span className="px-3 py-1 rounded-lg text-sm font-medium"
-                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                                                        <FiCalendar className="inline-block mr-1 h-4 w-4" />
-                                                        Sắp hết hạn
-                                                    </span>
-                                                )}
-                                                {item.isExpired && (
-                                                    <span className="px-3 py-1 rounded-lg text-sm font-medium"
-                                                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                                                        <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
-                                                        Đã hết hạn
-                                                    </span>
-                                                )}
+                                                <InfoItem
+                                                    label="Dạng thuốc"
+                                                    value={item.formDisplayName || 'N/A'}
+                                                    icon={<FiPackage className="h-5 w-5" />}
+                                                />
+                                                <InfoItem
+                                                    label="Liều lượng"
+                                                    value={item.dosage || 'N/A'}
+                                                    icon={<FiThermometer className="h-5 w-5" />}
+                                                />
                                             </>
-                                        }
-                                        important={item.isExpiringSoon || item.isExpired}
-                                    />
+                                        )}
+
+                                        {item.type === 'Medication' && item.expiryDate && (
+                                            <InfoItem
+                                                label="Hạn sử dụng"
+                                                value={formatDate(item.expiryDate)}
+                                                icon={<FiCalendar className="h-5 w-5" />}
+                                                badge={
+                                                    <>
+                                                        {item.isExpiringSoon && (
+                                                            <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                                                style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
+                                                                <FiCalendar className="inline-block mr-1 h-4 w-4" />
+                                                                Sắp hết hạn
+                                                            </span>
+                                                        )}
+                                                        {item.isExpired && (
+                                                            <span className="px-3 py-1 rounded-lg text-sm font-medium"
+                                                                style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
+                                                                <FiAlertTriangle className="inline-block mr-1 h-4 w-4" />
+                                                                Đã hết hạn
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                }
+                                                important={item.isExpiringSoon || item.isExpired}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </div>
 
-                            {item.description && (
+                            {(item.description || isEditing) && (
                                 <div className="mt-6">
-                                    <InfoItem
-                                        label="Mô tả"
-                                        value={item.description}
-                                        icon={<FiFileText className="h-5 w-5" />}
-                                        className="col-span-2"
-                                    />
+                                    {isEditing ? (
+                                        <div>
+                                            <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Mô tả
+                                            </label>
+                                            <textarea
+                                                name="description"
+                                                value={editedData.description}
+                                                onChange={handleInputChange}
+                                                disabled={saving}
+                                                rows={3}
+                                                className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                style={{ borderColor: formErrors.description ? ERROR[500] : BORDER.DEFAULT }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <InfoItem
+                                            label="Mô tả"
+                                            value={item.description}
+                                            icon={<FiFileText className="h-5 w-5" />}
+                                            className="col-span-2"
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -371,46 +778,66 @@ const MedicalItemDetail = () => {
                                 Thông tin yêu cầu
                             </h2>
                             <div className="space-y-4">
-                                <InfoItem
-                                    label="Lý do yêu cầu"
-                                    value={item.justification}
-                                    icon={<FiFileText className="h-5 w-5" />}
-                                    important={true}
-                                />
+                                {isEditing ? (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Lý do chỉnh sửa *
+                                            </label>
+                                            <textarea
+                                                name="justification"
+                                                value={editedData.justification}
+                                                onChange={handleInputChange}
+                                                disabled={saving}
+                                                rows={3}
+                                                className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                style={{ borderColor: formErrors.justification ? ERROR[500] : BORDER.DEFAULT }}
+                                                placeholder="Nhập lý do chỉnh sửa (tối thiểu 10 ký tự)..."
+                                            />
+                                            {formErrors.justification && (
+                                                <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                    {formErrors.justification}
+                                                </p>
+                                            )}
+                                        </div>
 
-                                <InfoItem
-                                    label="Người yêu cầu"
-                                    value={
-                                        item.requestedByName ? (
-                                            <>
-                                                {item.requestedByName}
-                                                <span className="ml-2 text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                    ({item.requestedByStaffCode})
-                                                </span>
-                                            </>
-                                        ) : (
-                                            'N/A'
-                                        )
-                                    }
-                                    icon={<FiUser className="h-5 w-5" />}
-                                />
-
-                                <InfoItem
-                                    label="Ngày yêu cầu"
-                                    value={formatDate(item.createdDate)}
-                                    icon={<FiClock className="h-5 w-5" />}
-                                />
-
-                                {item.status === 'Approved' && (
+                                        <div className="flex items-center mt-4">
+                                            <input
+                                                type="checkbox"
+                                                name="isUrgent"
+                                                checked={editedData.isUrgent}
+                                                onChange={handleInputChange}
+                                                disabled={saving}
+                                                className="h-5 w-5 rounded focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                style={{ color: PRIMARY[600] }}
+                                            />
+                                            <label className="ml-3 text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                Yêu cầu khẩn cấp
+                                            </label>
+                                        </div>
+                                        {formErrors.isUrgent && (
+                                            <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                {formErrors.isUrgent}
+                                            </p>
+                                        )}
+                                    </>
+                                ) : (
                                     <>
                                         <InfoItem
-                                            label="Người duyệt"
+                                            label="Lý do yêu cầu"
+                                            value={item.justification}
+                                            icon={<FiFileText className="h-5 w-5" />}
+                                            important={true}
+                                        />
+
+                                        <InfoItem
+                                            label="Người yêu cầu"
                                             value={
-                                                item.approvedByName ? (
+                                                item.requestedByName ? (
                                                     <>
-                                                        {item.approvedByName}
+                                                        {item.requestedByName}
                                                         <span className="ml-2 text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                            ({item.approvedByStaffCode})
+                                                            ({item.requestedByStaffCode})
                                                         </span>
                                                     </>
                                                 ) : (
@@ -418,31 +845,58 @@ const MedicalItemDetail = () => {
                                                 )
                                             }
                                             icon={<FiUser className="h-5 w-5" />}
-                                            important={true}
                                         />
 
                                         <InfoItem
-                                            label="Ngày duyệt"
-                                            value={formatDate(item.approvedAt)}
+                                            label="Ngày yêu cầu"
+                                            value={formatDate(item.createdDate)}
                                             icon={<FiClock className="h-5 w-5" />}
                                         />
-                                    </>
-                                )}
 
-                                {item.status === 'Rejected' && (
-                                    <>
-                                        <InfoItem
-                                            label="Ngày từ chối"
-                                            value={formatDate(item.rejectedAt)}
-                                            icon={<FiClock className="h-5 w-5" />}
-                                        />
-                                        <InfoItem
-                                            label="Lý do từ chối"
-                                            value={item.rejectionReason || 'Không có lý do'}
-                                            icon={<FiFileText className="h-5 w-5" />}
-                                            error={true}
-                                            important={true}
-                                        />
+                                        {item.status === 'Approved' && (
+                                            <>
+                                                <InfoItem
+                                                    label="Người duyệt"
+                                                    value={
+                                                        item.approvedByName ? (
+                                                            <>
+                                                                {item.approvedByName}
+                                                                <span className="ml-2 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                                    ({item.approvedByStaffCode})
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            'N/A'
+                                                        )
+                                                    }
+                                                    icon={<FiUser className="h-5 w-5" />}
+                                                    important={true}
+                                                />
+
+                                                <InfoItem
+                                                    label="Ngày duyệt"
+                                                    value={formatDate(item.approvedAt)}
+                                                    icon={<FiClock className="h-5 w-5" />}
+                                                />
+                                            </>
+                                        )}
+
+                                        {item.status === 'Rejected' && (
+                                            <>
+                                                <InfoItem
+                                                    label="Ngày từ chối"
+                                                    value={formatDate(item.rejectedAt)}
+                                                    icon={<FiClock className="h-5 w-5" />}
+                                                />
+                                                <InfoItem
+                                                    label="Lý do từ chối"
+                                                    value={item.rejectionReason || 'Không có lý do'}
+                                                    icon={<FiFileText className="h-5 w-5" />}
+                                                    error={true}
+                                                    important={true}
+                                                />
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -450,6 +904,14 @@ const MedicalItemDetail = () => {
                     </div>
                 </div>
             </div>
+
+            <AlertModal
+                isOpen={showAlert}
+                onClose={handleAlertClose}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+            />
         </div>
     );
 };
