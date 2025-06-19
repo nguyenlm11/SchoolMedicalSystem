@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye, FiTrash2 } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import AddMedicineModal from "../../components/modal/AddMedicineModal";
+import ConfirmModal from "../../components/modal/ConfirmModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseMedicationPage = () => {
@@ -29,6 +30,8 @@ const NurseMedicationPage = () => {
         approvalStatus: '',
         priority: ''
     });
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -127,6 +130,26 @@ const NurseMedicationPage = () => {
         fetchMedicines();
     };
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const handleDelete = async (id) => {
+        try {
+            const response = await medicalApi.deleteMedicalItem(id);
+            if (response.success) {
+                showAlert("success", "Thành công", "Đã xóa thuốc thành công");
+                fetchMedicines();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể xóa thuốc. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error deleting medicine:', error);
+            showAlert("error", "Lỗi", "Không thể xóa thuốc. Vui lòng thử lại.");
+        }
+    };
+
+    const confirmDelete = (id) => {
+        setSelectedItemId(id);
+        setShowConfirmModal(true);
+    };
 
     if (loading) {
         return (
@@ -465,11 +488,17 @@ const NurseMedicationPage = () => {
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <>
-                                                        <Link to={`/schoolnurse/medical-items/${item.id}`} className="text-blue-500 hover:text-blue-700">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Link to={`/schoolnurse/medical-items/${item.id}`}
+                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
                                                             <FiEye className="h-4 w-4" />
                                                         </Link>
-                                                    </>
+                                                        <button
+                                                            onClick={() => confirmDelete(item.id)}
+                                                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
+                                                            <FiTrash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -627,6 +656,20 @@ const NurseMedicationPage = () => {
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
+                />
+
+                <ConfirmModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={() => {
+                        handleDelete(selectedItemId);
+                        setShowConfirmModal(false);
+                    }}
+                    title="Xác nhận xóa"
+                    message="Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác."
+                    confirmText="Xóa"
+                    cancelText="Hủy"
+                    type="error"
                 />
             </div>
         </div >
