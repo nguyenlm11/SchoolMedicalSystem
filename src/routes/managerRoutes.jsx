@@ -6,6 +6,7 @@ import StudentManagement from "../pages/manager/StudentManagement";
 import MedicineInventory from "../pages/manager/MedicineInventory";
 import SupplyInventory from "../pages/manager/SupplyInventory";
 import UserProfilePage from "../pages/auth/UserProfilePage";
+import ClassManagement from "../pages/manager/ClassManagement";
 import MedicalItemDetail from "../pages/nurse/MedicalItemDetail";
 
 const PlaceholderPage = ({ title }) => (
@@ -19,6 +20,7 @@ const managerRoutes = (
     <Route path="/manager/dashboard" element={<PlaceholderPage title="Manager Dashboard (đang phát triển)" />} />
     <Route path="/manager/parent-management" element={<ParentManagement />} />
     <Route path="/manager/student-management" element={<StudentManagement />} />
+    <Route path="/manager/class-management" element={<ClassManagement />} />
     <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />
     <Route path="/manager/supply-inventory" element={<SupplyInventory />} />
     <Route path="/manager/profile" element={<UserProfilePage />} />
