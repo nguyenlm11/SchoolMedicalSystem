@@ -4,6 +4,7 @@ import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiCheck,
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import medicalApi from "../../api/medicalApi";
 
 const SupplyInventory = () => {
@@ -28,6 +29,11 @@ const SupplyInventory = () => {
         priority: ''
     });
     const [openActionId, setOpenActionId] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState({
+        type: 'approve',
+        itemId: null
+    });
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -137,16 +143,16 @@ const SupplyInventory = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const handleApprove = async (id) => {
+    const handleApprove = async (reason) => {
         try {
-            const response = await medicalApi.approveMedicalItem(id, {
-                approvalNotes: "Đã phê duyệt"
+            const response = await medicalApi.approveMedicalItem(confirmAction.itemId, {
+                approvalNotes: reason
             });
 
             if (response.success) {
                 setSupplies(prevSupplies =>
                     prevSupplies.map(item =>
-                        item.id === id
+                        item.id === confirmAction.itemId
                             ? {
                                 ...item,
                                 status: 'Approved',
@@ -164,19 +170,21 @@ const SupplyInventory = () => {
         } catch (error) {
             console.error('Error approving supply:', error);
             showAlert("error", "Lỗi", "Không thể phê duyệt vật tư. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
         }
     };
 
-    const handleReject = async (id) => {
+    const handleReject = async (reason) => {
         try {
-            const response = await medicalApi.rejectMedicalItem(id, {
-                rejectionReason: "Từ chối phê duyệt"
+            const response = await medicalApi.rejectMedicalItem(confirmAction.itemId, {
+                rejectionReason: reason
             });
 
             if (response.success) {
                 setSupplies(prevSupplies =>
                     prevSupplies.map(item =>
-                        item.id === id
+                        item.id === confirmAction.itemId
                             ? {
                                 ...item,
                                 status: 'Rejected',
@@ -194,6 +202,8 @@ const SupplyInventory = () => {
         } catch (error) {
             console.error('Error rejecting supply:', error);
             showAlert("error", "Lỗi", "Không thể từ chối phê duyệt vật tư. Vui lòng thử lại.");
+        } finally {
+            setShowConfirmModal(false);
         }
     };
 
@@ -521,7 +531,11 @@ const SupplyInventory = () => {
                                                                     <>
                                                                         <button
                                                                             onClick={() => {
-                                                                                handleApprove(item.id);
+                                                                                setConfirmAction({
+                                                                                    type: 'approve',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
                                                                                 setOpenActionId(null);
                                                                             }}
                                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -532,7 +546,11 @@ const SupplyInventory = () => {
                                                                         </button>
                                                                         <button
                                                                             onClick={() => {
-                                                                                handleReject(item.id);
+                                                                                setConfirmAction({
+                                                                                    type: 'reject',
+                                                                                    itemId: item.id
+                                                                                });
+                                                                                setShowConfirmModal(true);
                                                                                 setOpenActionId(null);
                                                                             }}
                                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -699,6 +717,19 @@ const SupplyInventory = () => {
                     message={alertConfig.message}
                     type={alertConfig.type}
                     okText="OK"
+                />
+
+                <ConfirmActionModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={confirmAction.type === 'approve' ? handleApprove : handleReject}
+                    title={confirmAction.type === 'approve' ? "Phê duyệt vật tư" : "Từ chối vật tư"}
+                    message={confirmAction.type === 'approve' 
+                        ? "Bạn có chắc chắn muốn phê duyệt vật tư này? Vui lòng nhập lý do phê duyệt."
+                        : "Bạn có chắc chắn muốn từ chối vật tư này? Vui lòng nhập lý do từ chối."
+                    }
+                    type={confirmAction.type}
+                    confirmText={confirmAction.type === 'approve' ? "Phê duyệt" : "Từ chối"}
                 />
             </div>
         </div>
