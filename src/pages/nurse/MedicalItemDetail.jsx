@@ -63,9 +63,9 @@ const MedicalItemDetail = () => {
                 type: item.type || '',
                 name: item.name || '',
                 description: item.description || '',
-                dosage: item.dosage || '',
-                form: item.form || '',
-                expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
+                dosage: item.dosage || null,
+                form: item.form || null,
+                expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : null,
                 quantity: item.quantity || '',
                 unit: item.unit || '',
                 justification: '',  // Để trống vì đây là lý do cho lần chỉnh sửa mới
@@ -125,23 +125,25 @@ const MedicalItemDetail = () => {
         if (!editedData.name?.trim()) {
             errors.name = "Tên không được để trống";
         }
-        if (!editedData.form) {
-            errors.form = "Vui lòng chọn dạng thuốc/vật tư";
-        }
-        if (editedData.type === 'Medication' && !editedData.dosage?.trim()) {
-            errors.dosage = "Liều lượng không được để trống";
+        if (editedData.type === 'Medication') {
+            if (!editedData.form) {
+                errors.form = "Vui lòng chọn dạng thuốc/vật tư";
+            }
+            if (!editedData.dosage?.trim()) {
+                errors.dosage = "Liều lượng không được để trống";
+            }
+            if (!editedData.expiryDate) {
+                errors.expiryDate = "Hạn sử dụng không được để trống";
+            } else {
+                const expiryDate = new Date(editedData.expiryDate);
+                expiryDate.setHours(0, 0, 0, 0);
+                if (expiryDate <= today) {
+                    errors.expiryDate = "Hạn sử dụng phải lớn hơn ngày hiện tại";
+                }
+            }
         }
         if (!editedData.quantity || editedData.quantity <= 0) {
             errors.quantity = "Số lượng phải lớn hơn 0";
-        }
-        if (!editedData.expiryDate) {
-            errors.expiryDate = "Hạn sử dụng không được để trống";
-        } else {
-            const expiryDate = new Date(editedData.expiryDate);
-            expiryDate.setHours(0, 0, 0, 0);
-            if (expiryDate <= today) {
-                errors.expiryDate = "Hạn sử dụng phải lớn hơn ngày hiện tại";
-            }
         }
         if (!editedData.priority) {
             errors.priority = "Vui lòng chọn độ ưu tiên";
@@ -575,12 +577,6 @@ const MedicalItemDetail = () => {
                                                     name="quantity"
                                                     value={editedData.quantity}
                                                     onChange={handleInputChange}
-                                                    onKeyDown={(e) => {
-                                                        // Ngăn chặn nhập số âm và số thập phân
-                                                        if (e.key === '-' || e.key === '.' || e.key === 'e' || e.key === ',') {
-                                                            e.preventDefault();
-                                                        }
-                                                    }}
                                                     min="0"
                                                     step="1"
                                                     className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
@@ -594,23 +590,25 @@ const MedicalItemDetail = () => {
                                                     </p>
                                                 )}
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                    Đơn vị
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    name="unit"
-                                                    value={editedData.unit}
-                                                    disabled
-                                                    className="w-full p-3 border rounded-xl bg-gray-100"
-                                                    style={{ borderColor: BORDER.DEFAULT }}
-                                                    readOnly
-                                                />
-                                            </div>
+                                            {editedData.type === 'Medication' && (
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Đơn vị
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name="unit"
+                                                        value={editedData.unit}
+                                                        disabled
+                                                        className="w-full p-3 border rounded-xl bg-gray-100"
+                                                        style={{ borderColor: BORDER.DEFAULT }}
+                                                        readOnly
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {item.type === 'Medication' && (
+                                        {editedData.type === 'Medication' && (
                                             <>
                                                 <div>
                                                     <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
@@ -657,35 +655,34 @@ const MedicalItemDetail = () => {
                                                         </p>
                                                     )}
                                                 </div>
+                                                <div>
+                                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                        Hạn sử dụng *
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        name="expiryDate"
+                                                        value={editedData.expiryDate}
+                                                        onChange={handleInputChange}
+                                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                                        style={{ borderColor: formErrors.expiryDate ? ERROR[500] : BORDER.DEFAULT }}
+                                                        disabled={saving}
+                                                        min={new Date().toISOString().split('T')[0]}
+                                                    />
+                                                    {formErrors.expiryDate && (
+                                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                                            {formErrors.expiryDate}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </>
                                         )}
-
-                                        <div>
-                                            <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                Hạn sử dụng *
-                                            </label>
-                                            <input
-                                                type="date"
-                                                name="expiryDate"
-                                                value={editedData.expiryDate}
-                                                onChange={handleInputChange}
-                                                className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                                style={{ borderColor: formErrors.expiryDate ? ERROR[500] : BORDER.DEFAULT }}
-                                                disabled={saving}
-                                                min={new Date().toISOString().split('T')[0]}
-                                            />
-                                            {formErrors.expiryDate && (
-                                                <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                                    {formErrors.expiryDate}
-                                                </p>
-                                            )}
-                                        </div>
                                     </>
                                 ) : (
                                     <>
                                         <InfoItem
                                             label="Số lượng"
-                                            value={`${item.quantity} ${item.unit}`}
+                                            value={item.type === 'Supply' ? item.quantity : `${item.quantity} ${item.unit}`}
                                             icon={<FiBox className="h-5 w-5" />}
                                             badge={item.isLowStock && (
                                                 <span className="px-3 py-1 rounded-lg text-sm font-medium"
@@ -712,7 +709,7 @@ const MedicalItemDetail = () => {
                                             </>
                                         )}
 
-                                        {item.expiryDate && (
+                                        {item.type === 'Medication' && item.expiryDate && (
                                             <InfoItem
                                                 label="Hạn sử dụng"
                                                 value={formatDate(item.expiryDate)}
