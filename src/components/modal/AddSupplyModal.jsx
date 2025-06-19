@@ -15,7 +15,7 @@ const AddSupplyModal = ({ isOpen, onClose, onSuccess }) => {
         name: '',
         description: '',
         quantity: '',
-        unit: '',
+        unit: 'Đơn vị',
         justification: '',
         priority: '',
         isUrgent: false
@@ -34,7 +34,7 @@ const AddSupplyModal = ({ isOpen, onClose, onSuccess }) => {
             name: '',
             description: '',
             quantity: '',
-            unit: '',
+            unit: 'Đơn vị',
             justification: '',
             priority: '',
             isUrgent: false
@@ -77,9 +77,6 @@ const AddSupplyModal = ({ isOpen, onClose, onSuccess }) => {
         }
         if (!formData.quantity || formData.quantity <= 0) {
             errors.quantity = "Số lượng phải lớn hơn 0";
-        }
-        if (!formData.unit?.trim()) {
-            errors.unit = "Đơn vị không được để trống";
         }
         if (!formData.justification?.trim() || formData.justification.length < 10) {
             errors.justification = "Lý do yêu cầu phải có ít nhất 10 ký tự";
@@ -207,7 +204,7 @@ const AddSupplyModal = ({ isOpen, onClose, onSuccess }) => {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="md:col-span-2">
                                 <div>
                                     <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
                                         Số lượng *
@@ -226,27 +223,6 @@ const AddSupplyModal = ({ isOpen, onClose, onSuccess }) => {
                                     {formErrors.quantity && (
                                         <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
                                             {formErrors.quantity}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                        Đơn vị *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="unit"
-                                        value={formData.unit}
-                                        onChange={handleInputChange}
-                                        disabled={loading}
-                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                        style={{ borderColor: formErrors.unit ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                        placeholder="Ví dụ: cái, hộp..."
-                                    />
-                                    {formErrors.unit && (
-                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                            {formErrors.unit}
                                         </p>
                                     )}
                                 </div>
