@@ -48,6 +48,11 @@ const ManagerLayout = () => {
             icon: <FiUsers className="w-5 h-5" />,
         },
         {
+            path: "/manager/class-management",
+            name: "Quản lý lớp học",
+            icon: <FiPackage className="w-5 h-5" />,
+        },
+        {
             path: "/manager/student-management",
             name: "Quản lý học sinh",
             icon: <FiUserCheck className="w-5 h-5" />,

@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiHeart, FiUsers, FiShield, FiActivity, FiFileText, FiCalendar, FiCheckCircle, FiUserCheck, FiClipboard, FiPieChart, FiBook, FiStar, FiArrowRight, FiPhone, FiMail, FiMapPin, FiClock, FiUser, FiEye, FiAward, FiTarget, FiBookOpen } from 'react-icons/fi';
 import { PRIMARY, BACKGROUND, TEXT } from '../../constants/colors';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../utils/AuthContext";
 
 const HomePage = () => {
+  const { user, isAuthenticated, hasRole } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      if (hasRole('admin')) {
+        navigate('/admin/dashboard');
+      } else if (hasRole('manager')) {
+        navigate('/manager/dashboard');
+      }
+    }
+  }, [user, isAuthenticated, hasRole, navigate]);
+
   const mainFeatures = [
     {
       icon: FiFileText,
