@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye, FiTrash2 } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import AddSupplyModal from "../../components/modal/AddSupplyModal";
+import ConfirmModal from "../../components/modal/ConfirmModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseSupplyPage = () => {
@@ -29,6 +30,8 @@ const NurseSupplyPage = () => {
         approvalStatus: '',
         priority: ''
     });
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -128,6 +131,26 @@ const NurseSupplyPage = () => {
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
     const handleAddSuccess = () => {
         fetchSupplies();
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            const response = await medicalApi.deleteMedicalItem(id);
+            if (response.success) {
+                showAlert("success", "Thành công", "Đã xóa vật tư thành công");
+                fetchSupplies();
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể xóa vật tư. Vui lòng thử lại.");
+            }
+        } catch (error) {
+            console.error('Error deleting supply:', error);
+            showAlert("error", "Lỗi", "Không thể xóa vật tư. Vui lòng thử lại.");
+        }
+    };
+
+    const confirmDelete = (id) => {
+        setSelectedItemId(id);
+        setShowConfirmModal(true);
     };
 
     if (loading) {
@@ -395,8 +418,16 @@ const NurseSupplyPage = () => {
                                                     <span
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: item.status === 'Active' ? SUCCESS[100] : GRAY[100],
-                                                            color: item.status === 'Active' ? SUCCESS[700] : GRAY[700]
+                                                            backgroundColor:
+                                                                item.status === 'Approved' ? SUCCESS[100] :
+                                                                    item.status === 'Pending' ? WARNING[100] :
+                                                                        item.status === 'Rejected' ? ERROR[100] :
+                                                                            GRAY[100],
+                                                            color:
+                                                                item.status === 'Approved' ? SUCCESS[700] :
+                                                                    item.status === 'Pending' ? WARNING[700] :
+                                                                        item.status === 'Rejected' ? ERROR[700] :
+                                                                            GRAY[700]
                                                         }}
                                                     >
                                                         {item.statusDisplayName}
@@ -406,33 +437,35 @@ const NurseSupplyPage = () => {
                                                     <span
                                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
-                                                            backgroundColor: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[100];
-                                                                    case 'HIGH': return WARNING[100];
-                                                                    case 'NORMAL': return SUCCESS[100];
-                                                                    case 'LOW': return GRAY[100];
-                                                                    default: return GRAY[100];
-                                                                }
-                                                            })(),
-                                                            color: (() => {
-                                                                switch (item.priority) {
-                                                                    case 'CRITICAL': return ERROR[700];
-                                                                    case 'HIGH': return WARNING[700];
-                                                                    case 'NORMAL': return SUCCESS[700];
-                                                                    case 'LOW': return GRAY[700];
-                                                                    default: return GRAY[700];
-                                                                }
-                                                            })()
+                                                            backgroundColor:
+                                                                item.priority === 'Critical' ? ERROR[100] :
+                                                                    item.priority === 'High' ? WARNING[100] :
+                                                                        item.priority === 'Normal' ? SUCCESS[200] :
+                                                                            item.priority === 'Low' ? SUCCESS[100] :
+                                                                                GRAY[100],
+                                                            color:
+                                                                item.priority === 'Critical' ? ERROR[700] :
+                                                                    item.priority === 'High' ? WARNING[700] :
+                                                                        item.priority === 'Normal' ? SUCCESS[700] :
+                                                                            item.priority === 'Low' ? SUCCESS[700] :
+                                                                                GRAY[700]
                                                         }}
                                                     >
                                                         {item.priorityDisplayName}
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <Link to={`/schoolnurse/medical-items/${item.id}`} className="text-blue-500 hover:text-blue-700">
-                                                        <FiEye className="h-4 w-4" />
-                                                    </Link>
+                                                    <div className="flex items-center space-x-3">
+                                                        <Link to={`/schoolnurse/medical-items/${item.id}`}
+                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
+                                                            <FiEye className="h-4 w-4" />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => confirmDelete(item.id)}
+                                                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50">
+                                                            <FiTrash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -579,6 +612,20 @@ const NurseSupplyPage = () => {
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
+                />
+
+                <ConfirmModal
+                    isOpen={showConfirmModal}
+                    onClose={() => setShowConfirmModal(false)}
+                    onConfirm={() => {
+                        handleDelete(selectedItemId);
+                        setShowConfirmModal(false);
+                    }}
+                    title="Xác nhận xóa"
+                    message="Bạn có chắc chắn muốn xóa vật tư này không? Hành động này không thể hoàn tác."
+                    confirmText="Xóa"
+                    cancelText="Hủy"
+                    type="error"
                 />
             </div>
         </div>
