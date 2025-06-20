@@ -661,10 +661,10 @@ const ParentManagement = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr style={{ backgroundColor: GRAY[50] }}>
+                                    <tr style={{ backgroundColor: PRIMARY[50] }}>
                                         <th
                                             className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("name")}
                                         >
                                             <div className="flex items-center">
@@ -679,7 +679,7 @@ const ParentManagement = () => {
                                         </th>
                                         <th
                                             className="hidden sm:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("relationship")}
                                         >
                                             <div className="flex items-center">
@@ -694,7 +694,7 @@ const ParentManagement = () => {
                                         </th>
                                         <th
                                             className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("email")}
                                         >
                                             <div className="flex items-center">
@@ -708,7 +708,7 @@ const ParentManagement = () => {
                                         </th>
                                         <th
                                             className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("phone")}
                                         >
                                             <div className="flex items-center">
@@ -723,7 +723,7 @@ const ParentManagement = () => {
                                         </th>
                                         <th
                                             className="hidden md:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("occupation")}
                                         >
                                             <div className="flex items-center">
@@ -738,7 +738,7 @@ const ParentManagement = () => {
                                         </th>
                                         <th
                                             className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("address")}
                                         >
                                             <div className="flex items-center">
@@ -750,11 +750,11 @@ const ParentManagement = () => {
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             <span className="hidden sm:inline">Trạng thái</span>
                                             <span className="sm:hidden">TT</span>
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             <span className="hidden sm:inline">Thao tác</span>
                                             <span className="sm:hidden">TT</span>
                                         </th>

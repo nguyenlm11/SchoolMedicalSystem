@@ -4,56 +4,13 @@ import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiUser, 
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import classApi from "../../api/classApi";
 
 const StudentManagement = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
     const initialFilter = queryParams.get("filter") || "all";
-
-    const initialParentsData = [
-        {
-            parentId: 1,
-            firstName: "Nguyễn Thị",
-            lastName: "Lan",
-            fullName: "Nguyễn Thị Lan",
-            email: "nguyenthilan@email.com",
-            isActive: true
-        },
-        {
-            parentId: 2,
-            firstName: "Trần Văn",
-            lastName: "Minh",
-            fullName: "Trần Văn Minh",
-            email: "tranvanminh@email.com",
-            isActive: true
-        },
-        {
-            parentId: 3,
-            firstName: "Lê Thị",
-            lastName: "Hương",
-            fullName: "Lê Thị Hương",
-            email: "lethihuong@email.com",
-            isActive: true
-        },
-        {
-            parentId: 4,
-            firstName: "Phạm Văn",
-            lastName: "Đức",
-            fullName: "Phạm Văn Đức",
-            email: "phamvanduc@email.com",
-            isActive: true
-        },
-        {
-            parentId: 5,
-            firstName: "Võ Thị",
-            lastName: "Mai",
-            fullName: "Võ Thị Mai",
-            email: "vothimai@email.com",
-            isActive: true
-        }
-    ];
-
     const initialStudentsData = [
         {
             studentId: 1,
@@ -136,10 +93,7 @@ const StudentManagement = () => {
     ];
 
     const [students, setStudents] = useState(initialStudentsData);
-    const [parents, setParents] = useState(initialParentsData);
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
-    const [deleting, setDeleting] = useState(false);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [filterGrade, setFilterGrade] = useState("all");
     const [selectedClass, setSelectedClass] = useState("all");
@@ -156,22 +110,15 @@ const StudentManagement = () => {
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [currentPage, setCurrentPage] = useState(1);
     const studentsPerPage = 5;
-    const [showStudentModal, setShowStudentModal] = useState(false);
-    const [selectedStudent, setSelectedStudent] = useState(null);
-    const [studentForm, setStudentForm] = useState({
-        studentId: 0,
-        studentCode: "",
-        firstName: "",
-        lastName: "",
-        dateOfBirth: "",
-        gender: "Nam",
-        className: "",
-        gradeLevel: "",
-        address: "",
-        parentId: 0,
-        isActive: true,
+    const [classes, setClasses] = useState([]);
+    const [loadingClasses, setLoadingClasses] = useState(false);
+    const [classStats, setClassStats] = useState({
+        totalClasses: 0,
+        classesPerGrade: {}
     });
-    const [formErrors, setFormErrors] = useState({});
+    const [academicYears] = useState(Array.from({ length: 6 }, (_, i) => 2025 + i));
+    const [selectedAcademicYear, setSelectedAcademicYear] = useState(2025);
+    const [showFilters, setShowFilters] = useState(true);
 
     useEffect(() => {
         fetchStudents();
@@ -185,6 +132,10 @@ const StudentManagement = () => {
         const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
         return () => clearTimeout(timer);
     }, [searchTerm]);
+
+    useEffect(() => {
+        fetchClasses();
+    }, [filterGrade, selectedAcademicYear]);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -208,118 +159,51 @@ const StudentManagement = () => {
         }
     };
 
-    // Create new student
-    const createStudent = async () => {
-        if (!validateForm()) return;
-        setSubmitting(true);
+    const fetchClasses = async () => {
+        setLoadingClasses(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const newStudent = {
-                studentId: Math.max(...students.map(s => s.studentId)) + 1,
-                studentCode: studentForm.studentCode || `HS${String(Math.max(...students.map(s => s.studentId)) + 1).padStart(3, '0')}`,
-                firstName: studentForm.firstName,
-                lastName: studentForm.lastName,
-                dateOfBirth: studentForm.dateOfBirth + "T00:00:00",
-                gender: studentForm.gender,
-                className: studentForm.className,
-                gradeLevel: parseInt(studentForm.gradeLevel) || 0,
-                address: studentForm.address,
-                parentId: parseInt(studentForm.parentId),
-                isActive: true
-            };
+            const response = await classApi.getSchoolClass({
+                pageIndex: 1,
+                pageSize: 1000,
+                grade: filterGrade !== "all" ? parseInt(filterGrade) : '',
+                academicYear: selectedAcademicYear
+            });
 
-            setStudents([...students, newStudent]);
-            setShowStudentModal(false);
-            resetForm();
-            showAlert("success", "Thành công", `Học sinh "${studentForm.firstName} ${studentForm.lastName}" đã được thêm thành công.`);
+            if (response.success) {
+                setClasses(response.data);
+
+                const classesPerGrade = response.data.reduce((acc, cls) => {
+                    acc[cls.grade] = (acc[cls.grade] || 0) + 1;
+                    return acc;
+                }, {});
+
+                setClassStats({
+                    totalClasses: response.totalCount,
+                    classesPerGrade
+                });
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách lớp học");
+            }
         } catch (error) {
-            console.error("Error creating student:", error);
-            showAlert("error", "Lỗi", "Không thể thêm học sinh mới. Vui lòng thử lại.");
+            console.error("Error fetching classes:", error);
+            showAlert("error", "Lỗi", "Không thể tải danh sách lớp học. Vui lòng thử lại.");
         } finally {
-            setSubmitting(false);
+            setLoadingClasses(false);
         }
-    };
-
-    // Update student
-    const updateStudent = async () => {
-        if (!validateForm()) return;
-        setSubmitting(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const updatedStudents = students.map(student =>
-                student.studentId === studentForm.studentId
-                    ? {
-                        ...student,
-                        studentCode: studentForm.studentCode,
-                        firstName: studentForm.firstName,
-                        lastName: studentForm.lastName,
-                        dateOfBirth: studentForm.dateOfBirth + "T00:00:00",
-                        gender: studentForm.gender,
-                        className: studentForm.className,
-                        gradeLevel: parseInt(studentForm.gradeLevel) || 0,
-                        address: studentForm.address,
-                        parentId: parseInt(studentForm.parentId),
-                    }
-                    : student
-            );
-
-            setStudents(updatedStudents);
-            setShowStudentModal(false);
-            resetForm();
-            showAlert("success", "Thành công", `Học sinh "${studentForm.firstName} ${studentForm.lastName}" đã được cập nhật thành công.`);
-        } catch (error) {
-            console.error("Error updating student:", error);
-            showAlert("error", "Lỗi", "Không thể cập nhật thông tin học sinh. Vui lòng thử lại.");
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // Delete student
-    const deleteStudent = async (id) => {
-        setDeleting(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const studentToDelete = students.find(student => student.studentId === id);
-            setStudents(students.filter(student => student.studentId !== id));
-            showAlert("success", "Thành công", `Học sinh "${studentToDelete?.firstName} ${studentToDelete?.lastName}" đã được xóa thành công.`);
-        } catch (error) {
-            console.error("Error deleting student:", error);
-            showAlert("error", "Lỗi", "Không thể xóa học sinh. Vui lòng thử lại.");
-        } finally {
-            setDeleting(false);
-        }
-    };
-
-    // Toggle student active status
-    const toggleStudentStatus = (item) => {
-        const updatedStudents = students.map(student =>
-            student.studentId === item.studentId
-                ? { ...student, isActive: !student.isActive }
-                : student
-        );
-        setStudents(updatedStudents);
     };
 
     // Handle filter change
     const handleFilterChange = (status) => {
-        setLoading(true);
         setFilterStatus(status);
 
         // Update URL
         const params = new URLSearchParams(location.search);
         params.set("filter", status);
         navigate({ search: params.toString() });
-
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-        }, 600);
     };
 
     // Reset filters
     const resetFilters = () => {
-        setLoading(true);
         setFilterStatus("all");
         setFilterGrade("all");
         setSelectedClass("all");
@@ -327,16 +211,12 @@ const StudentManagement = () => {
         setSortBy("name");
         setSortOrder("asc");
         setCurrentPage(1);
+        setSelectedAcademicYear(2025); // Reset to default year
 
         // Update URL
         const params = new URLSearchParams(location.search);
         params.delete("filter");
         navigate({ search: params.toString() });
-
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-        }, 800);
     };
 
     // Filter students based on search term, status and grade
@@ -414,97 +294,11 @@ const StudentManagement = () => {
         }
     }
 
-    // Handle add/edit student
-    const handleAddEditStudent = (item = null) => {
-        if (item) {
-            setStudentForm({
-                studentId: item.studentId,
-                studentCode: item.studentCode || "",
-                firstName: item.firstName || "",
-                lastName: item.lastName || "",
-                dateOfBirth: item.dateOfBirth ? item.dateOfBirth.split("T")[0] : "",
-                gender: item.gender || "Nam",
-                className: item.className || "",
-                gradeLevel: item.gradeLevel ? item.gradeLevel.toString() : "",
-                address: item.address || "",
-                parentId: item.parentId ? item.parentId.toString() : "",
-                isActive: item.isActive,
-            });
-            setSelectedStudent(item);
-        } else {
-            resetForm();
-            setSelectedStudent(null);
-        }
-        setShowStudentModal(true);
-    };
-
-    // Reset form
-    const resetForm = () => {
-        setStudentForm({
-            studentId: 0,
-            studentCode: "",
-            firstName: "",
-            lastName: "",
-            dateOfBirth: "",
-            gender: "Nam",
-            className: "",
-            gradeLevel: "",
-            address: "",
-            parentId: "",
-            isActive: true,
-        });
-        setFormErrors({});
-    };
-
-    // Validate form
-    const validateForm = () => {
-        const errors = {};
-        if (!studentForm.firstName.trim()) {
-            errors.firstName = "Họ không được để trống";
-        }
-        if (!studentForm.lastName.trim()) {
-            errors.lastName = "Tên không được để trống";
-        }
-        if (!studentForm.dateOfBirth) {
-            errors.dateOfBirth = "Ngày sinh không được để trống";
-        }
-        if (!studentForm.parentId) {
-            errors.parentId = "Vui lòng chọn phụ huynh";
-        }
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    // Handle input change
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setStudentForm({
-            ...studentForm,
-            [name]: type === "checkbox" ? checked : value,
-        });
-    };
-
-    // Handle form submission
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (selectedStudent) {
-            updateStudent();
-        } else {
-            createStudent();
-        }
-    };
-
     // Format date
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
         return date.toLocaleDateString("vi-VN");
-    };
-
-    // Get parent name
-    const getParentName = (parentId) => {
-        const parent = parents.find((p) => p.parentId === parentId);
-        return parent ? parent.fullName : "Không xác định";
     };
 
     // Get full name
@@ -515,36 +309,30 @@ const StudentManagement = () => {
     // Get unique classes by grade level
     const getClassesByGrade = (gradeLevel) => {
         if (gradeLevel === "all") return [];
-        return [...new Set(students
-            .filter(student => student.gradeLevel === parseInt(gradeLevel))
-            .map(student => student.className)
-            .filter(className => className && className.trim())
-        )].sort();
+        return classes
+            .filter(cls => cls.grade === parseInt(gradeLevel))
+            .map(cls => cls.name)
+            .sort();
     };
 
     // Handle grade selection
     const handleGradeSelection = (grade) => {
-        setLoading(true);
         setFilterGrade(grade);
         setSelectedClass("all"); // Reset class selection when grade changes
         setCurrentPage(1);
-
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-        }, 600);
     };
 
     // Handle class selection  
     const handleClassSelection = (className) => {
-        setLoading(true);
         setSelectedClass(className);
         setCurrentPage(1);
+    };
 
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
-        }, 600);
+    // Handle academic year change
+    const handleAcademicYearChange = (year) => {
+        setSelectedAcademicYear(parseInt(year));
+        setSelectedClass("all"); // Reset selected class when year changes
+        setCurrentPage(1);
     };
 
     if (loading) {
@@ -556,7 +344,7 @@ const StudentManagement = () => {
     }
 
     return (
-        <div className="min-h-screen" >
+        <div className="min-h-screen">
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
@@ -569,7 +357,6 @@ const StudentManagement = () => {
                             </p>
                         </div>
                         <button
-                            onClick={() => handleAddEditStudent()}
                             className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                             style={{
                                 background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
@@ -674,14 +461,14 @@ const StudentManagement = () => {
                     }}
                 >
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
-                            <div className="flex-1">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <div className="lg:col-span-8">
                                 <div className="relative">
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
                                         placeholder="Tìm kiếm theo tên hoặc mã học sinh..."
-                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{
                                             borderColor: BORDER.DEFAULT,
                                             backgroundColor: BACKGROUND.DEFAULT,
@@ -693,9 +480,26 @@ const StudentManagement = () => {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
+                            <div className="lg:col-span-4 flex gap-3">
                                 <select
-                                    className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200 min-w-[180px]"
+                                    className="flex-1 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200"
+                                    style={{
+                                        borderColor: BORDER.DEFAULT,
+                                        backgroundColor: BACKGROUND.DEFAULT,
+                                        focusRingColor: PRIMARY[500] + '40'
+                                    }}
+                                    value={selectedAcademicYear}
+                                    onChange={(e) => handleAcademicYearChange(parseInt(e.target.value))}
+                                >
+                                    {academicYears.map((year) => (
+                                        <option key={year} value={year}>
+                                            {year} - {year + 1}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    className="flex-1 border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all duration-200"
                                     style={{
                                         borderColor: BORDER.DEFAULT,
                                         backgroundColor: BACKGROUND.DEFAULT,
@@ -704,14 +508,14 @@ const StudentManagement = () => {
                                     value={filterStatus}
                                     onChange={(e) => handleFilterChange(e.target.value)}
                                 >
-                                    <option value="all">Tất cả trạng thái</option>
-                                    <option value="active">Đang hoạt động</option>
-                                    <option value="inactive">Ngừng hoạt động</option>
+                                    <option value="all">Tất cả</option>
+                                    <option value="active">Đang học</option>
+                                    <option value="inactive">Đã nghỉ</option>
                                 </select>
 
                                 <button
                                     onClick={resetFilters}
-                                    className="flex items-center px-6 py-3 rounded-xl transition-all duration-200 font-medium border"
+                                    className="flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 font-medium border"
                                     style={{
                                         color: PRIMARY[600],
                                         borderColor: PRIMARY[200],
@@ -726,122 +530,167 @@ const StudentManagement = () => {
                                         e.target.style.transform = 'scale(1)';
                                     }}
                                 >
-                                    <FiRefreshCw className="mr-2 h-4 w-4" />
-                                    Đặt lại
+                                    <FiRefreshCw className="h-5 w-5" />
                                 </button>
                             </div>
-                        </div>
 
-                        {/* Filter Status Indicator */}
-                        {(filterGrade !== "all" || selectedClass !== "all") && (
-                            <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: PRIMARY[50], border: `1px solid ${PRIMARY[200]}` }}>
-                                <div className="flex items-center gap-2 text-sm" style={{ color: PRIMARY[700] }}>
-                                    <span className="font-medium">Đang lọc:</span>
-                                    {filterGrade !== "all" && (
-                                        <span className="px-2 py-1 rounded text-xs font-semibold" style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
-                                            Khối {filterGrade}
-                                        </span>
-                                    )}
-                                    {selectedClass !== "all" && (
-                                        <span className="px-2 py-1 rounded text-xs font-semibold" style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}>
-                                            Lớp {selectedClass}
-                                        </span>
-                                    )}
-                                    <button
-                                        onClick={resetFilters}
-                                        className="ml-2 text-xs hover:underline"
-                                        style={{ color: ERROR[600] }}
-                                    >
-                                        (Xóa bộ lọc)
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Grade Level Filter Chips */}
-                        <div className="flex flex-col gap-3 mt-4">
-                            <h4 className="font-semibold text-sm sm:text-base" style={{ color: GRAY[700] }}>
-                                Lọc theo khối lớp:
-                            </h4>
-                            <div className="flex flex-wrap gap-2 sm:gap-3">
-                                <button
-                                    onClick={() => handleGradeSelection("all")}
-                                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 transform hover:scale-105"
-                                    style={{
-                                        backgroundColor: filterGrade === "all" ? PRIMARY[500] : 'white',
-                                        color: filterGrade === "all" ? 'white' : GRAY[700],
-                                        border: `2px solid ${filterGrade === "all" ? PRIMARY[500] : GRAY[300]}`,
-                                        boxShadow: filterGrade === "all" ? `0 4px 12px ${PRIMARY[200]}` : 'none'
-                                    }}
-                                >
-                                    Tất cả
-                                </button>
-                                {[1, 2, 3, 4, 5].map((grade) => (
-                                    <button
-                                        key={grade}
-                                        onClick={() => handleGradeSelection(grade.toString())}
-                                        className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 transform hover:scale-105"
-                                        style={{
-                                            backgroundColor: filterGrade === grade.toString() ? PRIMARY[500] : 'white',
-                                            color: filterGrade === grade.toString() ? 'white' : GRAY[700],
-                                            border: `2px solid ${filterGrade === grade.toString() ? PRIMARY[500] : GRAY[300]}`,
-                                            boxShadow: filterGrade === grade.toString() ? `0 4px 12px ${PRIMARY[200]}` : 'none'
-                                        }}
-                                    >
-                                        <span className="hidden sm:inline">Khối {grade}</span>
-                                        <span className="sm:hidden">{grade}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Class Filter Chips - Show when a grade is selected */}
-                            {filterGrade !== "all" && getClassesByGrade(filterGrade).length > 0 && (
-                                <div className="mt-4">
-                                    <h4 className="font-semibold text-sm sm:text-base mb-3" style={{ color: GRAY[700] }}>
-                                        Lọc theo lớp học (Khối {filterGrade}):
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2 sm:gap-3">
-                                        <button
-                                            onClick={() => handleClassSelection("all")}
-                                            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 transform hover:scale-105"
-                                            style={{
-                                                backgroundColor: selectedClass === "all" ? PRIMARY[500] : 'white',
-                                                color: selectedClass === "all" ? 'white' : GRAY[700],
-                                                border: `2px solid ${selectedClass === "all" ? PRIMARY[500] : GRAY[300]}`,
-                                                boxShadow: selectedClass === "all" ? `0 4px 12px ${PRIMARY[500]}` : 'none'
-                                            }}
-                                        >
-                                            Tất cả lớp
-                                        </button>
-                                        {getClassesByGrade(filterGrade).map((className) => (
+                            {/* Filter Status Indicator */}
+                            {(filterGrade !== "all" || selectedClass !== "all") && (
+                                <div className="lg:col-span-12">
+                                    <div className="p-3 rounded-lg" style={{ backgroundColor: PRIMARY[50], border: `1px solid ${PRIMARY[200]}` }}>
+                                        <div className="flex items-center gap-2 text-sm" style={{ color: PRIMARY[700] }}>
+                                            <span className="font-medium">Đang lọc:</span>
+                                            {filterGrade !== "all" && (
+                                                <span className="px-2 py-1 rounded text-xs font-semibold" style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
+                                                    Khối {filterGrade}
+                                                </span>
+                                            )}
+                                            {selectedClass !== "all" && (
+                                                <span className="px-2 py-1 rounded text-xs font-semibold" style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}>
+                                                    Lớp {selectedClass}
+                                                </span>
+                                            )}
                                             <button
-                                                key={className}
-                                                onClick={() => handleClassSelection(className)}
-                                                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 transform hover:scale-105"
-                                                style={{
-                                                    backgroundColor: selectedClass === className ? PRIMARY[500] : 'white',
-                                                    color: selectedClass === className ? 'white' : GRAY[700],
-                                                    border: `2px solid ${selectedClass === className ? PRIMARY[500] : GRAY[300]}`,
-                                                    boxShadow: selectedClass === className ? `0 4px 12px ${PRIMARY[200]}` : 'none'
-                                                }}
+                                                onClick={resetFilters}
+                                                className="ml-auto text-xs hover:underline"
+                                                style={{ color: ERROR[600] }}
                                             >
-                                                Lớp {className}
+                                                Xóa bộ lọc
                                             </button>
-                                        ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}
+
+                            {/* Filters Section */}
+                            <div className="lg:col-span-12">
+                                {/* Filters Toggle Header */}
+                                <div
+                                    className="flex items-center justify-between cursor-pointer border-b pb-4 mb-4"
+                                    style={{ borderColor: BORDER.DEFAULT }}
+                                    onClick={() => setShowFilters(!showFilters)}
+                                >
+                                    <h4 className="font-semibold text-base" style={{ color: GRAY[700] }}>
+                                        Bộ lọc nâng cao
+                                    </h4>
+                                    <div className="flex items-center gap-2" style={{ color: PRIMARY[600] }}>
+                                        <span className="text-sm">
+                                            {showFilters ? 'Thu gọn' : 'Mở rộng'}
+                                        </span>
+                                        <div
+                                            className="transform transition-transform duration-200"
+                                            style={{ transform: showFilters ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Filters Content */}
+                                <div className={`space-y-4 transition-all duration-300 ${showFilters ? 'opacity-100 max-h-[1000px]' : 'opacity-0 max-h-0 overflow-hidden'
+                                    }`}>
+                                    {/* Grade Level Filter */}
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-3" style={{ color: GRAY[700] }}>
+                                            Lọc theo khối lớp:
+                                        </h4>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                            <button
+                                                onClick={() => handleGradeSelection("all")}
+                                                className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105"
+                                                style={{
+                                                    backgroundColor: filterGrade === "all" ? PRIMARY[500] : 'white',
+                                                    color: filterGrade === "all" ? 'white' : GRAY[700],
+                                                    border: `2px solid ${filterGrade === "all" ? PRIMARY[500] : GRAY[300]}`,
+                                                    boxShadow: filterGrade === "all" ? `0 4px 12px ${PRIMARY[200]}` : 'none'
+                                                }}
+                                            >
+                                                Tất cả ({classStats.totalClasses || 0})
+                                            </button>
+                                            {[1, 2, 3, 4, 5].map((grade) => (
+                                                <button
+                                                    key={grade}
+                                                    onClick={() => handleGradeSelection(grade.toString())}
+                                                    className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105"
+                                                    style={{
+                                                        backgroundColor: filterGrade === grade.toString() ? PRIMARY[500] : 'white',
+                                                        color: filterGrade === grade.toString() ? 'white' : GRAY[700],
+                                                        border: `2px solid ${filterGrade === grade.toString() ? PRIMARY[500] : GRAY[300]}`,
+                                                        boxShadow: filterGrade === grade.toString() ? `0 4px 12px ${PRIMARY[200]}` : 'none'
+                                                    }}
+                                                >
+                                                    Khối {grade} ({classStats.classesPerGrade[grade] || 0})
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Class Filter */}
+                                    {filterGrade !== "all" && (
+                                        <div>
+                                            <h4 className="font-semibold text-sm mb-3" style={{ color: GRAY[700] }}>
+                                                Lọc theo lớp học (Khối {filterGrade}):
+                                            </h4>
+                                            {loadingClasses ? (
+                                                <div className="flex items-center justify-center py-4">
+                                                    <Loading type="medical" size="small" color="primary" text="Đang tải danh sách lớp..." />
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                                    <button
+                                                        onClick={() => handleClassSelection("all")}
+                                                        className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105"
+                                                        style={{
+                                                            backgroundColor: selectedClass === "all" ? PRIMARY[500] : 'white',
+                                                            color: selectedClass === "all" ? 'white' : GRAY[700],
+                                                            border: `2px solid ${selectedClass === "all" ? PRIMARY[500] : GRAY[300]}`,
+                                                            boxShadow: selectedClass === "all" ? `0 4px 12px ${PRIMARY[500]}` : 'none'
+                                                        }}
+                                                    >
+                                                        Tất cả lớp
+                                                    </button>
+                                                    {getClassesByGrade(filterGrade).map((className) => (
+                                                        <button
+                                                            key={className}
+                                                            onClick={() => handleClassSelection(className)}
+                                                            className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105"
+                                                            style={{
+                                                                backgroundColor: selectedClass === className ? PRIMARY[500] : 'white',
+                                                                color: selectedClass === className ? 'white' : GRAY[700],
+                                                                border: `2px solid ${selectedClass === className ? PRIMARY[500] : GRAY[300]}`,
+                                                                boxShadow: selectedClass === className ? `0 4px 12px ${PRIMARY[200]}` : 'none'
+                                                            }}
+                                                        >
+                                                            {className}
+                                                            {classes.find(cls => cls.name === className) && (
+                                                                <span className="ml-1">
+                                                                    ({classes.find(cls => cls.name === className).studentCount})
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
+                {/* Table */}
+                <div className="rounded-2xl shadow-lg border mb-6" style={{ borderColor: BORDER.DEFAULT }}>
                     <div className="overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr style={{ backgroundColor: GRAY[50] }}>
+                                    <tr style={{ backgroundColor: PRIMARY[50] }}>
                                         <th
                                             className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("name")}
                                         >
                                             <div className="flex items-center">
@@ -856,7 +705,7 @@ const StudentManagement = () => {
                                         </th>
                                         <th
                                             className="hidden sm:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("dob")}
                                         >
                                             <div className="flex items-center">
@@ -869,13 +718,13 @@ const StudentManagement = () => {
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="hidden md:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="hidden md:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             <span className="hidden lg:inline">Giới tính</span>
                                             <span className="lg:hidden">GT</span>
                                         </th>
                                         <th
                                             className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("gradeLevel")}
                                         >
                                             <div className="flex items-center">
@@ -887,18 +736,14 @@ const StudentManagement = () => {
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             Địa chỉ
                                         </th>
-                                        <th className="hidden sm:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
-                                            <span className="hidden lg:inline">Phụ huynh</span>
-                                            <span className="lg:hidden">PH</span>
-                                        </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             <span className="hidden sm:inline">Trạng thái</span>
                                             <span className="sm:hidden">TT</span>
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
                                             <span className="hidden sm:inline">Thao tác</span>
                                             <span className="sm:hidden">TT</span>
                                         </th>
@@ -927,18 +772,9 @@ const StudentManagement = () => {
                                             >
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
-                                                        <div
-                                                            className="h-2 w-2 rounded-full mr-3"
-                                                            style={{ backgroundColor: student.isActive ? SUCCESS[500] : GRAY[400] }}
-                                                        ></div>
-                                                        <div>
-                                                            <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                                {getFullName(student)}
-                                                            </span>
-                                                            <div className="sm:hidden text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                                {student.className} • {student.gender}
-                                                            </div>
-                                                        </div>
+                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {getFullName(student)}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="hidden sm:table-cell py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
@@ -952,9 +788,6 @@ const StudentManagement = () => {
                                                 </td>
                                                 <td className="hidden lg:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[150px]" style={{ color: TEXT.PRIMARY }}>
                                                     {student.address}
-                                                </td>
-                                                <td className="hidden sm:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[120px]" style={{ color: TEXT.PRIMARY }}>
-                                                    {getParentName(student.parentId)}
                                                 </td>
                                                 <td className="py-4 px-6 text-center align-middle">
                                                     <span
@@ -973,7 +806,6 @@ const StudentManagement = () => {
                                                 <td className="py-4 px-6 text-center align-middle">
                                                     <div className="flex space-x-1 sm:space-x-2 lg:space-x-3 justify-center">
                                                         <button
-                                                            onClick={() => handleAddEditStudent(student)}
                                                             className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
                                                             style={{
                                                                 backgroundColor: PRIMARY[100],
@@ -992,7 +824,6 @@ const StudentManagement = () => {
                                                             <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
                                                         </button>
                                                         <button
-                                                            onClick={() => toggleStudentStatus(student)}
                                                             className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
                                                             style={{
                                                                 backgroundColor: student.isActive ? WARNING[100] : SUCCESS[100],
@@ -1019,7 +850,6 @@ const StudentManagement = () => {
                                                             )}
                                                         </button>
                                                         <button
-                                                            onClick={() => deleteStudent(student.studentId)}
                                                             className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
                                                             style={{
                                                                 backgroundColor: ERROR[100],
@@ -1095,329 +925,97 @@ const StudentManagement = () => {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
 
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
-                                <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
-                                    <span className="text-sm">
-                                        Hiển thị {indexOfFirstStudent + 1}-{Math.min(indexOfLastStudent, sortedStudents.length)} trong tổng số {sortedStudents.length} học sinh
-                                    </span>
-                                </div>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                            <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
+                                <span className="text-sm">
+                                    Hiển thị {indexOfFirstStudent + 1}-{Math.min(indexOfLastStudent, sortedStudents.length)} trong tổng số {sortedStudents.length} học sinh
+                                </span>
+                            </div>
 
-                                <div>
-                                    <div className="flex items-center space-x-2">
+                            <div>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => setCurrentPage(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
+                                    >
+                                        <svg
+                                            className="h-4 w-4 lg:h-5 lg:w-5"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
+                                        >
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
+
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
                                         <button
-                                            onClick={() => setCurrentPage(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            key={number}
+                                            onClick={() => setCurrentPage(number)}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
                                             style={{
-                                                borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
+                                                borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
+                                                backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
                                             }}
                                         >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
+                                            {number}
                                         </button>
+                                    ))}
 
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                                            <button
-                                                key={number}
-                                                onClick={() => setCurrentPage(number)}
-                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
-                                                style={{
-                                                    borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
-                                                    backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                    color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
-                                                }}
-                                            >
-                                                {number}
-                                            </button>
-                                        ))}
-
-                                        <button
-                                            onClick={() => setCurrentPage(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
-                                            }}
+                                    <button
+                                        onClick={() => setCurrentPage(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
+                                    >
+                                        <svg
+                                            className="h-4 w-4 lg:h-5 lg:w-5"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                            aria-hidden="true"
                                         >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                clipRule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
+
+                <AlertModal
+                    isOpen={showAlertModal}
+                    onClose={() => setShowAlertModal(false)}
+                    type={alertConfig.type}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                />
             </div>
-
-            {/* Add/Edit Student Modal */}
-            {showStudentModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-                    <div className="bg-white rounded-lg sm:rounded-xl shadow-lg max-w-xs sm:max-w-md lg:max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
-                        <div className="p-4 sm:p-6">
-                            <h3 className="text-lg sm:text-xl font-bold text-neutral-900 mb-3 sm:mb-4">
-                                {selectedStudent ? "Chỉnh sửa học sinh" : "Thêm học sinh mới"}
-                            </h3>
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-4">
-                                    <label className="block text-neutral-700 font-medium mb-2">
-                                        Mã học sinh
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="studentCode"
-                                        value={studentForm.studentCode}
-                                        onChange={handleInputChange}
-                                        placeholder="Tự động tạo nếu để trống"
-                                        className="w-full p-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                                    <div className="mb-3 sm:mb-4">
-                                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-                                            Họ
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="firstName"
-                                            value={studentForm.firstName}
-                                            onChange={handleInputChange}
-                                            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 ${formErrors.firstName
-                                                ? "border-red-500"
-                                                : "border-neutral-300"
-                                                }`}
-                                        />
-                                        {formErrors.firstName && (
-                                            <p className="text-red-500 text-sm mt-1">
-                                                {formErrors.firstName}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-neutral-700 font-medium mb-2">
-                                            Tên
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="lastName"
-                                            value={studentForm.lastName}
-                                            onChange={handleInputChange}
-                                            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 ${formErrors.lastName
-                                                ? "border-red-500"
-                                                : "border-neutral-300"
-                                                }`}
-                                        />
-                                        {formErrors.lastName && (
-                                            <p className="text-red-500 text-sm mt-1">
-                                                {formErrors.lastName}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-neutral-700 font-medium mb-2">
-                                        Ngày sinh
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="dateOfBirth"
-                                        value={studentForm.dateOfBirth}
-                                        onChange={handleInputChange}
-                                        className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 ${formErrors.dateOfBirth
-                                            ? "border-red-500"
-                                            : "border-neutral-300"
-                                            }`}
-                                    />
-                                    {formErrors.dateOfBirth && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {formErrors.dateOfBirth}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-neutral-700 font-medium mb-2">
-                                        Giới tính
-                                    </label>
-                                    <select
-                                        name="gender"
-                                        value={studentForm.gender}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
-                                    >
-                                        <option value="Nam">Nam</option>
-                                        <option value="Nữ">Nữ</option>
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="mb-4">
-                                        <label className="block text-neutral-700 font-medium mb-2">
-                                            Lớp học
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="className"
-                                            value={studentForm.className}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
-                                            placeholder="VD: 1A, 2B, 3C..."
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label className="block text-neutral-700 font-medium mb-2">
-                                            Khối lớp
-                                        </label>
-                                        <select
-                                            name="gradeLevel"
-                                            value={studentForm.gradeLevel}
-                                            onChange={handleInputChange}
-                                            className="w-full p-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
-                                        >
-                                            <option value="">-- Chọn khối --</option>
-                                            <option value="1">Khối 1</option>
-                                            <option value="2">Khối 2</option>
-                                            <option value="3">Khối 3</option>
-                                            <option value="4">Khối 4</option>
-                                            <option value="5">Khối 5</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-neutral-700 font-medium mb-2">
-                                        Địa chỉ
-                                    </label>
-                                    <textarea
-                                        name="address"
-                                        value={studentForm.address}
-                                        onChange={handleInputChange}
-                                        className="w-full p-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
-                                        rows="2"
-                                        placeholder="Nhập địa chỉ học sinh"
-                                    ></textarea>
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-neutral-700 font-medium mb-2">
-                                        Phụ huynh
-                                    </label>
-                                    <select
-                                        name="parentId"
-                                        value={studentForm.parentId}
-                                        onChange={handleInputChange}
-                                        className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600 ${formErrors.parentId
-                                            ? "border-red-500"
-                                            : "border-neutral-300"
-                                            }`}
-                                    >
-                                        <option value="">-- Chọn phụ huynh --</option>
-                                        {parents.map((parent) => (
-                                            <option key={parent.parentId} value={parent.parentId}>
-                                                {parent.fullName || `${parent.firstName} ${parent.lastName}`} {parent.email ? `(${parent.email})` : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {formErrors.parentId && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {formErrors.parentId}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="mt-4 sm:mt-5 lg:mt-6 grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowStudentModal(false)}
-                                        className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-3 sm:px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-                                    >
-                                        Hủy
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-3 sm:px-4 py-2 bg-teal-600 text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-                                    >
-                                        {selectedStudent ? "Cập nhật" : "Thêm mới"}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {submitting && (
-                <div
-                    className="fixed inset-0 flex items-center justify-center z-50"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)' }}
-                >
-                    <div
-                        className="rounded-2xl shadow-2xl p-8 transform transition-all duration-300"
-                        style={{ backgroundColor: BACKGROUND.DEFAULT }}
-                    >
-                        <div className="text-center">
-                            <Loading type="medical" size="large" color="primary" text="Đang xử lý..." />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {deleting && (
-                <div
-                    className="fixed inset-0 flex items-center justify-center z-50"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)' }}
-                >
-                    <div
-                        className="rounded-2xl shadow-2xl p-8 transform transition-all duration-300"
-                        style={{ backgroundColor: BACKGROUND.DEFAULT }}
-                    >
-                        <div className="text-center">
-                            <Loading type="medical" size="large" color="primary" text="Đang xóa học sinh..." />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <AlertModal
-                isOpen={showAlertModal}
-                onClose={() => setShowAlertModal(false)}
-                type={alertConfig.type}
-                title={alertConfig.title}
-                message={alertConfig.message}
-            />
         </div>
     );
 };

@@ -382,7 +382,7 @@ const SupplyInventory = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr style={{ backgroundColor: GRAY[50] }}>
+                                    <tr style={{ backgroundColor: PRIMARY[50] }}>
                                         {[
                                             { key: "id", label: "Mã vật tư" },
                                             { key: "name", label: "Tên vật tư" },
@@ -394,7 +394,7 @@ const SupplyInventory = () => {
                                             <th
                                                 key={idx}
                                                 className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key !== 'actions' ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
-                                                style={{ color: TEXT.SECONDARY }}
+                                                style={{ color: TEXT.PRIMARY }}
                                                 onClick={col.key !== 'actions' ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
