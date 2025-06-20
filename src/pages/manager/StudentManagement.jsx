@@ -1,98 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiUser, FiUsers, FiUserCheck, FiUserX } from "react-icons/fi";
+import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiUser, FiUsers, FiUserCheck, FiUserX } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import classApi from "../../api/classApi";
+import userApi from "../../api/userApi";
 
 const StudentManagement = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
     const initialFilter = queryParams.get("filter") || "all";
-    const initialStudentsData = [
-        {
-            studentId: 1,
-            studentCode: "HS001",
-            firstName: "Nguyễn Văn",
-            lastName: "An",
-            dateOfBirth: "2015-03-15T00:00:00",
-            gender: "Nam",
-            className: "1A",
-            gradeLevel: 1,
-            address: "123 Đường ABC, Quận 1, TP.HCM",
-            parentId: 1,
-            isActive: true
-        },
-        {
-            studentId: 2,
-            studentCode: "HS002",
-            firstName: "Trần Thị",
-            lastName: "Bình",
-            dateOfBirth: "2015-07-22T00:00:00",
-            gender: "Nữ",
-            className: "1A",
-            gradeLevel: 1,
-            address: "456 Đường XYZ, Quận 2, TP.HCM",
-            parentId: 2,
-            isActive: true
-        },
-        {
-            studentId: 3,
-            studentCode: "HS003",
-            firstName: "Lê Văn",
-            lastName: "Cường",
-            dateOfBirth: "2015-12-10T00:00:00",
-            gender: "Nam",
-            className: "1B",
-            gradeLevel: 1,
-            address: "789 Đường DEF, Quận 3, TP.HCM",
-            parentId: 3,
-            isActive: false
-        },
-        {
-            studentId: 4,
-            studentCode: "HS004",
-            firstName: "Phạm Thị",
-            lastName: "Diệu",
-            dateOfBirth: "2015-05-08T00:00:00",
-            gender: "Nữ",
-            className: "1B",
-            gradeLevel: 1,
-            address: "321 Đường GHI, Quận 4, TP.HCM",
-            parentId: 4,
-            isActive: true
-        },
-        {
-            studentId: 5,
-            studentCode: "HS005",
-            firstName: "Võ Văn",
-            lastName: "Hoàng",
-            dateOfBirth: "2015-09-18T00:00:00",
-            gender: "Nam",
-            className: "1C",
-            gradeLevel: 1,
-            address: "654 Đường JKL, Quận 5, TP.HCM",
-            parentId: 5,
-            isActive: true
-        },
-        {
-            studentId: 6,
-            studentCode: "HS006",
-            firstName: "Nguyễn Thị",
-            lastName: "Mai",
-            dateOfBirth: "2014-03-15T00:00:00",
-            gender: "Nữ",
-            className: "2A",
-            gradeLevel: 2,
-            address: "123 Đường ABC, Quận 1, TP.HCM",
-            parentId: 1,
-            isActive: true
-        }
-    ];
-
-    const [students, setStudents] = useState(initialStudentsData);
+    const [students, setStudents] = useState([]);
+    const [totalStudents, setTotalStudents] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const studentsPerPage = 10;
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [filterGrade, setFilterGrade] = useState("all");
@@ -101,28 +24,20 @@ const StudentManagement = () => {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
     const [sortOrder, setSortOrder] = useState("asc");
-    const [stats, setStats] = useState({
-        total: 0,
-        active: 0,
-        inactive: 0,
-    });
+    const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [currentPage, setCurrentPage] = useState(1);
-    const studentsPerPage = 5;
     const [classes, setClasses] = useState([]);
     const [loadingClasses, setLoadingClasses] = useState(false);
-    const [classStats, setClassStats] = useState({
-        totalClasses: 0,
-        classesPerGrade: {}
-    });
+    const [classStats, setClassStats] = useState({ totalClasses: 0, classesPerGrade: {} });
     const [academicYears] = useState(Array.from({ length: 6 }, (_, i) => 2025 + i));
     const [selectedAcademicYear, setSelectedAcademicYear] = useState(2025);
     const [showFilters, setShowFilters] = useState(true);
 
     useEffect(() => {
         fetchStudents();
-    }, []);
+    }, [currentPage, debouncedSearchTerm, sortBy, sortOrder, selectedClass, selectedAcademicYear, filterGrade]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -145,12 +60,53 @@ const StudentManagement = () => {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setStudents(initialStudentsData);
-            const total = initialStudentsData.length;
-            const active = initialStudentsData.filter(item => item.isActive).length;
-            const inactive = initialStudentsData.filter(item => !item.isActive).length;
-            setStats({ total, active, inactive });
+            const params = {
+                pageIndex: currentPage,
+                pageSize: studentsPerPage,
+                searchTerm: debouncedSearchTerm,
+                orderBy: `${sortBy}_${sortOrder}`,
+                classId: selectedClass !== "all" ? selectedClass : undefined
+            };
+
+            const response = await userApi.getStudents(params);
+
+            if (response.success) {
+                // Filter students based on academic year and grade
+                const filteredData = response.data.filter(student => {
+                    // Check if student has any class in the selected academic year
+                    const hasClassInYear = student.classes.some(c => c.academicYear === selectedAcademicYear);
+                    if (!hasClassInYear) return false;
+
+                    // Check if student has any class in the selected grade
+                    if (filterGrade !== "all") {
+                        const hasClassInGrade = student.classes.some(c =>
+                            c.academicYear === selectedAcademicYear &&
+                            c.grade === parseInt(filterGrade)
+                        );
+                        if (!hasClassInGrade) return false;
+                    }
+
+                    return true;
+                });
+
+                setStudents(filteredData);
+                setTotalStudents(filteredData.length);
+                setTotalPages(Math.ceil(filteredData.length / studentsPerPage));
+
+                // Update stats based on filtered data
+                const total = filteredData.length;
+                const active = filteredData.filter(item =>
+                    item.classes.some(c =>
+                        c.academicYear === selectedAcademicYear &&
+                        c.isActive &&
+                        (filterGrade === "all" || c.grade === parseInt(filterGrade))
+                    )
+                ).length;
+                const inactive = total - active;
+                setStats({ total, active, inactive });
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách học sinh");
+            }
         } catch (error) {
             console.error("Error fetching students:", error);
             showAlert("error", "Lỗi", "Không thể tải danh sách học sinh. Vui lòng thử lại.");
@@ -219,38 +175,46 @@ const StudentManagement = () => {
         navigate({ search: params.toString() });
     };
 
-    // Filter students based on search term, status and grade
-    const filteredStudents = students.filter((item) => {
-        // Filter by search term
-        const fullName = `${item.firstName || ""} ${item.lastName || ""}`.trim();
-        const matchesSearch =
-            fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.studentCode &&
-                item.studentCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (item.studentId && item.studentId.toString().includes(searchTerm));
+    // Get current class info
+    const getCurrentClass = (student) => {
+        if (!student.classes || student.classes.length === 0) return null;
 
-        // Filter by status
-        let matchesStatus = true;
+        // Get class in current academic year and grade
+        const currentYearClasses = student.classes.filter(c =>
+            c.academicYear === selectedAcademicYear &&
+            (filterGrade === "all" || c.grade === parseInt(filterGrade))
+        );
+
+        if (currentYearClasses.length === 0) return null;
+
+        // Return active class if exists, otherwise return first class
+        return currentYearClasses.find(c => c.isActive) || currentYearClasses[0];
+    };
+
+    // Filter students based on status only
+    const filteredStudents = students.filter((student) => {
+        const currentClass = getCurrentClass(student);
+        if (!currentClass) return false;
+
         if (filterStatus === "active") {
-            matchesStatus = item.isActive;
+            return currentClass.isActive;
         } else if (filterStatus === "inactive") {
-            matchesStatus = !item.isActive;
+            return !currentClass.isActive;
         }
 
-        // Filter by grade level
-        let matchesGrade = true;
-        if (filterGrade !== "all") {
-            matchesGrade = item.gradeLevel === parseInt(filterGrade);
-        }
-
-        // Filter by class
-        let matchesClass = true;
-        if (selectedClass !== "all") {
-            matchesClass = item.className === selectedClass;
-        }
-
-        return matchesSearch && matchesStatus && matchesGrade && matchesClass;
+        return true;
     });
+
+    // Update stats based on filtered students
+    useEffect(() => {
+        const total = filteredStudents.length;
+        const active = filteredStudents.filter(student => {
+            const currentClass = getCurrentClass(student);
+            return currentClass?.isActive;
+        }).length;
+        const inactive = total - active;
+        setStats({ total, active, inactive });
+    }, [filteredStudents, selectedAcademicYear, filterGrade]);
 
     // Sort students
     const sortedStudents = [...filteredStudents].sort((a, b) => {
@@ -279,7 +243,6 @@ const StudentManagement = () => {
     });
 
     // Pagination calculations
-    const totalPages = Math.ceil(sortedStudents.length / studentsPerPage);
     const indexOfLastStudent = currentPage * studentsPerPage;
     const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
     const currentStudents = sortedStudents.slice(indexOfFirstStudent, indexOfLastStudent);
@@ -303,7 +266,7 @@ const StudentManagement = () => {
 
     // Get full name
     const getFullName = (student) => {
-        return `${student.firstName || ""} ${student.lastName || ""}`.trim();
+        return student.fullName || "";
     };
 
     // Get unique classes by grade level
@@ -311,8 +274,7 @@ const StudentManagement = () => {
         if (gradeLevel === "all") return [];
         return classes
             .filter(cls => cls.grade === parseInt(gradeLevel))
-            .map(cls => cls.name)
-            .sort();
+            .sort((a, b) => a.name.localeCompare(b.name));
     };
 
     // Handle grade selection
@@ -323,8 +285,8 @@ const StudentManagement = () => {
     };
 
     // Handle class selection  
-    const handleClassSelection = (className) => {
-        setSelectedClass(className);
+    const handleClassSelection = (classId) => {
+        setSelectedClass(classId);
         setCurrentPage(1);
     };
 
@@ -332,6 +294,7 @@ const StudentManagement = () => {
     const handleAcademicYearChange = (year) => {
         setSelectedAcademicYear(parseInt(year));
         setSelectedClass("all"); // Reset selected class when year changes
+        setFilterGrade("all"); // Reset grade when year changes
         setCurrentPage(1);
     };
 
@@ -651,24 +614,22 @@ const StudentManagement = () => {
                                                     >
                                                         Tất cả lớp
                                                     </button>
-                                                    {getClassesByGrade(filterGrade).map((className) => (
+                                                    {getClassesByGrade(filterGrade).map((cls) => (
                                                         <button
-                                                            key={className}
-                                                            onClick={() => handleClassSelection(className)}
+                                                            key={cls.id}
+                                                            onClick={() => handleClassSelection(cls.id)}
                                                             className="w-full px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105"
                                                             style={{
-                                                                backgroundColor: selectedClass === className ? PRIMARY[500] : 'white',
-                                                                color: selectedClass === className ? 'white' : GRAY[700],
-                                                                border: `2px solid ${selectedClass === className ? PRIMARY[500] : GRAY[300]}`,
-                                                                boxShadow: selectedClass === className ? `0 4px 12px ${PRIMARY[200]}` : 'none'
+                                                                backgroundColor: selectedClass === cls.id ? PRIMARY[500] : 'white',
+                                                                color: selectedClass === cls.id ? 'white' : GRAY[700],
+                                                                border: `2px solid ${selectedClass === cls.id ? PRIMARY[500] : GRAY[300]}`,
+                                                                boxShadow: selectedClass === cls.id ? `0 4px 12px ${PRIMARY[200]}` : 'none'
                                                             }}
                                                         >
-                                                            {className}
-                                                            {classes.find(cls => cls.name === className) && (
-                                                                <span className="ml-1">
-                                                                    ({classes.find(cls => cls.name === className).studentCount})
-                                                                </span>
-                                                            )}
+                                                            {cls.name}
+                                                            <span className="ml-1">
+                                                                ({cls.studentCount})
+                                                            </span>
                                                         </button>
                                                     ))}
                                                 </div>
@@ -689,13 +650,12 @@ const StudentManagement = () => {
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
                                         <th
-                                            className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("name")}
                                         >
                                             <div className="flex items-center">
-                                                <span className="hidden sm:inline">Họ tên</span>
-                                                <span className="sm:hidden">Tên</span>
+                                                <span>HỌ TÊN</span>
                                                 {sortBy === "name" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
@@ -704,48 +664,62 @@ const StudentManagement = () => {
                                             </div>
                                         </th>
                                         <th
-                                            className="hidden sm:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("dob")}
                                         >
-                                            <div className="flex items-center">
-                                                <span className="hidden lg:inline">Ngày sinh</span>
-                                                <span className="lg:hidden">NS</span>
-                                                {sortBy === "dob" && (
+                                            <div className="flex items-center justify-center">
+                                                <span>MÃ HỌC SINH</span>
+                                                {sortBy === "studentCode" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
                                                     </span>
                                                 )}
                                             </div>
-                                        </th>
-                                        <th className="hidden md:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            <span className="hidden lg:inline">Giới tính</span>
-                                            <span className="lg:hidden">GT</span>
                                         </th>
                                         <th
-                                            className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("gradeLevel")}
                                         >
-                                            <div className="flex items-center">
-                                                Lớp
-                                                {sortBy === "gradeLevel" && (
+                                            NGÀY SINH
+                                        </th>
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                            onClick={() => handleSortChange("dob")}
+                                        >
+                                            <div className="flex items-center justify-center">
+                                                <span>GIỚI TÍNH</span>
+                                                {sortBy === "gender" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
                                                     </span>
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            Địa chỉ
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            LỚP
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            <span className="hidden sm:inline">Trạng thái</span>
-                                            <span className="sm:hidden">TT</span>
+                                        <th
+                                            className="py-4 px-6 text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            ĐỊA CHỈ
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            <span className="hidden sm:inline">Thao tác</span>
-                                            <span className="sm:hidden">TT</span>
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            TRẠNG THÁI
+                                        </th>
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            THAO TÁC
                                         </th>
                                     </tr>
                                 </thead>
@@ -753,124 +727,66 @@ const StudentManagement = () => {
                                     {loading ? (
                                         <tr>
                                             <td colSpan="8" className="text-center py-12">
-                                                <div className="flex flex-col items-center justify-center space-y-4">
-                                                    <Loading
-                                                        type="medical"
-                                                        size="xl"
-                                                        color="primary"
-                                                        text="Đang tải danh sách học sinh..."
-                                                    />
-                                                </div>
+                                                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách học sinh..." />
                                             </td>
                                         </tr>
-                                    ) : currentStudents.length > 0 ? (
-                                        currentStudents.map((student, index) => (
-                                            <tr
-                                                key={student.studentId}
-                                                className="hover:bg-opacity-50 transition-all duration-200 group"
-                                                style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] || '#fafafa' }}
-                                            >
-                                                <td className="py-4 px-6">
-                                                    <div className="flex items-center">
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {getFullName(student)}
+                                    ) : students.length > 0 ? (
+                                        students.map((student) => {
+                                            const currentClass = getCurrentClass(student);
+                                            return (
+                                                <tr
+                                                    key={student.id}
+                                                    className="hover:bg-opacity-50 transition-all duration-200"
+                                                    style={{ backgroundColor: 'transparent' }}
+                                                >
+                                                    <td className="py-4 px-6">
+                                                        <span className="font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                            {student.fullName}
                                                         </span>
-                                                    </div>
-                                                </td>
-                                                <td className="hidden sm:table-cell py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
-                                                    {formatDate(student.dateOfBirth)}
-                                                </td>
-                                                <td className="hidden md:table-cell py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
-                                                    {student.gender}
-                                                </td>
-                                                <td className="py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
-                                                    {student.className}
-                                                </td>
-                                                <td className="hidden lg:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[150px]" style={{ color: TEXT.PRIMARY }}>
-                                                    {student.address}
-                                                </td>
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <span
-                                                        className="inline-flex items-center justify-center px-1.5 sm:px-2 lg:px-3 py-0.5 sm:py-1 lg:py-1.5 rounded-md sm:rounded-lg lg:rounded-xl text-xs sm:text-xs lg:text-xs font-bold whitespace-nowrap min-w-0"
-                                                        style={{
-                                                            backgroundColor: student.isActive ? SUCCESS[100] : WARNING[100],
-                                                            color: student.isActive ? SUCCESS[800] : WARNING[800],
-                                                            border: `2px solid ${student.isActive ? SUCCESS[200] : WARNING[200]}`
-                                                        }}
-                                                    >
-                                                        <span className="hidden lg:inline">{student.isActive ? "Hoạt động" : "Ngừng hoạt động"}</span>
-                                                        <span className="hidden sm:inline lg:hidden text-xs">{student.isActive ? "Hoạt động" : "Tạm ngưng"}</span>
-                                                        <span className="sm:hidden text-xs">{student.isActive ? "✓" : "✗"}</span>
-                                                    </span>
-                                                </td>
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <div className="flex space-x-1 sm:space-x-2 lg:space-x-3 justify-center">
-                                                        <button
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                        {student.studentCode || 'N/A'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                        {formatDate(student.dateOfBirth)}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                        {student.gender === 'Male' ? 'Nam' : 'Nữ'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                        {student.currentClassName || 'N/A'}
+                                                    </td>
+                                                    <td className="py-4 px-6" style={{ color: TEXT.PRIMARY }}>
+                                                        {student.address || 'N/A'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center">
+                                                        <span
+                                                            className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium"
                                                             style={{
-                                                                backgroundColor: PRIMARY[100],
-                                                                color: PRIMARY[600]
+                                                                backgroundColor: currentClass?.isActive ? SUCCESS[50] : WARNING[50],
+                                                                color: currentClass?.isActive ? SUCCESS[700] : WARNING[700],
+                                                                border: `1px solid ${currentClass?.isActive ? SUCCESS[200] : WARNING[200]}`
                                                             }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = PRIMARY[200];
-                                                                e.target.style.color = PRIMARY[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = PRIMARY[100];
-                                                                e.target.style.color = PRIMARY[600];
-                                                            }}
-                                                            title="Chỉnh sửa"
                                                         >
-                                                            <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                        </button>
+                                                            {currentClass?.isActive ? "Đang học" : "Đã nghỉ"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center">
                                                         <button
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
+                                                            className="p-2 rounded-lg transition-all duration-200 hover:bg-opacity-80"
                                                             style={{
-                                                                backgroundColor: student.isActive ? WARNING[100] : SUCCESS[100],
-                                                                color: student.isActive ? WARNING[600] : SUCCESS[600]
+                                                                backgroundColor: PRIMARY[50],
+                                                                color: PRIMARY[600],
+                                                                border: `1px solid ${PRIMARY[200]}`
                                                             }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = student.isActive ? WARNING[200] : SUCCESS[200];
-                                                                e.target.style.color = student.isActive ? WARNING[700] : SUCCESS[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = student.isActive ? WARNING[100] : SUCCESS[100];
-                                                                e.target.style.color = student.isActive ? WARNING[600] : SUCCESS[600];
-                                                            }}
-                                                            title={
-                                                                student.isActive
-                                                                    ? "Đánh dấu ngừng hoạt động"
-                                                                    : "Đánh dấu đang hoạt động"
-                                                            }
+                                                            title="Xem chi tiết"
                                                         >
-                                                            {student.isActive ? (
-                                                                <FiX className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                            ) : (
-                                                                <FiCheck className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                            )}
+                                                            <FiEdit className="w-4 h-4" />
                                                         </button>
-                                                        <button
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
-                                                            style={{
-                                                                backgroundColor: ERROR[100],
-                                                                color: ERROR[600]
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = ERROR[200];
-                                                                e.target.style.color = ERROR[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = ERROR[100];
-                                                                e.target.style.color = ERROR[600];
-                                                            }}
-                                                            title="Xóa"
-                                                        >
-                                                            <FiTrash2 className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
                                             <td colSpan="8" className="text-center py-12">
@@ -932,7 +848,7 @@ const StudentManagement = () => {
                         <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
                             <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
                                 <span className="text-sm">
-                                    Hiển thị {indexOfFirstStudent + 1}-{Math.min(indexOfLastStudent, sortedStudents.length)} trong tổng số {sortedStudents.length} học sinh
+                                    Hiển thị {(currentPage - 1) * studentsPerPage + 1}-{Math.min(currentPage * studentsPerPage, totalStudents)} trong tổng số {totalStudents} học sinh
                                 </span>
                             </div>
 
