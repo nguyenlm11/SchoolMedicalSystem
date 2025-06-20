@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiUser, FiUsers, FiUserCheck, FiUserX } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
@@ -191,19 +191,21 @@ const StudentManagement = () => {
         return currentYearClasses.find(c => c.isActive) || currentYearClasses[0];
     };
 
-    // Filter students based on status only
-    const filteredStudents = students.filter((student) => {
-        const currentClass = getCurrentClass(student);
-        if (!currentClass) return false;
+    // Filter students based on status only using useMemo
+    const filteredStudents = useMemo(() => {
+        return students.filter((student) => {
+            const currentClass = getCurrentClass(student);
+            if (!currentClass) return false;
 
-        if (filterStatus === "active") {
-            return currentClass.isActive;
-        } else if (filterStatus === "inactive") {
-            return !currentClass.isActive;
-        }
+            if (filterStatus === "active") {
+                return currentClass.isActive;
+            } else if (filterStatus === "inactive") {
+                return !currentClass.isActive;
+            }
 
-        return true;
-    });
+            return true;
+        });
+    }, [students, filterStatus, selectedAcademicYear, filterGrade]);
 
     // Update stats based on filtered students
     useEffect(() => {
@@ -214,33 +216,35 @@ const StudentManagement = () => {
         }).length;
         const inactive = total - active;
         setStats({ total, active, inactive });
-    }, [filteredStudents, selectedAcademicYear, filterGrade]);
+    }, [filteredStudents]);
 
-    // Sort students
-    const sortedStudents = [...filteredStudents].sort((a, b) => {
-        let comparison = 0;
+    // Sort students using useMemo
+    const sortedStudents = useMemo(() => {
+        return [...filteredStudents].sort((a, b) => {
+            let comparison = 0;
 
-        switch (sortBy) {
-            case "name":
-                const fullNameA = `${a.lastName || ""} ${a.firstName || ""}`.trim();
-                const fullNameB = `${b.lastName || ""} ${b.firstName || ""}`.trim();
-                comparison = fullNameA.localeCompare(fullNameB);
-                break;
-            case "id":
-                comparison = a.studentId - b.studentId;
-                break;
-            case "dob":
-                comparison = new Date(a.dateOfBirth) - new Date(b.dateOfBirth);
-                break;
-            case "gradeLevel":
-                comparison = a.gradeLevel - b.gradeLevel;
-                break;
-            default:
-                comparison = 0;
-        }
+            switch (sortBy) {
+                case "name":
+                    const fullNameA = `${a.lastName || ""} ${a.firstName || ""}`.trim();
+                    const fullNameB = `${b.lastName || ""} ${b.firstName || ""}`.trim();
+                    comparison = fullNameA.localeCompare(fullNameB);
+                    break;
+                case "id":
+                    comparison = a.studentId - b.studentId;
+                    break;
+                case "dob":
+                    comparison = new Date(a.dateOfBirth) - new Date(b.dateOfBirth);
+                    break;
+                case "gradeLevel":
+                    comparison = a.gradeLevel - b.gradeLevel;
+                    break;
+                default:
+                    comparison = 0;
+            }
 
-        return sortOrder === "asc" ? comparison : -comparison;
-    });
+            return sortOrder === "asc" ? comparison : -comparison;
+        });
+    }, [filteredStudents, sortBy, sortOrder]);
 
     // Pagination calculations
     const indexOfLastStudent = currentPage * studentsPerPage;
