@@ -240,6 +240,16 @@ const userApi = {
             };
         }
     },
+    // Lấy danh sách học sinh
+    getStudents: async (params) => {
+        try {
+            const response = await apiClient.get('/users/students', { params });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching students:', error);
+            throw error;
+        }
+    }
 };
 
 export default userApi; 
