@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiRefreshCw, FiEdit, FiTrash2, FiCheck, FiX, FiUser, 
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
+import userApi from "../../api/userApi";
 
 const ParentManagement = () => {
     const location = useLocation();
@@ -17,7 +18,7 @@ const ParentManagement = () => {
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [sortBy, setSortBy] = useState("name");
+    const [sortBy, setSortBy] = useState("fullName");
     const [sortOrder, setSortOrder] = useState("asc");
     const [stats, setStats] = useState({
         total: 0,
@@ -26,113 +27,39 @@ const ParentManagement = () => {
     });
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
-    const [currentPage, setCurrentPage] = useState(1);
-    const parentsPerPage = 5;
+    const [paginationState, setPaginationState] = useState({
+        totalPages: 1,
+        totalCount: 0,
+        pageSize: 10,
+        currentPage: 1
+    });
     const [showParentModal, setShowParentModal] = useState(false);
     const [selectedParent, setSelectedParent] = useState(null);
+    const [filterRelationship, setFilterRelationship] = useState("");
+    const [filterHasChildren, setFilterHasChildren] = useState(null);
     const [parentForm, setParentForm] = useState({
-        id: 0,
-        firstName: "",
-        lastName: "",
-        studentId: null,
-        relationship: "",
+        id: "",
+        username: "",
         email: "",
-        phone: "",
+        fullName: "",
+        phoneNumber: "",
         address: "",
-        occupation: "",
-        isEmergencyContact: false,
-        isMainContact: false,
-        isActive: true,
+        gender: "Male",
+        dateOfBirth: "",
+        relationship: "",
         password: "",
-        studentName: "",
     });
     const [formErrors, setFormErrors] = useState({});
     const [showPassword, setShowPassword] = useState(false);
 
-    const initialParentsData = [
-        {
-            parentId: 1,
-            firstName: "Nguyễn Thị",
-            lastName: "Lan",
-            studentId: 101,
-            relationship: "Mẹ",
-            email: "nguyenthilan@email.com",
-            phone: "0901234567",
-            address: "123 Đường ABC, Quận 1, TP.HCM",
-            occupation: "Giáo viên",
-            isEmergencyContact: true,
-            isMainContact: true,
-            isActive: true,
-            studentName: "Nguyễn Văn An"
-        },
-        {
-            parentId: 2,
-            firstName: "Trần Văn",
-            lastName: "Minh",
-            studentId: 102,
-            relationship: "Bố",
-            email: "tranvanminh@email.com",
-            phone: "0912345678",
-            address: "456 Đường XYZ, Quận 2, TP.HCM",
-            occupation: "Kỹ sư",
-            isEmergencyContact: false,
-            isMainContact: true,
-            isActive: true,
-            studentName: "Trần Thị Bình"
-        },
-        {
-            parentId: 3,
-            firstName: "Lê Thị",
-            lastName: "Hương",
-            studentId: 103,
-            relationship: "Mẹ",
-            email: "lethihuong@email.com",
-            phone: "0923456789",
-            address: "789 Đường DEF, Quận 3, TP.HCM",
-            occupation: "Bác sĩ",
-            isEmergencyContact: true,
-            isMainContact: false,
-            isActive: false,
-            studentName: "Lê Văn Cường"
-        },
-        {
-            parentId: 4,
-            firstName: "Phạm Văn",
-            lastName: "Đức",
-            studentId: 104,
-            relationship: "Bố",
-            email: "phamvanduc@email.com",
-            phone: "0934567890",
-            address: "321 Đường GHI, Quận 4, TP.HCM",
-            occupation: "Kinh doanh",
-            isEmergencyContact: false,
-            isMainContact: true,
-            isActive: true,
-            studentName: "Phạm Thị Diệu"
-        },
-        {
-            parentId: 5,
-            firstName: "Võ Thị",
-            lastName: "Mai",
-            studentId: 105,
-            relationship: "Bà",
-            email: "vothimai@email.com",
-            phone: "0945678901",
-            address: "654 Đường JKL, Quận 5, TP.HCM",
-            occupation: "Hưu trí",
-            isEmergencyContact: true,
-            isMainContact: false,
-            isActive: true,
-            studentName: "Võ Văn Hoàng"
-        }
-    ];
+
 
     useEffect(() => {
         fetchParents();
-    }, []);
+    }, [paginationState.currentPage, paginationState.pageSize, debouncedSearchTerm, sortBy, sortOrder, filterRelationship, filterHasChildren]);
 
     useEffect(() => {
-        setCurrentPage(1);
+        setPaginationState({ ...paginationState, currentPage: 1 });
     }, [filterStatus, debouncedSearchTerm]);
 
     useEffect(() => {
@@ -148,12 +75,38 @@ const ParentManagement = () => {
     const fetchParents = async () => {
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setParents(initialParentsData);
-            const total = initialParentsData.length;
-            const active = initialParentsData.filter(item => item.isActive).length;
-            const inactive = initialParentsData.filter(item => !item.isActive).length;
-            setStats({ total, active, inactive });
+            const params = {
+                pageIndex: paginationState.currentPage,
+                pageSize: paginationState.pageSize,
+                searchTerm: debouncedSearchTerm,
+                orderBy: `${sortBy} ${sortOrder}`,
+                hasChildren: filterHasChildren,
+                relationship: filterRelationship || undefined
+            };
+
+            const response = await userApi.getParents(params);
+
+            if (response.success) {
+                setParents(response.data);
+                setPaginationState({
+                    totalPages: response.totalPages,
+                    totalCount: response.totalCount,
+                    pageSize: response.pageSize,
+                    currentPage: response.currentPage
+                });
+
+                // Update stats
+                const total = response.totalCount;
+                const active = response.data.filter(item => item.children.length > 0).length;
+                const inactive = total - active;
+                setStats({ total, active, inactive });
+
+                if (response.message) {
+                    showAlert("success", "Thành công", response.message);
+                }
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể tải danh sách phụ huynh");
+            }
         } catch (error) {
             console.error("Error fetching parents:", error);
             showAlert("error", "Lỗi", "Không thể tải danh sách phụ huynh. Vui lòng thử lại.");
@@ -162,88 +115,136 @@ const ParentManagement = () => {
         }
     };
 
+    const handleSortChange = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        } else {
+            setSortBy(column);
+            setSortOrder("asc");
+        }
+    };
+
+    const handleAddEditParent = (item = null) => {
+        if (item) {
+            setParentForm({
+                id: item.id,
+                username: item.username,
+                email: item.email,
+                fullName: item.fullName,
+                phoneNumber: item.phoneNumber,
+                address: item.address,
+                gender: item.gender,
+                dateOfBirth: item.dateOfBirth ? item.dateOfBirth.split('T')[0] : '',
+                relationship: item.relationship,
+                password: '', // Don't include the password when editing
+            });
+            setSelectedParent(item);
+        } else {
+            resetForm();
+            setSelectedParent(null);
+        }
+        setShowParentModal(true);
+    };
+
+    const validateForm = () => {
+        const errors = {};
+
+        if (!parentForm.fullName.trim()) {
+            errors.fullName = "Vui lòng nhập họ tên";
+        }
+
+        if (!parentForm.username.trim()) {
+            errors.username = "Vui lòng nhập tên đăng nhập";
+        }
+
+        if (!parentForm.email.trim()) {
+            errors.email = "Vui lòng nhập email";
+        } else if (!/\S+@\S+\.\S+/.test(parentForm.email)) {
+            errors.email = "Email không hợp lệ";
+        }
+
+        if (!parentForm.phoneNumber.trim()) {
+            errors.phoneNumber = "Vui lòng nhập số điện thoại";
+        } else if (!/^[0-9]{10,11}$/.test(parentForm.phoneNumber)) {
+            errors.phoneNumber = "Số điện thoại không hợp lệ";
+        }
+
+        if (!parentForm.relationship) {
+            errors.relationship = "Vui lòng chọn mối quan hệ";
+        }
+
+        if (!selectedParent && !parentForm.password.trim()) {
+            errors.password = "Vui lòng nhập mật khẩu";
+        } else if (parentForm.password && parentForm.password.length < 6) {
+            errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        }
+
+        if (!parentForm.dateOfBirth) {
+            errors.dateOfBirth = "Vui lòng nhập ngày sinh";
+        }
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const createParent = async () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const newParent = {
-                parentId: Math.max(...parents.map(p => p.parentId)) + 1,
-                firstName: parentForm.firstName,
-                lastName: parentForm.lastName,
-                studentId: parentForm.studentId,
-                relationship: parentForm.relationship,
-                email: parentForm.email,
-                phone: parentForm.phone,
-                address: parentForm.address,
-                occupation: parentForm.occupation,
-                isEmergencyContact: parentForm.isEmergencyContact,
-                isMainContact: parentForm.isMainContact,
-                isActive: parentForm.isActive,
-                studentName: parentForm.studentName,
-            };
+            const response = await userApi.createParent(parentForm);
 
-            setParents([...parents, newParent]);
-            setShowParentModal(false);
-            resetForm();
-            showAlert("success", "Thành công", `Phụ huynh "${parentForm.firstName} ${parentForm.lastName}" đã được thêm thành công.`);
+            if (response.success) {
+                setShowParentModal(false);
+                resetForm();
+                showAlert("success", "Thành công", response.message || "Thêm phụ huynh mới thành công");
+                fetchParents(); // Refresh the list
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể thêm phụ huynh mới");
+            }
         } catch (error) {
             console.error("Error creating parent:", error);
-            showAlert("error", "Lỗi", "Không thể thêm phụ huynh mới. Vui lòng thử lại.");
+            showAlert("error", "Lỗi", error.response?.data?.message || "Không thể thêm phụ huynh mới. Vui lòng thử lại.");
         } finally {
             setSubmitting(false);
         }
     };
 
-    // Update parent
     const updateParent = async () => {
         if (!validateForm()) return;
         setSubmitting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            const updatedParents = parents.map(parent =>
-                parent.parentId === parentForm.id
-                    ? {
-                        ...parent,
-                        firstName: parentForm.firstName,
-                        lastName: parentForm.lastName,
-                        studentId: parentForm.studentId,
-                        relationship: parentForm.relationship,
-                        email: parentForm.email,
-                        phone: parentForm.phone,
-                        address: parentForm.address,
-                        occupation: parentForm.occupation,
-                        isEmergencyContact: parentForm.isEmergencyContact,
-                        isMainContact: parentForm.isMainContact,
-                        isActive: parentForm.isActive,
-                        studentName: parentForm.studentName,
-                    }
-                    : parent
-            );
+            const response = await userApi.updateParent(parentForm.id, parentForm);
 
-            setParents(updatedParents);
-            setShowParentModal(false);
-            resetForm();
-            showAlert("success", "Thành công", `Phụ huynh "${parentForm.firstName} ${parentForm.lastName}" đã được cập nhật thành công.`);
+            if (response.success) {
+                setShowParentModal(false);
+                resetForm();
+                showAlert("success", "Thành công", response.message || "Cập nhật thông tin phụ huynh thành công");
+                fetchParents(); // Refresh the list
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể cập nhật thông tin phụ huynh");
+            }
         } catch (error) {
             console.error("Error updating parent:", error);
-            showAlert("error", "Lỗi", "Không thể cập nhật thông tin phụ huynh. Vui lòng thử lại.");
+            showAlert("error", "Lỗi", error.response?.data?.message || "Không thể cập nhật thông tin phụ huynh. Vui lòng thử lại.");
         } finally {
             setSubmitting(false);
         }
     };
 
-    // Delete parent
     const deleteParent = async (id) => {
         setDeleting(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const parentToDelete = parents.find(parent => parent.parentId === id);
-            setParents(parents.filter(parent => parent.parentId !== id));
-            showAlert("success", "Thành công", `Phụ huynh "${parentToDelete?.firstName} ${parentToDelete?.lastName}" đã được xóa thành công.`);
+            const response = await userApi.deleteParent(id);
+
+            if (response.success) {
+                showAlert("success", "Thành công", response.message || "Xóa phụ huynh thành công");
+                fetchParents(); // Refresh the list
+            } else {
+                showAlert("error", "Lỗi", response.message || "Không thể xóa phụ huynh");
+            }
         } catch (error) {
             console.error("Error deleting parent:", error);
-            showAlert("error", "Lỗi", "Không thể xóa phụ huynh. Vui lòng thử lại.");
+            showAlert("error", "Lỗi", error.response?.data?.message || "Không thể xóa phụ huynh. Vui lòng thử lại.");
         } finally {
             setDeleting(false);
         }
@@ -280,9 +281,9 @@ const ParentManagement = () => {
         setLoading(true);
         setFilterStatus("all");
         setSearchTerm("");
-        setSortBy("name");
+        setSortBy("fullName");
         setSortOrder("asc");
-        setCurrentPage(1);
+        setPaginationState({ ...paginationState, currentPage: 1 });
 
         // Update URL
         const params = new URLSearchParams(location.search);
@@ -322,7 +323,7 @@ const ParentManagement = () => {
         let comparison = 0;
 
         switch (sortBy) {
-            case "name":
+            case "fullName":
                 const fullNameA = `${a.firstName} ${a.lastName}`;
                 const fullNameB = `${b.firstName} ${b.lastName}`;
                 comparison = fullNameA.localeCompare(fullNameB);
@@ -350,106 +351,27 @@ const ParentManagement = () => {
     });
 
     // Pagination calculations
-    const totalPages = Math.ceil(sortedParents.length / parentsPerPage);
-    const indexOfLastParent = currentPage * parentsPerPage;
-    const indexOfFirstParent = indexOfLastParent - parentsPerPage;
+    const totalPages = Math.ceil(sortedParents.length / paginationState.pageSize);
+    const indexOfLastParent = paginationState.currentPage * paginationState.pageSize;
+    const indexOfFirstParent = indexOfLastParent - paginationState.pageSize;
     const currentParents = sortedParents.slice(indexOfFirstParent, indexOfLastParent);
-
-    // Handle sort change
-    function handleSortChange(column) {
-        if (sortBy === column) {
-            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-        } else {
-            setSortBy(column);
-            setSortOrder("asc");
-        }
-    }
-
-    // Handle add/edit parent
-    const handleAddEditParent = (item = null) => {
-        if (item) {
-            setParentForm({
-                id: item.parentId,
-                firstName: item.firstName || "",
-                lastName: item.lastName || "",
-                studentId: item.studentId,
-                relationship: item.relationship || "",
-                email: item.email || "",
-                phone: item.phone || "",
-                address: item.address || "",
-                occupation: item.occupation || "",
-                isEmergencyContact: item.isEmergencyContact || false,
-                isMainContact: item.isMainContact || false,
-                isActive: item.isActive,
-                password: "", // Don't include the password when editing
-                studentName: item.studentName || "",
-            });
-            setSelectedParent(item);
-        } else {
-            resetForm();
-            setSelectedParent(null);
-        }
-        setShowParentModal(true);
-    };
 
     // Reset form
     const resetForm = () => {
         setParentForm({
-            id: 0,
-            firstName: "",
-            lastName: "",
-            studentId: null,
-            relationship: "",
+            id: "",
+            username: "",
             email: "",
-            phone: "",
+            fullName: "",
+            phoneNumber: "",
             address: "",
-            occupation: "",
-            isEmergencyContact: false,
-            isMainContact: false,
-            isActive: true,
+            gender: "Male",
+            dateOfBirth: "",
+            relationship: "",
             password: "",
-            studentName: "",
         });
         setFormErrors({});
         setShowPassword(false);
-    };
-
-    // Validate form
-    const validateForm = () => {
-        const errors = {};
-
-        if (!parentForm.firstName.trim()) {
-            errors.firstName = "Vui lòng nhập họ";
-        }
-
-        if (!parentForm.lastName.trim()) {
-            errors.lastName = "Vui lòng nhập tên";
-        }
-
-        if (!parentForm.email.trim()) {
-            errors.email = "Vui lòng nhập email";
-        } else if (!/\S+@\S+\.\S+/.test(parentForm.email)) {
-            errors.email = "Email không hợp lệ";
-        }
-
-        if (!parentForm.phone.trim()) {
-            errors.phone = "Vui lòng nhập số điện thoại";
-        } else if (!/^[0-9]{10,11}$/.test(parentForm.phone)) {
-            errors.phone = "Số điện thoại không hợp lệ";
-        }
-
-        if (!parentForm.relationship.trim()) {
-            errors.relationship = "Vui lòng nhập mối quan hệ";
-        }
-
-        if (!selectedParent && !parentForm.password.trim()) {
-            errors.password = "Vui lòng nhập mật khẩu";
-        } else if (parentForm.password && parentForm.password.length < 6) {
-            errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-        }
-
-        setFormErrors(errors);
-        return Object.keys(errors).length === 0;
     };
 
     // Handle input change
@@ -663,14 +585,13 @@ const ParentManagement = () => {
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
                                         <th
-                                            className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("name")}
+                                            onClick={() => handleSortChange("fullName")}
                                         >
                                             <div className="flex items-center">
-                                                <span className="hidden sm:inline">Họ tên</span>
-                                                <span className="sm:hidden">Tên</span>
-                                                {sortBy === "name" && (
+                                                <span>HỌ TÊN</span>
+                                                {sortBy === "fullName" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
                                                     </span>
@@ -678,13 +599,12 @@ const ParentManagement = () => {
                                             </div>
                                         </th>
                                         <th
-                                            className="hidden sm:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("relationship")}
                                         >
-                                            <div className="flex items-center">
-                                                <span className="hidden lg:inline">Mối quan hệ</span>
-                                                <span className="lg:hidden">QH</span>
+                                            <div className="flex items-center justify-center">
+                                                <span>MỐI QUAN HỆ</span>
                                                 {sortBy === "relationship" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
@@ -693,12 +613,12 @@ const ParentManagement = () => {
                                             </div>
                                         </th>
                                         <th
-                                            className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("email")}
                                         >
-                                            <div className="flex items-center">
-                                                Email
+                                            <div className="flex items-center justify-center">
+                                                <span>EMAIL</span>
                                                 {sortBy === "email" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
@@ -707,14 +627,13 @@ const ParentManagement = () => {
                                             </div>
                                         </th>
                                         <th
-                                            className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("phone")}
+                                            onClick={() => handleSortChange("phoneNumber")}
                                         >
-                                            <div className="flex items-center">
-                                                <span className="hidden sm:inline">Số điện thoại</span>
-                                                <span className="sm:hidden">SĐT</span>
-                                                {sortBy === "phone" && (
+                                            <div className="flex items-center justify-center">
+                                                <span>SỐ ĐIỆN THOẠI</span>
+                                                {sortBy === "phoneNumber" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
                                                     </span>
@@ -722,27 +641,12 @@ const ParentManagement = () => {
                                             </div>
                                         </th>
                                         <th
-                                            className="hidden md:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
-                                            style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("occupation")}
-                                        >
-                                            <div className="flex items-center">
-                                                <span className="hidden lg:inline">Nghề nghiệp</span>
-                                                <span className="lg:hidden">Nghề</span>
-                                                {sortBy === "occupation" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </th>
-                                        <th
-                                            className="hidden lg:table-cell py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200"
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSortChange("address")}
                                         >
-                                            <div className="flex items-center">
-                                                Địa chỉ
+                                            <div className="flex items-center justify-center">
+                                                <span>ĐỊA CHỈ</span>
                                                 {sortBy === "address" && (
                                                     <span className="ml-2 text-xs">
                                                         {sortOrder === "asc" ? "↑" : "↓"}
@@ -750,20 +654,24 @@ const ParentManagement = () => {
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            <span className="hidden sm:inline">Trạng thái</span>
-                                            <span className="sm:hidden">TT</span>
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            TRẠNG THÁI
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                            <span className="hidden sm:inline">Thao tác</span>
-                                            <span className="sm:hidden">TT</span>
+                                        <th
+                                            className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            style={{ color: TEXT.PRIMARY }}
+                                        >
+                                            THAO TÁC
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="8" className="text-center py-12">
+                                            <td colSpan="7" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center space-y-4">
                                                     <Loading
                                                         type="medical"
@@ -777,60 +685,46 @@ const ParentManagement = () => {
                                     ) : currentParents.length > 0 ? (
                                         currentParents.map((parent, index) => (
                                             <tr
-                                                key={parent.parentId}
-                                                className="hover:bg-opacity-50 transition-all duration-200 group"
+                                                key={parent.id}
+                                                className="hover:bg-opacity-50 transition-all duration-200"
                                                 style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] || '#fafafa' }}
                                             >
                                                 <td className="py-4 px-6">
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className="h-2 w-2 rounded-full mr-3"
-                                                            style={{ backgroundColor: parent.isActive ? SUCCESS[500] : GRAY[400] }}
-                                                        ></div>
-                                                        <div>
-                                                            <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                                {parent.firstName} {parent.lastName}
-                                                            </span>
-                                                            <div className="sm:hidden text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                                {parent.relationship} • {parent.phone}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="hidden sm:table-cell py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
-                                                    {parent.relationship}
-                                                </td>
-                                                <td className="hidden lg:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[150px]" style={{ color: TEXT.PRIMARY }}>
-                                                    {parent.email}
-                                                </td>
-                                                <td className="py-4 px-6 text-center align-middle text-sm" style={{ color: TEXT.PRIMARY }}>
-                                                    {parent.phone}
-                                                </td>
-                                                <td className="hidden md:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[100px]" style={{ color: TEXT.PRIMARY }}>
-                                                    {parent.occupation}
-                                                </td>
-                                                <td className="hidden lg:table-cell py-4 px-6 text-center align-middle text-sm truncate max-w-[150px]" style={{ color: TEXT.PRIMARY }}>
-                                                    {parent.address}
-                                                </td>
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <span
-                                                        className="inline-flex items-center justify-center px-1.5 sm:px-2 lg:px-3 py-0.5 sm:py-1 lg:py-1.5 rounded-md sm:rounded-lg lg:rounded-xl text-xs sm:text-xs lg:text-xs font-bold whitespace-nowrap min-w-0"
-                                                        style={{
-                                                            backgroundColor: parent.isActive ? SUCCESS[100] : WARNING[100],
-                                                            color: parent.isActive ? SUCCESS[800] : WARNING[800],
-                                                            border: `2px solid ${parent.isActive ? SUCCESS[200] : WARNING[200]}`
-                                                        }}
-                                                    >
-                                                        <span className="hidden lg:inline">{parent.isActive ? "Hoạt động" : "Ngừng hoạt động"}</span>
-                                                        <span className="hidden sm:inline lg:hidden text-xs">{parent.isActive ? "Hoạt động" : "Tạm ngưng"}</span>
-                                                        <span className="sm:hidden text-xs">{parent.isActive ? "✓" : "✗"}</span>
+                                                    <span className="font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {parent.fullName}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6 text-center align-middle">
-                                                    <div className="flex space-x-1 sm:space-x-2 lg:space-x-3 justify-center">
+                                                <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                    {parent.relationship === 'Mother' ? 'Mẹ' :
+                                                        parent.relationship === 'Father' ? 'Bố' :
+                                                            parent.relationship === 'Guardian' ? 'Người giám hộ' : parent.relationship}
+                                                </td>
+                                                <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                    {parent.email}
+                                                </td>
+                                                <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                    {parent.phoneNumber}
+                                                </td>
+                                                <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY }}>
+                                                    {parent.address || 'N/A'}
+                                                </td>
+                                                <td className="py-4 px-6 text-center">
+                                                    <span
+                                                        className="inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-bold whitespace-nowrap"
+                                                        style={{
+                                                            backgroundColor: parent.children.length > 0 ? SUCCESS[100] : WARNING[100],
+                                                            color: parent.children.length > 0 ? SUCCESS[800] : WARNING[800],
+                                                            border: `2px solid ${parent.children.length > 0 ? SUCCESS[200] : WARNING[200]}`
+                                                        }}
+                                                    >
+                                                        {parent.children.length > 0 ? `${parent.children.length} con` : "Chưa có con"}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6 text-center">
+                                                    <div className="flex space-x-2 justify-center">
                                                         <button
                                                             onClick={() => handleAddEditParent(parent)}
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
+                                                            className="p-2 rounded-lg transition-all duration-300 transform hover:scale-110"
                                                             style={{
                                                                 backgroundColor: PRIMARY[100],
                                                                 color: PRIMARY[600]
@@ -845,38 +739,11 @@ const ParentManagement = () => {
                                                             }}
                                                             title="Chỉnh sửa"
                                                         >
-                                                            <FiEdit className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                                                            <FiEdit className="h-4 w-4" />
                                                         </button>
                                                         <button
-                                                            onClick={() => toggleParentStatus(parent)}
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
-                                                            style={{
-                                                                backgroundColor: parent.isActive ? WARNING[100] : SUCCESS[100],
-                                                                color: parent.isActive ? WARNING[600] : SUCCESS[600]
-                                                            }}
-                                                            onMouseEnter={(e) => {
-                                                                e.target.style.backgroundColor = parent.isActive ? WARNING[200] : SUCCESS[200];
-                                                                e.target.style.color = parent.isActive ? WARNING[700] : SUCCESS[700];
-                                                            }}
-                                                            onMouseLeave={(e) => {
-                                                                e.target.style.backgroundColor = parent.isActive ? WARNING[100] : SUCCESS[100];
-                                                                e.target.style.color = parent.isActive ? WARNING[600] : SUCCESS[600];
-                                                            }}
-                                                            title={
-                                                                parent.isActive
-                                                                    ? "Đánh dấu ngừng hoạt động"
-                                                                    : "Đánh dấu đang hoạt động"
-                                                            }
-                                                        >
-                                                            {parent.isActive ? (
-                                                                <FiX className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                            ) : (
-                                                                <FiCheck className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
-                                                            )}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => deleteParent(parent.parentId)}
-                                                            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110"
+                                                            onClick={() => deleteParent(parent.id)}
+                                                            className="p-2 rounded-lg transition-all duration-300 transform hover:scale-110"
                                                             style={{
                                                                 backgroundColor: ERROR[100],
                                                                 color: ERROR[600]
@@ -891,7 +758,7 @@ const ParentManagement = () => {
                                                             }}
                                                             title="Xóa"
                                                         >
-                                                            <FiTrash2 className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                                                            <FiTrash2 className="h-4 w-4" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -899,7 +766,7 @@ const ParentManagement = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="text-center py-12">
+                                            <td colSpan="7" className="text-center py-12">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div
                                                         className="h-20 w-20 rounded-full flex items-center justify-center mb-4"
@@ -908,42 +775,24 @@ const ParentManagement = () => {
                                                         <FiUser className="h-10 w-10" style={{ color: GRAY[400] }} />
                                                     </div>
                                                     <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
-                                                        {sortedParents.length === 0 ? "Không có phụ huynh nào phù hợp" : "Không có dữ liệu trang này"}
+                                                        Không có phụ huynh nào
                                                     </p>
                                                     <p className="mb-4" style={{ color: TEXT.SECONDARY }}>
-                                                        {sortedParents.length === 0 ?
-                                                            "Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác" :
-                                                            "Vui lòng chọn trang khác hoặc điều chỉnh bộ lọc"
-                                                        }
+                                                        Hãy thêm phụ huynh mới hoặc thay đổi bộ lọc
                                                     </p>
-                                                    {sortedParents.length === 0 ? (
-                                                        <button
-                                                            onClick={resetFilters}
-                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                            style={{
-                                                                backgroundColor: PRIMARY[100],
-                                                                color: PRIMARY[700]
-                                                            }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
-                                                        >
-                                                            <FiRefreshCw className="mr-2 h-4 w-4" />
-                                                            Đặt lại bộ lọc
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => setCurrentPage(1)}
-                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                            style={{
-                                                                backgroundColor: PRIMARY[100],
-                                                                color: PRIMARY[700]
-                                                            }}
-                                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
-                                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
-                                                        >
-                                                            Về trang đầu
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={() => handleAddEditParent()}
+                                                        className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
+                                                        style={{
+                                                            backgroundColor: PRIMARY[100],
+                                                            color: PRIMARY[700]
+                                                        }}
+                                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[200]}
+                                                        onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[100]}
+                                                    >
+                                                        <FiPlus className="mr-2 h-4 w-4" />
+                                                        Thêm phụ huynh mới
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -953,81 +802,53 @@ const ParentManagement = () => {
                         </div>
 
                         {/* Pagination */}
-                        {totalPages > 1 && (
+                        {paginationState.totalPages > 1 && (
                             <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
-                                <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
-                                    <span className="text-sm">
-                                        Hiển thị {indexOfFirstParent + 1}-{Math.min(indexOfLastParent, sortedParents.length)} trong tổng số {sortedParents.length} phụ huynh
-                                    </span>
+                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                    Hiển thị {(paginationState.currentPage - 1) * paginationState.pageSize + 1}-{Math.min(paginationState.currentPage * paginationState.pageSize, paginationState.totalCount)} trong tổng số {paginationState.totalCount} phụ huynh
                                 </div>
 
-                                <div>
-                                    <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => setPaginationState({ ...paginationState, currentPage: paginationState.currentPage - 1 })}
+                                        disabled={paginationState.currentPage === 1}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: paginationState.currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: paginationState.currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
+                                    >
+                                        Trước
+                                    </button>
+
+                                    {Array.from({ length: paginationState.totalPages }, (_, i) => i + 1).map((number) => (
                                         <button
-                                            onClick={() => setCurrentPage(currentPage - 1)}
-                                            disabled={currentPage === 1}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            key={number}
+                                            onClick={() => setPaginationState({ ...paginationState, currentPage: number })}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
                                             style={{
-                                                borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
+                                                borderColor: paginationState.currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
+                                                backgroundColor: paginationState.currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: paginationState.currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
                                             }}
                                         >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
+                                            {number}
                                         </button>
+                                    ))}
 
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
-                                            <button
-                                                key={number}
-                                                onClick={() => setCurrentPage(number)}
-                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
-                                                style={{
-                                                    borderColor: currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
-                                                    backgroundColor: currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                    color: currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
-                                                }}
-                                            >
-                                                {number}
-                                            </button>
-                                        ))}
-
-                                        <button
-                                            onClick={() => setCurrentPage(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
-                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
-                                                color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
-                                                backgroundColor: BACKGROUND.DEFAULT
-                                            }}
-                                        >
-                                            <svg
-                                                className="h-4 w-4 lg:h-5 lg:w-5"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={() => setPaginationState({ ...paginationState, currentPage: paginationState.currentPage + 1 })}
+                                        disabled={paginationState.currentPage === paginationState.totalPages}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: paginationState.currentPage === paginationState.totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: paginationState.currentPage === paginationState.totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
+                                    >
+                                        Sau
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -1043,289 +864,172 @@ const ParentManagement = () => {
                                     {selectedParent ? "Chỉnh sửa phụ huynh" : "Thêm phụ huynh mới"}
                                 </h3>
                                 <form onSubmit={handleSubmit}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                                                    Tên đăng nhập
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="username"
+                                                    id="username"
+                                                    className={`mt-1 block w-full border ${formErrors.username ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                    value={parentForm.username}
+                                                    onChange={handleInputChange}
+                                                />
+                                                {formErrors.username && (
+                                                    <p className="mt-1 text-sm text-red-500">{formErrors.username}</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                                                    Họ và tên
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="fullName"
+                                                    id="fullName"
+                                                    className={`mt-1 block w-full border ${formErrors.fullName ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                    value={parentForm.fullName}
+                                                    onChange={handleInputChange}
+                                                />
+                                                {formErrors.fullName && (
+                                                    <p className="mt-1 text-sm text-red-500">{formErrors.fullName}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
                                         <div>
-                                            <label
-                                                htmlFor="firstName"
-                                                className="block text-xs sm:text-sm font-medium text-gray-700"
-                                            >
-                                                Họ
+                                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                                Email
                                             </label>
                                             <input
-                                                type="text"
-                                                name="firstName"
-                                                id="firstName"
-                                                className={`mt-1 block w-full border ${formErrors.firstName
-                                                    ? "border-red-500"
-                                                    : "border-gray-300"
-                                                    } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm`}
-                                                value={parentForm.firstName}
+                                                type="email"
+                                                name="email"
+                                                id="email"
+                                                className={`mt-1 block w-full border ${formErrors.email ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                value={parentForm.email}
                                                 onChange={handleInputChange}
                                             />
-                                            {formErrors.firstName && (
-                                                <p className="mt-1 text-sm text-red-500">
-                                                    {formErrors.firstName}
-                                                </p>
+                                            {formErrors.email && (
+                                                <p className="mt-1 text-sm text-red-500">{formErrors.email}</p>
                                             )}
                                         </div>
 
                                         <div>
-                                            <label
-                                                htmlFor="lastName"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Tên
+                                            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                                                Số điện thoại
                                             </label>
                                             <input
                                                 type="text"
-                                                name="lastName"
-                                                id="lastName"
-                                                className={`mt-1 block w-full border ${formErrors.lastName
-                                                    ? "border-red-500"
-                                                    : "border-gray-300"
-                                                    } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
-                                                value={parentForm.lastName}
+                                                name="phoneNumber"
+                                                id="phoneNumber"
+                                                className={`mt-1 block w-full border ${formErrors.phoneNumber ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                value={parentForm.phoneNumber}
                                                 onChange={handleInputChange}
                                             />
-                                            {formErrors.lastName && (
-                                                <p className="mt-1 text-sm text-red-500">
-                                                    {formErrors.lastName}
-                                                </p>
+                                            {formErrors.phoneNumber && (
+                                                <p className="mt-1 text-sm text-red-500">{formErrors.phoneNumber}</p>
                                             )}
                                         </div>
-                                    </div>
 
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="studentId"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Mã học sinh
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="studentId"
-                                            id="studentId"
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                                            value={parentForm.studentId || ""}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="studentName"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Tên học sinh
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="studentName"
-                                            id="studentName"
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                                            value={parentForm.studentName}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="relationship"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Mối quan hệ
-                                        </label>
-                                        <select
-                                            name="relationship"
-                                            id="relationship"
-                                            className={`mt-1 block w-full border ${formErrors.relationship
-                                                ? "border-red-500"
-                                                : "border-gray-300"
-                                                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
-                                            value={parentForm.relationship}
-                                            onChange={handleInputChange}
-                                        >
-                                            <option value="">-- Chọn mối quan hệ --</option>
-                                            <option value="Mẹ">Mẹ</option>
-                                            <option value="Bố">Bố</option>
-                                            <option value="Ông">Ông</option>
-                                            <option value="Bà">Bà</option>
-                                            <option value="Khác">Khác</option>
-                                        </select>
-                                        {formErrors.relationship && (
-                                            <p className="mt-1 text-sm text-red-500">
-                                                {formErrors.relationship}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="email"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Email
-                                        </label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            id="email"
-                                            className={`mt-1 block w-full border ${formErrors.email ? "border-red-500" : "border-gray-300"
-                                                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
-                                            value={parentForm.email}
-                                            onChange={handleInputChange}
-                                        />
-                                        {formErrors.email && (
-                                            <p className="mt-1 text-sm text-red-500">
-                                                {formErrors.email}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="phone"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Số điện thoại
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="phone"
-                                            id="phone"
-                                            className={`mt-1 block w-full border ${formErrors.phone ? "border-red-500" : "border-gray-300"
-                                                } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
-                                            value={parentForm.phone}
-                                            onChange={handleInputChange}
-                                        />
-                                        {formErrors.phone && (
-                                            <p className="mt-1 text-sm text-red-500">
-                                                {formErrors.phone}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="address"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Địa chỉ
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="address"
-                                            id="address"
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                                            value={parentForm.address}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="occupation"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            Nghề nghiệp
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="occupation"
-                                            id="occupation"
-                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
-                                            value={parentForm.occupation}
-                                            onChange={handleInputChange}
-                                        />
-                                    </div>
-
-                                    <div className="mb-4">
-                                        <label
-                                            htmlFor="password"
-                                            className="block text-sm font-medium text-gray-700"
-                                        >
-                                            {selectedParent
-                                                ? "Mật khẩu mới (để trống nếu không thay đổi)"
-                                                : "Mật khẩu"}
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type={showPassword ? "text" : "password"}
-                                                name="password"
-                                                id="password"
-                                                className={`mt-1 block w-full border ${formErrors.password
-                                                    ? "border-red-500"
-                                                    : "border-gray-300"
-                                                    } rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
-                                                value={parentForm.password}
-                                                onChange={handleInputChange}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? "Ẩn" : "Hiện"}
-                                            </button>
-                                        </div>
-                                        {formErrors.password && (
-                                            <p className="mt-1 text-sm text-red-500">
-                                                {formErrors.password}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                        <div className="flex items-center">
-                                            <input
-                                                id="isActive"
-                                                name="isActive"
-                                                type="checkbox"
-                                                className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                                                checked={parentForm.isActive}
-                                                onChange={handleInputChange}
-                                            />
-                                            <label
-                                                htmlFor="isActive"
-                                                className="ml-2 block text-sm text-gray-900"
-                                            >
-                                                Đang hoạt động
+                                        <div>
+                                            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                                                Địa chỉ
                                             </label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                id="address"
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                                value={parentForm.address}
+                                                onChange={handleInputChange}
+                                            />
                                         </div>
 
-                                        <div className="flex items-center">
-                                            <input
-                                                id="isEmergencyContact"
-                                                name="isEmergencyContact"
-                                                type="checkbox"
-                                                className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                                                checked={parentForm.isEmergencyContact}
-                                                onChange={handleInputChange}
-                                            />
-                                            <label
-                                                htmlFor="isEmergencyContact"
-                                                className="ml-2 block text-sm text-gray-900"
-                                            >
-                                                Liên hệ khẩn cấp
-                                            </label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                                                    Giới tính
+                                                </label>
+                                                <select
+                                                    name="gender"
+                                                    id="gender"
+                                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                                                    value={parentForm.gender}
+                                                    onChange={handleInputChange}
+                                                >
+                                                    <option value="Male">Nam</option>
+                                                    <option value="Female">Nữ</option>
+                                                    <option value="Other">Khác</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">
+                                                    Ngày sinh
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    name="dateOfBirth"
+                                                    id="dateOfBirth"
+                                                    className={`mt-1 block w-full border ${formErrors.dateOfBirth ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                    value={parentForm.dateOfBirth}
+                                                    onChange={handleInputChange}
+                                                />
+                                                {formErrors.dateOfBirth && (
+                                                    <p className="mt-1 text-sm text-red-500">{formErrors.dateOfBirth}</p>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <div className="flex items-center">
-                                            <input
-                                                id="isMainContact"
-                                                name="isMainContact"
-                                                type="checkbox"
-                                                className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                                                checked={parentForm.isMainContact}
-                                                onChange={handleInputChange}
-                                            />
-                                            <label
-                                                htmlFor="isMainContact"
-                                                className="ml-2 block text-sm text-gray-900"
-                                            >
-                                                Liên hệ chính
+                                        <div>
+                                            <label htmlFor="relationship" className="block text-sm font-medium text-gray-700">
+                                                Mối quan hệ
                                             </label>
+                                            <select
+                                                name="relationship"
+                                                id="relationship"
+                                                className={`mt-1 block w-full border ${formErrors.relationship ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                value={parentForm.relationship}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="">-- Chọn mối quan hệ --</option>
+                                                <option value="Mother">Mẹ</option>
+                                                <option value="Father">Bố</option>
+                                                <option value="Guardian">Người giám hộ</option>
+                                            </select>
+                                            {formErrors.relationship && (
+                                                <p className="mt-1 text-sm text-red-500">{formErrors.relationship}</p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                                {selectedParent ? "Mật khẩu mới (để trống nếu không thay đổi)" : "Mật khẩu"}
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    name="password"
+                                                    id="password"
+                                                    className={`mt-1 block w-full border ${formErrors.password ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm`}
+                                                    value={parentForm.password}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                >
+                                                    {showPassword ? "Ẩn" : "Hiện"}
+                                                </button>
+                                            </div>
+                                            {formErrors.password && (
+                                                <p className="mt-1 text-sm text-red-500">{formErrors.password}</p>
+                                            )}
                                         </div>
                                     </div>
 
