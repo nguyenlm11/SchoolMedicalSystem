@@ -249,7 +249,100 @@ const userApi = {
             console.error('Error fetching students:', error);
             throw error;
         }
-    }
+    },
+    // Parent Management APIs
+    getParents: async (params = {}) => {
+        try {
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                searchTerm = '',
+                orderBy = '',
+                hasChildren = null,
+                relationship = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+            if (searchTerm) {
+                queryParams.append('searchTerm', searchTerm);
+            }
+            if (orderBy) {
+                queryParams.append('orderBy', orderBy);
+            }
+            if (hasChildren !== null) {
+                queryParams.append('hasChildren', hasChildren);
+            }
+            if (relationship) {
+                queryParams.append('relationship', relationship);
+            }
+
+            const response = await apiClient.get(`/users/parents?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể tải danh sách phụ huynh",
+                data: [],
+                errors: []
+            };
+        }
+    },
+
+    createParent: async (parentData) => {
+        try {
+            const response = await apiClient.post('/users/parents', parentData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể thêm phụ huynh mới",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    updateParent: async (parentId, parentData) => {
+        try {
+            const response = await apiClient.put(`/users/parents/${parentId}`, parentData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật thông tin phụ huynh",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    deleteParent: async (parentId) => {
+        try {
+            const response = await apiClient.delete(`/users/parents/${parentId}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể xóa phụ huynh",
+                data: null,
+                errors: []
+            };
+        }
+    },
 };
 
 export default userApi; 
