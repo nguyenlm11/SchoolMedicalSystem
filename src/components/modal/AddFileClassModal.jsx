@@ -149,7 +149,7 @@ const AddFileClassModal = ({ isOpen, onClose, onSuccess }) => {
                             <Loading type="spinner" size="small" color="white" />
                         </div>
                         )}
-                        {loading ? 'Đang xử lý...' : 'Submit'}
+                        {loading ? 'Đang xử lý...' : 'Nhập'}
                     </button>
                     <button
                         type="button"
