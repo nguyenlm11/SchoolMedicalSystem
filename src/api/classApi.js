@@ -48,6 +48,24 @@ const classApi = {
         }
     },
 
+    // Lấy thông tin chi tiết của lớp học
+    getClassById: async (classId) => {
+        try {
+            const response = await apiClient.get(`/school-classes/${classId}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: error.message,
+                data: null,
+                errors: []
+            };
+        }
+    },
+
     // Thêm lớp
     addSchoolClass: async (classData) => {
         try {
@@ -56,6 +74,28 @@ const classApi = {
         } catch (error) {
             throw error.response?.data || error;
         }
+    },
+
+    // Thêm lớp bằng import file
+    addSchoolClassByFile: async (classData) => {
+        try {
+            const response = await apiClient.post('/school-classes/import', classData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+            });
+            return response.data;
+        } catch (error) {
+        if (error.response && error.response.data) {
+            return error.response.data;
+        }
+        return {
+            success: false,
+            message: error.message,
+            data: null,
+            errors: []
+        };
+    }
     },
 
     // Chỉnh sửa lớp
