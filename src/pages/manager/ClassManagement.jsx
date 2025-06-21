@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { FiUsers, FiPlus, FiUserCheck, FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiUsers, FiPlus, FiUserCheck, FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import classApi from "../../api/classApi";
 import AddClassModal from "../../components/modal/AddClassModal";
+import AddFileClassModal from "../../components/modal/AddFileClassModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
+import { useNavigate } from "react-router-dom";
 
 const ClassManagement = () => {
     const [classes, setClasses] = useState([]);
@@ -24,6 +26,8 @@ const ClassManagement = () => {
     const [classToEdit, setClassToEdit] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [classToDelete, setClassToDelete] = useState(null);
+    const [showAddFileClassModal, setShowAddFileClassModal] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchClasses();
@@ -124,20 +128,35 @@ const ClassManagement = () => {
                                 Quản lý danh sách lớp học trong trường
                             </p>
                         </div>
-                        <button
-                            onClick={() => {
-                                setClassToEdit(null);
-                                setShowAddClassModal(true);
-                            }}
-                            className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                            style={{
-                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                color: TEXT.INVERSE
-                            }}
-                        >
-                            <FiPlus className="mr-2 h-5 w-5" />
-                            Thêm lớp học mới
-                        </button>
+                        <div className="flex space-x-4">
+                            <button
+                                onClick={() => {
+                                    setClassToEdit(null);
+                                    setShowAddClassModal(true);
+                                }}
+                                className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                                style={{
+                                    background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
+                                    color: TEXT.INVERSE
+                                }}
+                            >
+                                <FiPlus className="mr-2 h-5 w-5" />
+                                Thêm lớp học mới
+                            </button>
+
+                            {/* Button to add class via file */}
+                            <button
+                                onClick={() => setShowAddFileClassModal(true)}
+                                className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                                style={{
+                                    background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`,
+                                    color: TEXT.INVERSE
+                                }}
+                            >
+                                <FiPlus className="mr-2 h-5 w-5" />
+                                Thêm lớp học bằng file
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -229,13 +248,26 @@ const ClassManagement = () => {
                                         <td className="py-4 px-6 pl-10">{classItem.academicYear}</td>
                                         <td className="py-4 px-6 pl-15">{classItem.studentCount}</td>
                                         <td className="py-4 px-6 pl-10">
-                                            <button onClick={() => {
-                                                    setClassToEdit(classItem);
-                                                    setShowAddClassModal(true);
-                                                }} className="mr-2">
+                                            <button className="action-button mr-2 cursor-pointer"
+                                                onClick={() => navigate(`/manager/class-details/${classItem.id}`)}
+                                                title="Xem chi tiết"
+                                            >
+                                                <FiEye />
+                                            </button>
+                                            <button 
+                                            onClick={() => {
+                                                setClassToEdit(classItem);
+                                                setShowAddClassModal(true);
+                                            }} 
+                                            className="mr-2 action-button cursor-pointer"
+                                            >
                                                 <FiEdit />
                                             </button>
-                                            <button onClick={() => handleDeleteClass(classItem.id, classItem.name)}>
+                                            <button 
+                                            className="action-button cursor-pointer"
+                                            onClick={() => handleDeleteClass(classItem.id, classItem.name)}
+                                            title="Xóa lớp học"
+                                            >
                                                 <FiTrash2 />
                                             </button>
                                         </td>
@@ -281,6 +313,12 @@ const ClassManagement = () => {
                 onSuccess={() => fetchClasses()}
                 classToEdit={classToEdit}
                 setClassToEdit={setClassToEdit}
+            />
+            {/* AddFileClassModal */}
+            <AddFileClassModal
+                isOpen={showAddFileClassModal}
+                onClose={() => setShowAddFileClassModal(false)}
+                onSuccess={() => fetchClasses()}
             />
             {/* Alert Modal */}
             <AlertModal
