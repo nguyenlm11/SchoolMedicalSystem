@@ -383,30 +383,24 @@ const SupplyInventory = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
-                                        {[
-                                            { key: "id", label: "Mã vật tư" },
-                                            { key: "name", label: "Tên vật tư" },
-                                            { key: "quantity", label: "Số lượng" },
-                                            { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên" },
-                                            { key: "actions", label: "Thao tác" }
-                                        ].map((col, idx) => (
-                                            <th
-                                                key={idx}
-                                                className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key !== 'actions' ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
-                                                style={{ color: TEXT.PRIMARY }}
-                                                onClick={col.key !== 'actions' ? () => handleSort(col.key) : undefined}
-                                            >
-                                                <div className="flex items-center">
-                                                    {col.label}
-                                                    {col.key !== 'actions' && sortBy === col.key && (
-                                                        <span className="ml-2 text-xs">
-                                                            {sortOrder === "asc" ? "↑" : "↓"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                        ))}
+                                        <th className="w-[120px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Mã vật tư
+                                        </th>
+                                        <th className="w-[250px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Tên vật tư
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Số lượng
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Trạng thái
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Độ ưu tiên
+                                        </th>
+                                        <th className="w-[100px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Thao tác
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
@@ -417,19 +411,19 @@ const SupplyInventory = () => {
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
                                                 style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                             >
-                                                <td className="py-4 px-6">
+                                                <td className="w-[120px] py-4 px-6">
                                                     <span className="font-mono text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                         #{(item.id || '').toString().substring(0, 8)}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="w-[250px] py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
                                                             {item.name}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="w-[150px] py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
                                                             className="font-bold text-lg"
@@ -447,7 +441,7 @@ const SupplyInventory = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-6">
+                                                <td className="w-[150px] py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
@@ -466,13 +460,11 @@ const SupplyInventory = () => {
                                                         {item.statusDisplayName}
                                                     </span>
                                                 </td>
-                                                <td className="py-4 px-6">
-                                                    {console.log('Priority:', item.priority)}
+                                                <td className="w-[150px] py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
                                                             backgroundColor: (() => {
-                                                                console.log('Priority value:', item.priority);
                                                                 switch (item.priority?.toUpperCase()) {
                                                                     case 'CRITICAL':
                                                                         return ERROR[100];
@@ -505,7 +497,7 @@ const SupplyInventory = () => {
                                                         {item.priorityDisplayName}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                <td className="w-[100px] py-4 px-6">
                                                     <div className="relative">
                                                         <button
                                                             onClick={() => toggleDropdown(item.id)}

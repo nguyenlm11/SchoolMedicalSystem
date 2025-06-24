@@ -411,32 +411,30 @@ const MedicineInventory = () => {
                             <table className="w-full">
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
-                                        {[
-                                            { key: "id", label: "Mã thuốc", className: "hidden sm:table-cell" },
-                                            { key: "name", label: "Tên thuốc" },
-                                            { key: "dosage", label: "Liều lượng", className: "hidden lg:table-cell" },
-                                            { key: "quantity", label: "Số lượng" },
-                                            { key: "expiryDate", label: "Hạn sử dụng", className: "hidden md:table-cell" },
-                                            { key: "status", label: "Trạng thái" },
-                                            { key: "priority", label: "Độ ưu tiên", className: "hidden md:table-cell" },
-                                            { key: "actions", label: "Thao tác" }
-                                        ].map((col, idx) => (
-                                            <th
-                                                key={idx}
-                                                className={`py-3 sm:py-4 px-4 sm:px-6 text-left text-xs sm:text-sm font-semibold uppercase tracking-wider ${col.className || ''} ${col.key !== 'actions' ? 'cursor-pointer hover:bg-opacity-80' : ''} transition-all duration-200`}
-                                                style={{ color: TEXT.PRIMARY }}
-                                                onClick={col.key !== 'actions' ? () => handleSort(col.key) : undefined}
-                                            >
-                                                <div className="flex items-center">
-                                                    {col.label}
-                                                    {col.key !== 'actions' && sortConfig.key === col.key && (
-                                                        <span className="ml-2">
-                                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </th>
-                                        ))}
+                                        <th className="w-[120px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider hidden sm:table-cell" style={{ color: TEXT.PRIMARY }}>
+                                            Mã thuốc
+                                        </th>
+                                        <th className="w-[250px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Tên thuốc
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider hidden lg:table-cell" style={{ color: TEXT.PRIMARY }}>
+                                            Liều lượng
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Số lượng
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: TEXT.PRIMARY }}>
+                                            Hạn sử dụng
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Trạng thái
+                                        </th>
+                                        <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider hidden md:table-cell" style={{ color: TEXT.PRIMARY }}>
+                                            Độ ưu tiên
+                                        </th>
+                                        <th className="w-[100px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                            Thao tác
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
@@ -445,14 +443,14 @@ const MedicineInventory = () => {
                                             <tr
                                                 key={item.id || index}
                                                 className="hover:bg-opacity-50 transition-all duration-200 group"
-                                                style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] || '#fafafa' }}
+                                                style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                             >
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden sm:table-cell">
-                                                    <span className="font-mono text-xs sm:text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                <td className="w-[120px] py-4 px-6 hidden sm:table-cell">
+                                                    <span className="font-mono text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                         #{(item.id || '').toString().substring(0, 8)}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                <td className="w-[250px] py-4 px-6">
                                                     <div className="flex items-center">
                                                         <div>
                                                             <span className="font-semibold block text-sm sm:text-base" style={{ color: TEXT.PRIMARY }}>
@@ -467,12 +465,12 @@ const MedicineInventory = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden lg:table-cell">
+                                                <td className="w-[150px] py-4 px-6 hidden lg:table-cell">
                                                     <span className="text-sm sm:text-base font-medium" style={{ color: TEXT.PRIMARY }}>
                                                         {item.dosage || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                <td className="w-[150px] py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
                                                             className="font-bold text-base sm:text-lg"
@@ -493,7 +491,7 @@ const MedicineInventory = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden md:table-cell">
+                                                <td className="w-[150px] py-4 px-6 hidden md:table-cell">
                                                     <div className="flex flex-col">
                                                         <span className="text-sm sm:text-base font-medium" style={{ color: TEXT.PRIMARY }}>
                                                             {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('vi-VN') : 'N/A'}
@@ -511,7 +509,7 @@ const MedicineInventory = () => {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                <td className="w-[150px] py-4 px-6">
                                                     <span
                                                         className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
@@ -530,7 +528,7 @@ const MedicineInventory = () => {
                                                         {item.statusDisplayName}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6 hidden md:table-cell">
+                                                <td className="w-[150px] py-4 px-6 hidden md:table-cell">
                                                     <span
                                                         className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold"
                                                         style={{
@@ -547,7 +545,7 @@ const MedicineInventory = () => {
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                                <td className="w-[100px] py-4 px-6">
                                                     <div className="relative">
                                                         <button
                                                             onClick={() => toggleDropdown(item.id)}
