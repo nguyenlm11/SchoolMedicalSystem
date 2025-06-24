@@ -1,7 +1,7 @@
 import apiClient from '../config/config';
 
 const userApi = {
-    // Lấy danh sách người dùng (y tế và quản lý)
+    // ========== STAFF MANAGEMENT ==========
     getUsers: async (params = {}) => {
         try {
             const {
@@ -37,7 +37,7 @@ const userApi = {
             };
         }
     },
-    // Lấy thông tin chi tiết của nhân viên
+
     getStaffProfile: async (staffId) => {
         try {
             const response = await apiClient.get(`/users/staff/${staffId}`);
@@ -54,7 +54,8 @@ const userApi = {
             };
         }
     },
-    // Create Manager
+
+    // ========== MANAGER MANAGEMENT ==========
     createManager: async (managerData) => {
         try {
             const response = await apiClient.post('/users/managers', managerData);
@@ -63,34 +64,7 @@ const userApi = {
             throw error.response?.data || error;
         }
     },
-    // Create School Nurse
-    createSchoolNurse: async (nurseData) => {
-        try {
-            const response = await apiClient.post('/users/school-nurses', nurseData);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error;
-        }
-    },
-    // Delete Manager
-    deleteManager: async (managerId) => {
-        try {
-            const response = await apiClient.delete(`/users/managers/${managerId}`);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error;
-        }
-    },
-    // Delete School Nurse
-    deleteSchoolNurse: async (nurseId) => {
-        try {
-            const response = await apiClient.delete(`/users/school-nurses/${nurseId}`);
-            return response.data;
-        } catch (error) {
-            throw error.response?.data || error;
-        }
-    },
-    // Cập nhật thông tin quản lý
+
     updateManager: async (managerId, managerData) => {
         try {
             const response = await apiClient.put(`/users/managers/${managerId}`, managerData);
@@ -107,24 +81,16 @@ const userApi = {
             };
         }
     },
-    // Cập nhật thông tin y tá
-    updateSchoolNurse: async (nurseId, nurseData) => {
+
+    deleteManager: async (managerId) => {
         try {
-            const response = await apiClient.put(`/users/school-nurses/${nurseId}`, nurseData);
+            const response = await apiClient.delete(`/users/managers/${managerId}`);
             return response.data;
         } catch (error) {
-            if (error.response && error.response.data) {
-                return error.response.data;
-            }
-            return {
-                success: false,
-                message: "Không thể cập nhật thông tin y tá",
-                data: null,
-                errors: []
-            };
+            throw error.response?.data || error;
         }
     },
-    // Download Manager Template
+
     downloadManagerTemplate: async () => {
         try {
             const response = await apiClient.get('/users/managers/template', {
@@ -143,26 +109,7 @@ const userApi = {
             };
         }
     },
-    // Download School Nurse Template
-    downloadSchoolNurseTemplate: async () => {
-        try {
-            const response = await apiClient.get('/users/school-nurses/template', {
-                responseType: 'blob'
-            });
-            return {
-                success: true,
-                data: response.data,
-                headers: response.headers
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: "Không thể tải mẫu y tá",
-                error: error.response?.data || error
-            };
-        }
-    },
-    // Export Manager List
+
     exportManagerList: async () => {
         try {
             const response = await apiClient.get('/users/managers/export', {
@@ -181,26 +128,7 @@ const userApi = {
             };
         }
     },
-    // Export School Nurse List
-    exportSchoolNurseList: async () => {
-        try {
-            const response = await apiClient.get('/users/school-nurses/export', {
-                responseType: 'blob'
-            });
-            return {
-                success: true,
-                data: response.data,
-                headers: response.headers
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: "Không thể xuất danh sách y tá",
-                error: error.response?.data || error
-            };
-        }
-    },
-    // Import Manager List
+
     importManagerList: async (file) => {
         try {
             const formData = new FormData();
@@ -220,7 +148,81 @@ const userApi = {
             };
         }
     },
-    // Import School Nurse List
+
+    // ========== NURSE MANAGEMENT ==========
+    createSchoolNurse: async (nurseData) => {
+        try {
+            const response = await apiClient.post('/users/school-nurses', nurseData);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    },
+
+    updateSchoolNurse: async (nurseId, nurseData) => {
+        try {
+            const response = await apiClient.put(`/users/school-nurses/${nurseId}`, nurseData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật thông tin y tá",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    deleteSchoolNurse: async (nurseId) => {
+        try {
+            const response = await apiClient.delete(`/users/school-nurses/${nurseId}`);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error;
+        }
+    },
+
+    downloadSchoolNurseTemplate: async () => {
+        try {
+            const response = await apiClient.get('/users/school-nurses/template', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể tải mẫu y tá",
+                error: error.response?.data || error
+            };
+        }
+    },
+
+    exportSchoolNurseList: async () => {
+        try {
+            const response = await apiClient.get('/users/school-nurses/export', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể xuất danh sách y tá",
+                error: error.response?.data || error
+            };
+        }
+    },
+
     importSchoolNurseList: async (file) => {
         try {
             const formData = new FormData();
@@ -240,7 +242,8 @@ const userApi = {
             };
         }
     },
-    // Lấy danh sách học sinh
+
+    // ========== STUDENT MANAGEMENT ==========
     getStudents: async (params) => {
         try {
             const response = await apiClient.get('/users/students', { params });
@@ -250,7 +253,25 @@ const userApi = {
             throw error;
         }
     },
-    // Parent Management APIs
+
+    deleteStudent: async (studentId) => {
+        try {
+            const response = await apiClient.delete(`/users/students/${studentId}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể xóa học sinh",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // ========== PARENT MANAGEMENT ==========
     getParents: async (params = {}) => {
         try {
             const {
