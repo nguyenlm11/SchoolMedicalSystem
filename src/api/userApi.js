@@ -138,6 +138,7 @@ const userApi = {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                timeout: 300000 // 5 minutes
             });
             return response.data;
         } catch (error) {
@@ -232,6 +233,7 @@ const userApi = {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                timeout: 300000 // 5 minutes
             });
             return response.data;
         } catch (error) {
@@ -267,6 +269,66 @@ const userApi = {
                 message: "Không thể xóa học sinh",
                 data: null,
                 errors: []
+            };
+        }
+    },
+
+    // Student template, import and export APIs
+    downloadStudentTemplate: async () => {
+        try {
+            const response = await apiClient.get('/users/download-student-parent-template', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể tải mẫu danh sách học sinh",
+                error: error.response?.data || error
+            };
+        }
+    },
+
+    importStudentList: async (file) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await apiClient.post('/users/import-parent-student-relationship', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                timeout: 300000 // 5 minutes
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể nhập danh sách học sinh",
+                error: error.response?.data || error
+            };
+        }
+    },
+
+    exportStudentList: async () => {
+        try {
+            const response = await apiClient.get('/users/export-parent-student-relationship', {
+                responseType: 'blob'
+            });
+            return {
+                success: true,
+                data: response.data,
+                headers: response.headers
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể xuất danh sách học sinh",
+                error: error.response?.data || error
             };
         }
     },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiUser, FiUsers, FiUserCheck, FiUserX, FiTrash2, FiEye } from "react-icons/fi";
-import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
+import { FiPlus, FiSearch, FiRefreshCw, FiUser, FiUsers, FiUserCheck, FiUserX, FiTrash2, FiEye, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
+import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
@@ -36,6 +36,8 @@ const StudentManagement = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
+    const [importResult, setImportResult] = useState(null);
 
     useEffect(() => {
         fetchStudents();
@@ -69,7 +71,6 @@ const StudentManagement = () => {
                 orderBy: `${sortBy}_${sortOrder}`,
                 classId: selectedClass !== "all" ? selectedClass : undefined
             };
-
             const response = await userApi.getStudents(params);
             if (response.success) {
                 const filteredData = response.data.filter(student => {
@@ -87,7 +88,6 @@ const StudentManagement = () => {
                 setStudents(filteredData);
                 setTotalStudents(filteredData.length);
                 setTotalPages(Math.ceil(filteredData.length / studentsPerPage));
-
                 const total = filteredData.length;
                 const active = filteredData.filter(item =>
                     item.classes.some(c =>
@@ -174,7 +174,6 @@ const StudentManagement = () => {
         });
     }, [students, filterStatus, selectedAcademicYear, filterGrade]);
 
-    // Update stats based on filtered students
     useEffect(() => {
         const total = filteredStudents.length;
         const active = filteredStudents.filter(student => {
@@ -193,15 +192,6 @@ const StudentManagement = () => {
                     const fullNameA = `${a.lastName || ""} ${a.firstName || ""}`.trim();
                     const fullNameB = `${b.lastName || ""} ${b.firstName || ""}`.trim();
                     comparison = fullNameA.localeCompare(fullNameB);
-                    break;
-                case "id":
-                    comparison = a.studentId - b.studentId;
-                    break;
-                case "dob":
-                    comparison = new Date(a.dateOfBirth) - new Date(b.dateOfBirth);
-                    break;
-                case "gradeLevel":
-                    comparison = a.gradeLevel - b.gradeLevel;
                     break;
                 default:
                     comparison = 0;
@@ -227,9 +217,7 @@ const StudentManagement = () => {
 
     const getClassesByGrade = (gradeLevel) => {
         if (gradeLevel === "all") return [];
-        return classes
-            .filter(cls => cls.grade === parseInt(gradeLevel))
-            .sort((a, b) => a.name.localeCompare(b.name));
+        return classes.filter(cls => cls.grade === parseInt(gradeLevel)).sort((a, b) => a.name.localeCompare(b.name));
     };
 
     const handleGradeSelection = (grade) => {
@@ -270,6 +258,95 @@ const StudentManagement = () => {
         }
     };
 
+    const handleTemplateDownload = async () => {
+        try {
+            const response = await userApi.downloadStudentTemplate();
+            if (response.success) {
+                const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                // Lấy tên file từ Content-Disposition header
+                const contentDisposition = response.headers['content-disposition'];
+                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : 'student_template.xlsx';
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            showAlert("error", "Lỗi", `Không thể tải xuống mẫu. ${error.message || 'Vui lòng thử lại sau.'}`);
+        }
+    };
+
+    const handleImport = async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx';
+        input.style.display = 'none';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            setImportLoading(true);
+            try {
+                const response = await userApi.importStudentList(file);
+                if (response.success) {
+                    const resultData = response.data;
+                    setImportResult({
+                        totalRows: resultData.totalRows,
+                        successRows: resultData.successRows,
+                        errorRows: resultData.errorRows,
+                        validData: resultData.validData,
+                        invalidData: resultData.invalidData,
+                        errors: resultData.errors
+                    });
+                    showAlert("success", "Thành công", "Nhập danh sách học sinh thành công!");
+                    if (resultData.successRows > 0) { fetchStudents() }
+                } else {
+                    throw new Error(response.message || 'Có lỗi xảy ra khi nhập file');
+                }
+            } catch (error) {
+                showAlert("error", "Lỗi", error.message || "Không thể nhập danh sách học sinh");
+            } finally {
+                setImportLoading(false);
+            }
+        };
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
+    };
+
+    const handleExport = async () => {
+        try {
+            const response = await userApi.exportStudentList();
+            if (response.success) {
+                const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                // Lấy tên file từ Content-Disposition header
+                const contentDisposition = response.headers['content-disposition'];
+                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : 'students.xlsx';
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            showAlert("error", "Lỗi", `Không thể xuất danh sách. ${error.message || 'Vui lòng thử lại sau.'}`);
+        }
+    };
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -291,26 +368,62 @@ const StudentManagement = () => {
                                 Theo dõi và quản lý danh sách học sinh tại trường
                             </p>
                         </div>
-                        <button
-                            className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                            style={{
-                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                color: TEXT.INVERSE
-                            }}
-                        >
-                            <FiPlus className="mr-2 h-5 w-5" />
-                            Thêm học sinh mới
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={handleTemplateDownload}
+                                className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style={{ backgroundColor: INFO[600], color: 'white', borderColor: INFO[600] }}
+                            >
+                                <FiFileText className="h-4 w-4 mr-2" />
+                                Lấy mẫu
+                            </button>
+
+                            <button
+                                onClick={handleImport}
+                                className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style={{ backgroundColor: SUCCESS[600], color: 'white', borderColor: SUCCESS[600] }}
+                                disabled={importLoading}
+                            >
+                                {importLoading ? (
+                                    <>
+                                        <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Đang nhập...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiUpload className="h-4 w-4 mr-2" />
+                                        Tải lên danh sách
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={handleExport}
+                                className="inline-flex items-center px-4 py-2.5 border text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                style={{ backgroundColor: WARNING[600], color: 'white', borderColor: WARNING[600] }}
+                            >
+                                <FiDownload className="h-4 w-4 mr-2" />
+                                Tải xuống danh sách
+                            </button>
+
+                            <button
+                                className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                                style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: TEXT.INVERSE }}
+                            >
+                                <FiPlus className="mr-2 h-5 w-5" />
+                                Thêm học sinh mới
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{
-                            background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                            borderColor: PRIMARY[200]
-                        }}
+                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
@@ -334,10 +447,7 @@ const StudentManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{
-                            background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`,
-                            borderColor: SUCCESS[200]
-                        }}
+                        style={{ background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`, borderColor: SUCCESS[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
@@ -361,10 +471,7 @@ const StudentManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{
-                            background: `linear-gradient(135deg, ${WARNING[500]} 0%, ${WARNING[600]} 100%)`,
-                            borderColor: WARNING[200]
-                        }}
+                        style={{ background: `linear-gradient(135deg, ${WARNING[500]} 0%, ${WARNING[600]} 100%)`, borderColor: WARNING[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">

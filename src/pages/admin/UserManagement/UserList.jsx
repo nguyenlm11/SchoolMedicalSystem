@@ -57,9 +57,7 @@ const UserList = () => {
                 setTotalPages(0);
             }
         } catch (error) {
-            if (error.name === 'AbortError') {
-                return;
-            }
+            if (error.name === 'AbortError') { return }
             setUsers([]);
             setTotalCount(0);
             setTotalPages(0);
@@ -67,7 +65,6 @@ const UserList = () => {
             setLoading(false);
         }
     };
-
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
@@ -191,16 +188,11 @@ const UserList = () => {
 
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-                setAlertType("success");
-                setAlertMessage(`Đã tải xuống mẫu ${type === 'manager' ? 'quản lý' : 'y tá'} thành công`);
-                setAlertModalOpen(true);
             } else {
                 throw new Error(response.message);
             }
         } catch (error) {
-            setAlertType("error");
             setAlertMessage(`Không thể tải xuống mẫu. ${error.message || 'Vui lòng thử lại sau.'}`);
-            setAlertModalOpen(true);
         }
     };
 
@@ -210,7 +202,6 @@ const UserList = () => {
         input.type = 'file';
         input.accept = '.xlsx';
         input.style.display = 'none';
-
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -271,16 +262,11 @@ const UserList = () => {
 
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
-                setAlertType("success");
-                setAlertMessage(`Đã xuất danh sách ${type === 'manager' ? 'quản lý' : 'y tá'} thành công`);
-                setAlertModalOpen(true);
             } else {
                 throw new Error(response.message);
             }
         } catch (error) {
-            setAlertType("error");
             setAlertMessage(`Không thể xuất danh sách. ${error.message || 'Vui lòng thử lại sau.'}`);
-            setAlertModalOpen(true);
         }
     };
 
@@ -386,7 +372,7 @@ const UserList = () => {
                                         ) : (
                                             <>
                                                 <FiUpload className="h-4 w-4 mr-2" />
-                                                Nhập
+                                                Tải lên danh sách
                                             </>
                                         )}
                                     </button>
@@ -396,13 +382,13 @@ const UserList = () => {
                                                 onClick={() => handleImport('manager')}
                                                 style={dropdownItemStyle}
                                             >
-                                                Nhập Quản lý
+                                                Danh sách quản lý
                                             </button>
                                             <button
                                                 onClick={() => handleImport('nurse')}
                                                 style={dropdownItemStyle}
                                             >
-                                                Nhập Y tế
+                                                Danh sách y tế
                                             </button>
                                         </div>
                                     )}
@@ -419,7 +405,7 @@ const UserList = () => {
                                         style={{ backgroundColor: WARNING[600], color: 'white', borderColor: WARNING[600] }}
                                     >
                                         <FiDownload className="h-4 w-4 mr-2" />
-                                        Xuất
+                                        Tải xuống danh sách
                                     </button>
                                     {showExportDropdown && (
                                         <div style={dropdownStyle}>
@@ -427,13 +413,13 @@ const UserList = () => {
                                                 onClick={() => handleExport('manager')}
                                                 style={dropdownItemStyle}
                                             >
-                                                Xuất Quản lý
+                                                Danh sách quản lý
                                             </button>
                                             <button
                                                 onClick={() => handleExport('nurse')}
                                                 style={dropdownItemStyle}
                                             >
-                                                Xuất Y tế
+                                                Danh sách y tế
                                             </button>
                                         </div>
                                     )}
