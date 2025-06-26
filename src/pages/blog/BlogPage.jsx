@@ -29,116 +29,136 @@ export default function BlogPage() {
 
     const featuredPosts = [
         {
-            id: 1,
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa1",
             title: "Hướng Dẫn Toàn Diện Về Tiêm Chủng Cho Học Sinh",
-            excerpt: "Tìm hiểu về lịch tiêm chủng, các loại vaccine quan trọng và cách chuẩn bị cho con em trước khi tiêm chủng tại trường học...",
-            author: "BS. Nguyễn Minh Hạnh",
-            date: "20/12/2023",
-            readTime: "12 phút",
-            views: "3,542",
-            category: "Tiêm chủng",
-            tags: ["tiêm chủng", "vaccine", "phòng bệnh"]
+            content: "Tìm hiểu về lịch tiêm chủng, các loại vaccine quan trọng và cách chuẩn bị cho con em trước khi tiêm chủng tại trường học...",
+            imageUrl: "/images/blog/vaccination.jpg",
+            authorName: "BS. Nguyễn Minh Hạnh",
+            isPublished: true,
+            categoryName: "Sức khỏe học đường",
+            createdDate: "2023-12-20T08:28:04.268Z",
+            isFeatured: true
         },
         {
-            id: 2,
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa2",
             title: "Dinh Dưỡng Học Đường: Xây Dựng Thực Đơn Cân Bằng",
-            excerpt: "Hướng dẫn chi tiết về cách xây dựng thực đơn dinh dưỡng cân bằng cho học sinh, đảm bảo phát triển toàn diện về thể chất và trí tuệ...",
-            author: "CN. Lê Thị Minh Châu",
-            date: "18/12/2023",
-            readTime: "10 phút",
-            views: "2,876",
-            category: "Dinh dưỡng",
-            tags: ["dinh dưỡng", "thực đơn", "sức khỏe"]
+            content: "Hướng dẫn chi tiết về cách xây dựng thực đơn dinh dưỡng cân bằng cho học sinh, đảm bảo phát triển toàn diện về thể chất và trí tuệ...",
+            imageUrl: "/images/blog/nutrition.jpg",
+            authorName: "CN. Lê Thị Minh Châu",
+            isPublished: true,
+            categoryName: "Dinh dưỡng",
+            createdDate: "2023-12-18T08:28:04.268Z",
+            isFeatured: true
         }
     ];
 
     const blogPosts = [
         {
-            id: 3,
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa3",
             title: "5 Cách Phòng Ngừa Cảm Cúm Hiệu Quả Cho Học Sinh",
-            excerpt: "Hướng dẫn chi tiết về các biện pháp phòng ngừa cảm cúm hiệu quả cho học sinh trong mùa đông...",
-            author: "BS. Nguyễn Thị Lan",
-            date: "15/12/2023",
-            readTime: "5 phút",
-            views: "1,234",
-            category: "Phòng bệnh",
-            tags: ["cảm cúm", "phòng ngừa", "mùa đông"]
+            content: "Hướng dẫn chi tiết về các biện pháp phòng ngừa cảm cúm hiệu quả cho học sinh trong mùa đông...",
+            imageUrl: "/images/blog/flu-prevention.jpg",
+            authorName: "BS. Nguyễn Thị Lan",
+            isPublished: true,
+            categoryName: "Phòng bệnh",
+            createdDate: "2023-12-15T08:28:04.268Z",
+            isFeatured: false
         },
         {
-            id: 4,
-            title: "Tầm Quan Trọng Của Kiểm Tra Mắt Định Kỳ",
-            excerpt: "Tại sao việc kiểm tra thị lực định kỳ lại quan trọng đối với học sinh và cách thực hiện hiệu quả...",
-            author: "BS. Trần Văn Minh",
-            date: "12/12/2023",
-            readTime: "7 phút",
-            views: "987",
-            category: "Kiểm tra sức khỏe",
-            tags: ["thị lực", "kiểm tra", "mắt"]
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa4",
+            title: "Tầm Quan Trọng Của Kiểm Tra Sức Khỏe Định Kỳ",
+            content: "Tại sao việc kiểm tra sức khỏe định kỳ lại quan trọng đối với học sinh và cách thực hiện hiệu quả...",
+            imageUrl: "/images/blog/eye-check.jpg",
+            authorName: "BS. Trần Văn Minh",
+            isPublished: true,
+            categoryName: "Sức khỏe học đường",
+            createdDate: "2023-12-12T08:28:04.268Z",
+            isFeatured: false
         },
         {
-            id: 5,
-            title: "Quản Lý Stress Học Tập Hiệu Quả",
-            excerpt: "Các phương pháp giúp học sinh quản lý áp lực học tập và duy trì sức khỏe tinh thần tích cực...",
-            author: "ThS. Phạm Minh Tuấn",
-            date: "08/12/2023",
-            readTime: "6 phút",
-            views: "2,156",
-            category: "Sức khỏe tinh thần",
-            tags: ["stress", "học tập", "tinh thần"]
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa5",
+            title: "Chế Độ Dinh Dưỡng Cho Học Sinh Mùa Thi",
+            content: "Hướng dẫn xây dựng chế độ dinh dưỡng khoa học giúp học sinh duy trì sức khỏe và tập trung học tập trong mùa thi...",
+            imageUrl: "/images/blog/nutrition-exam.jpg",
+            authorName: "ThS. Phạm Minh Tuấn",
+            isPublished: true,
+            categoryName: "Dinh dưỡng",
+            createdDate: "2023-12-08T08:28:04.268Z",
+            isFeatured: false
         },
         {
-            id: 6,
-            title: "Vệ Sinh Răng Miệng Cho Trẻ Em Tuổi Học Đường",
-            excerpt: "Hướng dẫn cách chăm sóc răng miệng đúng cách cho trẻ em, phòng ngừa sâu răng và các bệnh về răng miệng...",
-            author: "BS. Lê Thị Hương",
-            date: "05/12/2023",
-            readTime: "8 phút",
-            views: "1,567",
-            category: "Vệ sinh cá nhân",
-            tags: ["răng miệng", "vệ sinh", "trẻ em"]
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            title: "Phòng Ngừa Các Bệnh Truyền Nhiễm Trong Trường Học",
+            content: "Các biện pháp phòng ngừa hiệu quả các bệnh truyền nhiễm thường gặp trong môi trường học đường...",
+            imageUrl: "/images/blog/prevention.jpg",
+            authorName: "BS. Lê Thị Hương",
+            isPublished: true,
+            categoryName: "Phòng bệnh",
+            createdDate: "2023-12-05T08:28:04.268Z",
+            isFeatured: false
         },
         {
-            id: 7,
-            title: "Xử Lý Cấp Cứu Khi Trẻ Bị Thương Tại Trường",
-            excerpt: "Các bước cấp cứu cơ bản khi trẻ gặp tai nạn nhỏ tại trường học, từ việc sơ cứu đến thông báo phụ huynh...",
-            author: "Y sĩ Nguyễn Văn Đức",
-            date: "02/12/2023",
-            readTime: "9 phút",
-            views: "2,890",
-            category: "Cấp cứu",
-            tags: ["cấp cứu", "tai nạn", "sơ cứu"]
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+            title: "Dinh Dưỡng Cho Trẻ Biếng Ăn",
+            content: "Giải pháp dinh dưỡng và thực đơn phù hợp cho trẻ biếng ăn, giúp cải thiện tình trạng dinh dưỡng...",
+            imageUrl: "/images/blog/picky-eating.jpg",
+            authorName: "CN. Nguyễn Văn Đức",
+            isPublished: true,
+            categoryName: "Dinh dưỡng",
+            createdDate: "2023-12-02T08:28:04.268Z",
+            isFeatured: false
         },
         {
-            id: 8,
-            title: "Tăng Cường Hệ Miễn Dịch Cho Trẻ Mùa Lạnh",
-            excerpt: "Những cách tự nhiên và an toàn để tăng cường hệ miễn dịch cho trẻ em trong mùa lạnh...",
-            author: "BS. Trần Thị Mai",
-            date: "28/11/2023",
-            readTime: "7 phút",
-            views: "1,789",
-            category: "Tăng cường sức khỏe",
-            tags: ["miễn dịch", "mùa lạnh", "sức khỏe"]
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
+            title: "Tăng Cường Sức Đề Kháng Cho Học Sinh",
+            content: "Những phương pháp tự nhiên và hiệu quả giúp tăng cường hệ miễn dịch cho học sinh...",
+            imageUrl: "/images/blog/immune-system.jpg",
+            authorName: "BS. Trần Thị Mai",
+            isPublished: true,
+            categoryName: "Sức khỏe học đường",
+            createdDate: "2023-11-28T08:28:04.268Z",
+            isFeatured: false
         }
     ];
 
     const categories = [
-        { id: 'all', name: 'Tất cả', count: blogPosts.length + featuredPosts.length },
-        { id: 'phong-benh', name: 'Phòng bệnh', count: 3 },
-        { id: 'dinh-duong', name: 'Dinh dưỡng', count: 2 },
-        { id: 'kiem-tra-suc-khoe', name: 'Kiểm tra sức khỏe', count: 1 },
-        { id: 'tiem-chung', name: 'Tiêm chủng', count: 1 },
-        { id: 'suc-khoe-tinh-than', name: 'Sức khỏe tinh thần', count: 1 },
-        { id: 'cap-cuu', name: 'Cấp cứu', count: 1 },
-        { id: 've-sinh-ca-nhan', name: 'Vệ sinh cá nhân', count: 1 }
+        {
+            id: 'all',
+            title: 'Tất cả',
+            content: 'Tất cả bài viết',
+            isPublished: true,
+            totalPosts: blogPosts.length + featuredPosts.length
+        },
+        {
+            id: 'suc-khoe-hoc-duong',
+            title: 'Sức khỏe học đường',
+            content: 'Bài viết về sức khỏe học đường',
+            isPublished: true,
+            totalPosts: blogPosts.filter(post => post.categoryName === 'Sức khỏe học đường').length + featuredPosts.filter(post => post.categoryName === 'Sức khỏe học đường').length
+        },
+        {
+            id: 'dinh-duong',
+            title: 'Dinh dưỡng',
+            content: 'Bài viết về dinh dưỡng',
+            isPublished: true,
+            totalPosts: blogPosts.filter(post => post.categoryName === 'Dinh dưỡng').length + featuredPosts.filter(post => post.categoryName === 'Dinh dưỡng').length
+        },
+        {
+            id: 'phong-benh',
+            title: 'Phòng bệnh',
+            content: 'Bài viết về phòng bệnh',
+            isPublished: true,
+            totalPosts: blogPosts.filter(post => post.categoryName === 'Phòng bệnh').length + featuredPosts.filter(post => post.categoryName === 'Phòng bệnh').length
+        }
     ];
 
     const recentPosts = blogPosts.slice(0, 4);
 
     const filteredPosts = blogPosts.filter(post => {
         const matchesCategory = selectedCategory === 'all' ||
-            post.category.toLowerCase().replace(/\s+/g, '-') === selectedCategory;
+            post.categoryName === categories.find(cat => cat.id === selectedCategory)?.title;
         const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+            post.content.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
@@ -152,6 +172,13 @@ export default function BlogPage() {
                 className="h-40 sm:h-48 lg:h-52 relative overflow-hidden"
                 style={{ backgroundColor: PRIMARY[500] }}
             >
+                {post.imageUrl && (
+                    <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                    />
+                )}
                 <div className="absolute inset-0 bg-black bg-opacity-10"></div>
                 <div className="absolute top-4 lg:top-6 left-4 lg:left-6">
                     <span className="inline-flex items-center px-3 py-1 lg:px-4 lg:py-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-full text-white font-bold text-xs lg:text-sm">
@@ -159,14 +186,6 @@ export default function BlogPage() {
                         Bài viết nổi bật
                     </span>
                 </div>
-                <div className="absolute top-4 lg:top-6 right-4 lg:right-6">
-                    <div className="flex items-center space-x-2 text-white">
-                        <FiEye className="w-3 h-3 lg:w-4 lg:h-4" />
-                        <span className="font-medium text-sm lg:text-base">{post.views}</span>
-                    </div>
-                </div>
-                <div className="absolute -bottom-2 lg:-bottom-4 -right-4 lg:-right-8 w-12 h-12 lg:w-24 lg:h-24 bg-white bg-opacity-10 rounded-full"></div>
-                <div className="absolute top-1/2 -left-2 lg:-left-4 w-8 h-8 lg:w-16 lg:h-16 bg-white bg-opacity-10 rounded-full"></div>
             </div>
 
             <div className="p-4 sm:p-6 lg:p-8">
@@ -175,7 +194,7 @@ export default function BlogPage() {
                         className="px-3 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm font-bold text-white shadow-lg"
                         style={{ backgroundColor: PRIMARY[500] }}
                     >
-                        {post.category}
+                        {post.categoryName}
                     </span>
                     <button className="p-1 lg:p-2 rounded-full hover:bg-gray-100 transition-colors duration-300">
                         <FiHeart className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400 hover:text-red-500 transition-colors duration-300" />
@@ -189,38 +208,19 @@ export default function BlogPage() {
                 </h3>
 
                 <p className="text-sm sm:text-base lg:text-lg leading-relaxed mb-4 lg:mb-6" style={{ color: TEXT.SECONDARY }}>
-                    {post.excerpt}
+                    {post.content}
                 </p>
-
-                <div className="flex flex-wrap gap-1 lg:gap-2 mb-4 lg:mb-6">
-                    {post.tags.map((tag, index) => (
-                        <span
-                            key={index}
-                            className="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs lg:text-sm font-medium hover:opacity-80 transition-opacity duration-300"
-                            style={{
-                                backgroundColor: GRAY[100],
-                                color: GRAY[700]
-                            }}
-                        >
-                            #{tag}
-                        </span>
-                    ))}
-                </div>
 
                 <div className="flex items-center justify-between mb-4 lg:mb-0">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 lg:space-x-4 text-xs lg:text-sm" style={{ color: TEXT.SECONDARY }}>
                         <div className="flex items-center px-2 py-1 lg:px-3 lg:py-1 rounded-full mb-1 sm:mb-0" style={{ backgroundColor: GRAY[50] }}>
                             <FiUser className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
-                            <span className="truncate">{post.author}</span>
+                            <span className="truncate">{post.authorName}</span>
                         </div>
-                        <div className="flex items-center space-x-2 lg:space-x-4">
+                        <div className="flex items-center">
                             <div className="flex items-center px-2 py-1 lg:px-3 lg:py-1 rounded-full" style={{ backgroundColor: GRAY[50] }}>
                                 <FiCalendar className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
-                                {post.date}
-                            </div>
-                            <div className="flex items-center px-2 py-1 lg:px-3 lg:py-1 rounded-full" style={{ backgroundColor: GRAY[50] }}>
-                                <FiClock className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
-                                {post.readTime}
+                                {new Date(post.createdDate).toLocaleDateString('vi-VN')}
                             </div>
                         </div>
                     </div>
@@ -240,23 +240,26 @@ export default function BlogPage() {
 
     const BlogCard = ({ post }) => (
         <article className="group bg-white rounded-xl lg:rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300" style={{ borderColor: GRAY[100], borderWidth: 1 }}>
+            {post.imageUrl && (
+                <div className="h-48 relative overflow-hidden">
+                    <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            )}
             <div className="p-4 lg:p-6">
                 <div className="flex items-center justify-between mb-3 lg:mb-4">
                     <span
                         className="px-3 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm font-bold text-white shadow-md"
                         style={{ backgroundColor: PRIMARY[500] }}
                     >
-                        {post.category}
+                        {post.categoryName}
                     </span>
-                    <div className="flex items-center space-x-2">
-                        <div className="flex items-center text-xs lg:text-sm px-2 py-1 lg:px-3 lg:py-1 rounded-full" style={{ backgroundColor: GRAY[50], color: TEXT.SECONDARY }}>
-                            <FiEye className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-                            <span>{post.views}</span>
-                        </div>
-                        <button className="p-1 lg:p-2 rounded-full hover:bg-gray-100 transition-colors duration-300">
-                            <FiBookmark className="w-3 h-3 lg:w-4 lg:h-4 transition-colors duration-300" style={{ color: GRAY[400] }} />
-                        </button>
-                    </div>
+                    <button className="p-1 lg:p-2 rounded-full hover:bg-gray-100 transition-colors duration-300">
+                        <FiBookmark className="w-3 h-3 lg:w-4 lg:h-4 transition-colors duration-300" style={{ color: GRAY[400] }} />
+                    </button>
                 </div>
 
                 <h3 className="text-base sm:text-lg lg:text-xl font-bold mb-2 lg:mb-3 leading-tight group-hover:text-current transition-colors duration-300" style={{ color: TEXT.PRIMARY }}>
@@ -266,33 +269,18 @@ export default function BlogPage() {
                 </h3>
 
                 <p className="text-sm lg:text-base leading-relaxed mb-3 lg:mb-4 line-clamp-3" style={{ color: TEXT.SECONDARY }}>
-                    {post.excerpt}
+                    {post.content}
                 </p>
 
-                <div className="flex flex-wrap gap-1 lg:gap-2 mb-4 lg:mb-5">
-                    {post.tags.slice(0, 3).map((tag, index) => (
-                        <span
-                            key={index}
-                            className="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs font-medium hover:opacity-80 transition-opacity duration-300"
-                            style={{
-                                backgroundColor: GRAY[100],
-                                color: GRAY[600]
-                            }}
-                        >
-                            #{tag}
-                        </span>
-                    ))}
-                </div>
-
                 <div className="flex items-center justify-between pt-3 lg:pt-4" style={{ borderTopColor: GRAY[100], borderTopWidth: 1 }}>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 text-xs lg:text-sm" style={{ color: TEXT.SECONDARY }}>
-                        <div className="flex items-center mb-1 sm:mb-0">
+                    <div className="flex items-center space-x-3 text-xs lg:text-sm" style={{ color: TEXT.SECONDARY }}>
+                        <div className="flex items-center">
                             <FiUser className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-                            <span className="truncate">{post.author}</span>
+                            <span className="truncate">{post.authorName}</span>
                         </div>
                         <div className="flex items-center">
-                            <FiClock className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-                            {post.readTime}
+                            <FiCalendar className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
+                            {new Date(post.createdDate).toLocaleDateString('vi-VN')}
                         </div>
                     </div>
 
@@ -389,7 +377,7 @@ export default function BlogPage() {
                                 >
                                     {categories.map(category => (
                                         <option key={category.id} value={category.id}>
-                                            {category.name} ({category.count})
+                                            {category.title} ({category.totalPosts})
                                         </option>
                                     ))}
                                 </select>
@@ -421,7 +409,7 @@ export default function BlogPage() {
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-10">
                                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black" style={{ color: TEXT.PRIMARY }}>
                                     {selectedCategory === 'all' ? 'Tất cả bài viết' :
-                                        categories.find(c => c.id === selectedCategory)?.name}
+                                        categories.find(c => c.id === selectedCategory)?.title}
                                     {searchTerm && (
                                         <span className="block sm:inline text-lg lg:text-xl ml-0 sm:ml-3 font-normal" style={{ color: TEXT.SECONDARY }}>
                                             - Kết quả cho "{searchTerm}"
@@ -507,7 +495,7 @@ export default function BlogPage() {
                                         }}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm lg:text-base">{category.name}</span>
+                                            <span className="text-sm lg:text-base">{category.title}</span>
                                             <span
                                                 className="px-2 py-1 lg:px-3 lg:py-1 rounded-full text-xs lg:text-sm font-bold"
                                                 style={{
@@ -515,7 +503,7 @@ export default function BlogPage() {
                                                     color: selectedCategory === category.id ? 'white' : TEXT.SECONDARY
                                                 }}
                                             >
-                                                {category.count}
+                                                {category.totalPosts}
                                             </span>
                                         </div>
                                     </button>
@@ -543,7 +531,7 @@ export default function BlogPage() {
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-2 text-xs lg:text-sm" style={{ color: TEXT.SECONDARY }}>
                                             <div className="flex items-center px-2 py-1 rounded-full" style={{ backgroundColor: GRAY[100] }}>
                                                 <FiCalendar className="w-3 h-3 mr-1" />
-                                                <span>{post.date}</span>
+                                                <span>{post.createdDate}</span>
                                             </div>
                                             <div className="flex items-center px-2 py-1 rounded-full" style={{ backgroundColor: GRAY[100] }}>
                                                 <FiClock className="w-3 h-3 mr-1" />
