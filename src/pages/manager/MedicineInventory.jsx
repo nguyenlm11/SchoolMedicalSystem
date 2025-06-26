@@ -406,8 +406,8 @@ const MedicineInventory = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-hidden">
-                        <div className="overflow-x-auto">
+                    <div className="overflow-visible">
+                        <div className="overflow-visible">
                             <table className="w-full">
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
@@ -545,7 +545,7 @@ const MedicineInventory = () => {
                                                         {item.priorityDisplayName || item.priority || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="w-[100px] py-4 px-6">
+                                                <td className="w-[100px] py-4 px-6 overflow-visible">
                                                     <div className="relative">
                                                         <button
                                                             onClick={() => toggleDropdown(item.id)}
@@ -563,9 +563,11 @@ const MedicineInventory = () => {
                                                                 className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
                                                                 style={{
                                                                     borderColor: BORDER.DEFAULT,
-                                                                    left: '-200px',
-                                                                    top: 0,
-                                                                    pointerEvents: 'auto'
+                                                                    right: '100%',
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    marginRight: '8px',
+                                                                    zIndex: 50
                                                                 }}
                                                             >
                                                                 {item.status === 'Pending' && (
@@ -603,10 +605,6 @@ const MedicineInventory = () => {
                                                                     </>
                                                                 )}
                                                                 <button
-                                                                    onClick={() => {
-                                                                        handleViewDetails(item);
-                                                                        setOpenActionId(null);
-                                                                    }}
                                                                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                     style={{ color: PRIMARY[600] }}
                                                                 >
