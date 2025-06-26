@@ -58,6 +58,11 @@ const ManagerLayout = () => {
             icon: <FiUserCheck className="w-5 h-5" />,
         },
         {
+            path: "/manager/vaccination-list-management",
+            name: "Danh sách tiêm chủng",
+            icon: <FiPackage className="w-5 h-5" />,
+        },
+        {
             path: "/manager/medicine-inventory",
             name: "Kho thuốc",
             icon: <FiTablet className="w-5 h-5" />,
