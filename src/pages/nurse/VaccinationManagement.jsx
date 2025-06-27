@@ -410,7 +410,7 @@ const VaccinationManagement = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex justify-center items-center space-x-2">
                                                 <Link
-                                                    to={`/nurse/vaccination/${vaccination.id}`}
+                                                    to={`/schoolnurse/vaccination/${vaccination.id}`}
                                                     className="px-3 py-1.5 rounded-lg text-sm font-medium inline-flex items-center transition-all duration-200 hover:opacity-80"
                                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                                 >

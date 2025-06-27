@@ -7,6 +7,7 @@ import NurseSupplyPage from "../pages/nurse/NurseSupplyPage";
 import MedicalItemDetail from "../pages/nurse/MedicalItemDetail";
 import VaccinationManagement from "../pages/nurse/VaccinationManagement";
 import VaccinationPlanCreate from "../pages/nurse/VaccinationPlanCreate";
+import VaccinationDetail from "../pages/nurse/VaccinationDetail";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -23,7 +24,9 @@ const staffRoutes = (
 
     {/* Vaccination Routes */}
     <Route path="/schoolnurse/vaccination" element={<VaccinationManagement />} />
+    <Route path="/schoolnurse/vaccination/:id" element={<VaccinationDetail />} />
     <Route path="/schoolnurse/vaccination/create" element={<VaccinationPlanCreate />} />
+
 
     {/* Staff Profile Routes */}
     <Route path="/schoolnurse/profile" element={<UserProfilePage />} />

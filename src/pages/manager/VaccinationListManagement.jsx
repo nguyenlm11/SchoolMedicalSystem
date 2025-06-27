@@ -727,7 +727,7 @@ const VaccinationListManagement = () => {
                                                                             </>
                                                                         )}
                                                                         <Link
-                                                                            to={`/nurse/vaccination/${vaccination.id}`}
+                                                                            to={`/manager/vaccination/${vaccination.id}`}
                                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                             style={{ color: PRIMARY[600] }}
                                                                             onClick={() => setOpenActionId(null)}

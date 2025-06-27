@@ -10,6 +10,7 @@ import ClassManagement from "../pages/manager/ClassManagement";
 import ClassDetails from "../pages/manager/ClassDetails";
 import MedicalItemDetail from "../pages/nurse/MedicalItemDetail";
 import VaccinationListManagement from "../pages/manager/VaccinationListManagement";
+import VaccinationDetail from "../pages/nurse/VaccinationDetail";
 
 const PlaceholderPage = ({ title }) => (
   <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
@@ -29,6 +30,7 @@ const managerRoutes = (
     <Route path="/manager/profile" element={<UserProfilePage />} />
     <Route path="/manager/medical-items/:id" element={<MedicalItemDetail />} />
     <Route path="/manager/vaccination-list-management" element={<VaccinationListManagement />} />
+    <Route path="/manager/vaccination/:id" element={<VaccinationDetail />} />
   </Route>
 );
 
