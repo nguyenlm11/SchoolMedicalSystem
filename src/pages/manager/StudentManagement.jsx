@@ -7,6 +7,7 @@ import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import classApi from "../../api/classApi";
 import userApi from "../../api/userApi";
+import AddStudentModal from "../../components/modal/AddStudentModal";
 
 const StudentManagement = () => {
     const location = useLocation();
@@ -38,6 +39,7 @@ const StudentManagement = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [importLoading, setImportLoading] = useState(false);
     const [importResult, setImportResult] = useState(null);
+    const [showAddModal, setShowAddModal] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -347,6 +349,11 @@ const StudentManagement = () => {
         }
     };
 
+    const handleAddSuccess = () => {
+        fetchStudents();
+        showAlert("success", "Thành công", "Đã thêm học sinh mới thành công");
+    };
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -410,6 +417,7 @@ const StudentManagement = () => {
                             </button>
 
                             <button
+                                onClick={() => setShowAddModal(true)}
                                 className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
                                 style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: TEXT.INVERSE }}
                             >
@@ -955,6 +963,12 @@ const StudentManagement = () => {
                     cancelText="Hủy"
                     type="error"
                     isLoading={isDeleting}
+                />
+
+                <AddStudentModal
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    onSuccess={handleAddSuccess}
                 />
             </div>
         </div>
