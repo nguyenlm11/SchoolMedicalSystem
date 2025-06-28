@@ -426,6 +426,24 @@ const userApi = {
             };
         }
     },
+
+    // Thêm học sinh mới
+    createStudent: async (studentData) => {
+        try {
+            const response = await apiClient.post('/users/students', studentData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: error.message || 'Có lỗi xảy ra khi tạo học sinh mới',
+                data: null,
+                errors: []
+            };
+        }
+    },
 };
 
 export default userApi; 

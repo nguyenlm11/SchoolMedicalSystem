@@ -261,13 +261,13 @@ const ParentManagement = () => {
                                     />
                                 </div>
                             </div>
-                            <button
-                                onClick={resetFilters}
+                                <button
+                                    onClick={resetFilters}
                                 className="flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 font-medium border"
                                 style={{ color: PRIMARY[600], borderColor: PRIMARY[200], backgroundColor: PRIMARY[50] }}
                             >
                                 <FiRefreshCw className="h-5 w-5" />
-                            </button>
+                                </button>
                         </div>
                     </div>
 
