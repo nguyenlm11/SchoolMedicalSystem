@@ -550,10 +550,11 @@ const StudentManagement = () => {
 
                                 <button
                                     onClick={resetFilters}
-                                    className="flex items-center justify-center px-4 py-3 rounded-xl transition-all duration-200 font-medium border"
-                                    style={{ color: PRIMARY[600], borderColor: PRIMARY[200], backgroundColor: PRIMARY[50] }}
+                                    className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
+                                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                 >
-                                    <FiRefreshCw className="h-5 w-5" />
+                                    <FiRefreshCw className="h-4 w-4 mr-2" />
+                                    Đặt lại bộ lọc
                                 </button>
                             </div>
 
@@ -840,8 +841,8 @@ const StudentManagement = () => {
                                                     {sortedStudents.length === 0 ? (
                                                         <button
                                                             onClick={resetFilters}
-                                                            className="px-6 py-3 rounded-xl flex items-center transition-all duration-300 font-medium"
-                                                            style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}
+                                                            className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
+                                                            style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                                         >
                                                             <FiRefreshCw className="mr-2 h-4 w-4" />
                                                             Đặt lại bộ lọc
