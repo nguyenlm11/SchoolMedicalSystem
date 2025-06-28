@@ -34,6 +34,7 @@ const ClassManagement = () => {
     const [filterGrade, setFilterGrade] = useState("");
     const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
     const [availableGrades, setAvailableGrades] = useState([]);
+    const [grade, setGrade] = useState([]);
 
     // Fetch lớp học từ API
     const fetchClasses = async () => {
@@ -112,6 +113,51 @@ const ClassManagement = () => {
         }
     };
 
+    const handleExportClassList = async () => {
+        if(!grade) {
+            showAlert('error', 'Lỗi', 'Vui lòng nhập khối.');
+            return;
+        }
+        if(!academicYear) {
+            showAlert('error', 'Lỗi', 'Vui lòng nhập năm.');
+        }
+
+        setLoading(true);
+        try{
+            const formData = new FormData();
+            formData.append('grade', grade);
+            formData.append('academicYear', academicYear);
+
+            const result = await classApi.exportClassList(formData);
+
+            if (result.success) {
+                
+                const blob = new Blob([result.data]);
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+
+                const contentDisposition = result.headers['content-disposition'];
+                let filename = 'class_template.xlsx';
+                if (contentDisposition && contentDisposition.includes('filename=')) {
+                    filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+                }
+
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                showAlert('success', 'Thành công', result.message);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            setLoading(false);
+            showAlert('error', 'Lỗi', error.message);
+        }
+    };
 
     const handleDeleteClass = async (classId, className) => {
         setClassToDelete(classId);
