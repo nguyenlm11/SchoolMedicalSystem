@@ -14,11 +14,11 @@ const vaccineApi = {
             const queryParams = new URLSearchParams();
             queryParams.append('pageIndex', pageIndex);
             queryParams.append('pageSize', pageSize);
-            
+
             if (searchTerm) {
                 queryParams.append('searchTerm', searchTerm);
             }
-            
+
             if (orderBy) {
                 queryParams.append('orderBy', orderBy);
             }
@@ -40,7 +40,7 @@ const vaccineApi = {
     // Tạo buổi tiêm chủng mới
     createVaccinationSession: async (sessionData) => {
         try {
-            const response = await apiClient.post('/VaccinationSession/create-whole', sessionData);
+            const response = await apiClient.post('/vaccination-sessions/whole', sessionData);
             return response.data;
         } catch (error) {
             console.error('Error creating vaccination session:', error);
