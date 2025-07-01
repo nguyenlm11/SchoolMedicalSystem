@@ -7,7 +7,7 @@ import {
     FiUser,
     FiUsers,
     FiClipboard,
-    FiCheckCircle,
+    FiCheckCircle, 
     FiXCircle,
     FiDownload,
     FiMessageCircle,
@@ -29,6 +29,8 @@ import {
     FiUserPlus,
 } from "react-icons/fi";
 import { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from "../../constants/colors";
+import vaccineSessionApi from '../../api/vaccineSessionApi';
+import Loading from "../../components/Loading";
 
 const VaccinationDetail = () => {
     const { id } = useParams();
@@ -40,6 +42,51 @@ const VaccinationDetail = () => {
     const [confirmationModal, setConfirmationModal] = useState(false);
     const [sortBy, setSortBy] = useState("index");
     const [sortOrder, setSortOrder] = useState("asc");
+    const [error, setError] = useState(null);
+
+    // Fetch details by id 
+    // useEffect(() => {
+    //     const fetchVaccinationDetails = async () => {
+    //         try {
+    //             setLoading(true);
+    //             const response = await vaccineSessionApi.getVaccineSessionDetails(id);
+    //             setVaccination(response.data);
+    //             setLoading(false);
+    //         } catch (err) {
+    //             console.error("Error fetching vaccination details:", err);
+    //             setError("Không thể tải thông tin tiêm chủng.");
+    //             setLoading(false);
+    //         }
+    //     };
+
+    //     fetchVaccinationDetails();
+    // }, [id]);
+
+    // if (loading) {
+    //     return (
+    //     <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+    //         <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
+    //     </div>
+    //     );
+    // }
+
+    // if (error) {
+    //     return (
+    //         <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+    //             <div className="text-center">
+    //                 <h3 className="text-xl font-semibold mb-2" style={{ color: ERROR[600] }}>{error}</h3>
+    //                 <button
+    //                 onClick={() => navigate('/manager/vaccination-list-management')}
+    //                 className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
+    //                 style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
+    //                 >
+    //                 <FiArrowLeft className="mr-2" />
+    //                 Quay lại danh sách tiêm chủng
+    //                 </button>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     // Mock data - in a real application, this would come from an API
     useEffect(() => {
@@ -97,19 +144,19 @@ const VaccinationDetail = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case "planning":
+            case "PendingApproval":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
                         Lên kế hoạch
                     </span>
                 );
-            case "upcoming":
+            case "WaitingForParentConsent":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                         Sắp diễn ra
                     </span>
                 );
-            case "completed":
+            case "Scheduled":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                         Đã hoàn thành
@@ -277,7 +324,7 @@ const VaccinationDetail = () => {
                                     Chi tiết tiêm chủng
                                 </h1>
                                 <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                    {vaccination.title}
+                                    {vaccination.sessionName}
                                 </p>
                             </div>
                         </div>
@@ -349,18 +396,18 @@ const VaccinationDetail = () => {
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {vaccination.title}
+                                        {vaccination.sessionName}
                                     </h2>
-                                    <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
+                                    {/* <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
                                         {vaccination.description}
-                                    </p>
+                                    </p> */}
                                 </div>
                             </div>
                             <div className="flex flex-col items-end space-y-3">
                                 {getStatusBadge(vaccination.status)}
                                 <div className="flex items-center text-sm" style={{ color: TEXT.SECONDARY }}>
                                     <FiCalendar className="mr-2 h-4 w-4" />
-                                    {new Date(vaccination.scheduledDate).toLocaleDateString("vi-VN")}
+                                    {new Date(vaccination.startTime).toLocaleDateString("vi-VN")}
                                 </div>
                             </div>
                         </div>
@@ -432,11 +479,11 @@ const VaccinationDetail = () => {
                                                 Loại vắc-xin và phương pháp
                                             </p>
                                             <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
-                                                {vaccination.vaccineInfo}
+                                                {vaccination.vaccineTypeName}
                                             </p>
-                                            <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
+                                            {/* <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                 Phương pháp: {vaccination.vaccinationMethod}
-                                            </p>
+                                            </p> */}
                                         </div>
                                     </div>
                                 </div>
@@ -479,9 +526,9 @@ const VaccinationDetail = () => {
                                             <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                                 Đơn vị thực hiện
                                             </p>
-                                            <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
+                                            {/* <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
                                                 {vaccination.healthcareProvider}
-                                            </p>
+                                            </p> */}
                                             <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                 Đơn vị y tế được cấp phép
                                             </p>
@@ -531,9 +578,9 @@ const VaccinationDetail = () => {
                                             <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                                 Tác dụng phụ có thể xảy ra
                                             </p>
-                                            <p className="text-lg font-semibold mt-1" style={{ color: WARNING[700] }}>
+                                            {/* <p className="text-lg font-semibold mt-1" style={{ color: WARNING[700] }}>
                                                 {vaccination.sideEffects}
-                                            </p>
+                                            </p> */}
                                         </div>
                                     </div>
                                 </div>
