@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../utils/AuthContext";
+import { PRIMARY, SECONDARY, SUCCESS, WARNING, ERROR, INFO, GRAY, COMMON } from "../../../constants/colors";
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const { user, logout, isAuthenticated } = useAuth();
+    const { user, logout, isAuthenticated, hasRole, ROLES } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const [userDropdown, setUserDropdown] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
@@ -31,8 +33,9 @@ const Navbar = () => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (!event.target.closest('[data-dropdown]')) {
+            if (!event.target.closest('[data-dropdown]') && !event.target.closest('[data-user-dropdown]')) {
                 setActiveDropdown(null);
+                setUserDropdown(false);
             }
         };
 
@@ -43,16 +46,66 @@ const Navbar = () => {
     const toggleDropdown = (dropdownName, event) => {
         event.stopPropagation();
         setActiveDropdown(prev => prev === dropdownName ? null : dropdownName);
+        setUserDropdown(false); // Close user dropdown when opening other dropdowns
+    };
+
+    const toggleUserDropdown = (event) => {
+        event.stopPropagation();
+        setUserDropdown(prev => !prev);
+        setActiveDropdown(null); // Close other dropdowns when opening user dropdown
     };
 
     const closeDropdown = () => {
         setActiveDropdown(null);
     };
 
+    const closeUserDropdown = () => {
+        setUserDropdown(false);
+    };
+
     const handleLogout = () => {
         logout();
         navigate("/login");
         setIsMobileMenuOpen(false);
+        setUserDropdown(false);
+    };
+
+    // Function to get role-based category mapping
+    const getRoleCategories = () => {
+        if (!isAuthenticated()) return [];
+
+        const roleCategories = {
+            [ROLES.PARENT]: ["Phụ huynh"],
+            [ROLES.STUDENT]: ["Học sinh"],
+            [ROLES.SCHOOLNURSE]: ["Nhân viên y tế"],
+            [ROLES.MANAGER]: ["Phụ huynh", "Học sinh", "Nhân viên y tế"], // Manager có thể xem tất cả
+            [ROLES.ADMIN]: ["Phụ huynh", "Học sinh", "Nhân viên y tế"]     // Admin có thể xem tất cả
+        };
+
+        return roleCategories[user?.role] || [];
+    };
+
+    // Function to check if a menu item should be visible for current user
+    const isMenuItemVisible = (item) => {
+        if (!isAuthenticated()) return false; // Guest không thấy menu items
+
+        const allowedCategories = getRoleCategories();
+
+        // Check if any subItem category is allowed for current user
+        return item.subItems.some(subItem =>
+            allowedCategories.includes(subItem.category)
+        );
+    };
+
+    // Function to filter subItems based on user role
+    const getFilteredSubItems = (subItems) => {
+        if (!isAuthenticated()) return [];
+
+        const allowedCategories = getRoleCategories();
+
+        return subItems.filter(subItem =>
+            allowedCategories.includes(subItem.category)
+        );
     };
 
     const menuItems = [
@@ -73,6 +126,12 @@ const Navbar = () => {
                     links: [
                         { to: "/parent/health-profile", label: "Danh sách hồ sơ sức khỏe", desc: "Xem tất cả hồ sơ y tế" },
                         { to: "/parent/health-profile/new", label: "Khai báo hồ sơ sức khỏe", desc: "Tạo hồ sơ mới cho con em" },
+                    ],
+                },
+                {
+                    category: "Học sinh",
+                    links: [
+                        { to: "/student/health-profile", label: "Hồ sơ sức khỏe", desc: "Xem hồ sơ sức khỏe cá nhân" },
                     ],
                 },
             ],
@@ -100,6 +159,12 @@ const Navbar = () => {
                     links: [
                         { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
                         { to: "/schoolnurse/vaccination/flow", label: "Quy trình tiêm chủng", desc: "Hướng dẫn quy trình" },
+                    ],
+                },
+                {
+                    category: "Học sinh",
+                    links: [
+                        { to: "/student/health-events", label: "Sự kiện tiêm chủng", desc: "Xem lịch tiêm chủng cá nhân" },
                     ],
                 },
             ],
@@ -192,235 +257,292 @@ const Navbar = () => {
                         { to: "/schoolnurse/health-check/new", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
                     ],
                 },
+                {
+                    category: "Học sinh",
+                    links: [
+                        { to: "/student/health-events", label: "Lịch kiểm tra sức khỏe", desc: "Xem lịch kiểm tra sức khỏe cá nhân" },
+                    ],
+                },
             ],
         },
     ];
 
+    // Filter menu items based on user role
+    const visibleMenuItems = menuItems.filter(isMenuItemVisible);
+
+    // Get dashboard link based on user role
+    const getDashboardLink = () => {
+        if (!isAuthenticated()) return "/";
+
+        const dashboardLinks = {
+            [ROLES.PARENT]: "/parent/dashboard",
+            [ROLES.STUDENT]: "/student/dashboard",
+            [ROLES.SCHOOLNURSE]: "/schoolnurse/dashboard",
+            [ROLES.MANAGER]: "/manager/dashboard",
+            [ROLES.ADMIN]: "/admin/dashboard"
+        };
+
+        return dashboardLinks[user?.role] || "/";
+    };
+
     return (
         <nav
             className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled
-                ? 'shadow-lg border-b border-teal-400'
+                ? 'shadow-lg'
                 : 'shadow-md'
                 } ${isNavbarVisible ? 'translate-y-0' : '-translate-y-full'
                 }`}
             style={{
-                background: 'linear-gradient(135deg, #008080 0%, #006666 100%)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)'
+                backgroundColor: PRIMARY[500],
+                borderBottom: isScrolled ? `1px solid ${PRIMARY[400]}` : 'none'
             }}
         >
             <div className="max-w-8xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
                 <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
-                    {/* Logo - Enhanced for better responsive */}
+                    {/* Logo - Simplified */}
                     <div className="flex-shrink-0">
                         <Link to="/" className="flex items-center group">
                             <div
-                                className="relative h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 mr-2 sm:mr-3 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:rotate-3"
+                                className="h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 mr-2 sm:mr-3 rounded-lg flex items-center justify-center transition-all duration-300"
                                 style={{
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
-                                    boxShadow: '0 8px 32px rgba(255, 255, 255, 0.3)'
+                                    backgroundColor: COMMON.WHITE
                                 }}
                             >
-                                <span className="text-teal-700 font-bold text-lg sm:text-xl">M</span>
-                                <div
-                                    className="absolute inset-0 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                                    style={{
-                                        background: 'linear-gradient(135deg, rgba(0,128,128,0.1) 0%, rgba(0,102,102,0.1) 100%)'
-                                    }}
-                                ></div>
+                                <span className="font-bold text-lg sm:text-xl" style={{ color: PRIMARY[600] }}>M</span>
                             </div>
                             <div className="flex flex-col">
                                 <span
-                                    className="font-bold text-xl sm:text-2xl lg:text-2xl xl:text-3xl tracking-tight leading-none text-white group-hover:text-teal-100 transition-colors duration-300"
+                                    className="font-bold text-xl sm:text-2xl lg:text-2xl xl:text-3xl tracking-tight leading-none"
+                                    style={{ color: COMMON.WHITE }}
                                 >
-                                    Med<span className="text-teal-200">School</span>
+                                    MedSchool
                                 </span>
-                                <span className="text-xs sm:text-sm text-teal-100 font-medium hidden sm:block">Health Management System</span>
+                                <span className="text-xs sm:text-sm font-medium hidden sm:block" style={{ color: PRIMARY[100] }}>Health Management System</span>
                             </div>
                         </Link>
                     </div>
 
                     {/* Desktop Navigation - Better responsive breakpoints */}
                     <div className="hidden xl:flex items-center space-x-1 2xl:space-x-2">
-                        {/* Trang chủ */}
-                        <Link
-                            to="/"
-                            className="group relative px-3 xl:px-4 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center text-sm xl:text-base text-white hover:text-teal-100"
-                        >
-                            <div className="absolute inset-0 rounded-lg xl:rounded-xl bg-gradient-to-r from-teal-600/50 to-cyan-600/50 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-95 group-hover:scale-100"></div>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 xl:h-5 xl:w-5 mr-2 relative z-10 group-hover:scale-110 transition-transform duration-300"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
+                        {/* Trang chủ - Chỉ hiển thị khi đã đăng nhập */}
+                        {isAuthenticated() && (
+                            <Link
+                                to="/"
+                                className="px-3 xl:px-4 py-2 xl:py-3 rounded-lg font-medium transition-all duration-300 text-sm xl:text-base hover:bg-opacity-20"
+                                style={{
+                                    color: COMMON.WHITE,
+                                    backgroundColor: 'transparent'
+                                }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                />
-                            </svg>
-                            <span className="relative z-10">Trang chủ</span>
-                        </Link>
+                                Trang chủ
+                            </Link>
+                        )}
 
                         {/* Menu items with enhanced dropdowns */}
-                        {menuItems.map((item) => (
-                            <div key={item.name} className="relative" data-dropdown>
-                                <button
-                                    onClick={(e) => toggleDropdown(item.name, e)}
-                                    className="group relative px-3 xl:px-4 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center text-white hover:text-teal-100 text-sm xl:text-base"
-                                >
-                                    <div className="absolute inset-0 rounded-lg xl:rounded-xl bg-gradient-to-r from-teal-600/50 to-cyan-600/50 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-95 group-hover:scale-100"></div>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-4 w-4 xl:h-5 xl:w-5 mr-2 relative z-10 group-hover:scale-110 transition-transform duration-300"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        {item.icon}
-                                    </svg>
-                                    <span className="relative z-10 whitespace-nowrap">{item.label}</span>
-                                    <svg
-                                        className={`ml-1 xl:ml-2 h-3 w-3 xl:h-4 xl:w-4 relative z-10 transition-all duration-300 ${activeDropdown === item.name ? "rotate-180 text-teal-100" : "group-hover:text-teal-100"
-                                            }`}
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </button>
+                        {visibleMenuItems.map((item) => {
+                            const filteredSubItems = getFilteredSubItems(item.subItems);
 
-                                {/* Enhanced Dropdown Menu - TEAL THEME with Scroll */}
-                                <div
-                                    className={`absolute top-full left-0 mt-2 w-72 xl:w-80 transition-all duration-300 transform ${activeDropdown === item.name
-                                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
-                                        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-                                        }`}
-                                    style={{ zIndex: 9999 }}
-                                    data-dropdown
-                                >
-                                    <div
-                                        className="rounded-xl xl:rounded-2xl shadow-2xl border border-teal-300 overflow-hidden dropdown-scroll max-h-96 overflow-y-auto"
+                            return (
+                                <div key={item.name} className="relative" data-dropdown>
+                                    <button
+                                        onClick={(e) => toggleDropdown(item.name, e)}
+                                        className="px-3 xl:px-4 py-2 xl:py-3 rounded-lg font-medium transition-all duration-300 flex items-center text-sm xl:text-base"
                                         style={{
-                                            backgroundColor: '#006666',
-                                            boxShadow: '0 25px 50px -12px rgba(0, 128, 128, 0.4)'
+                                            color: COMMON.WHITE,
+                                            backgroundColor: 'transparent'
                                         }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                     >
-                                        <div className="p-2 xl:p-3">
-                                            {item.subItems.map((category, categoryIndex) => (
-                                                <div key={categoryIndex} className="mb-2 last:mb-0">
-                                                    {categoryIndex > 0 && (
-                                                        <div className="border-t border-teal-400/30 my-3"></div>
-                                                    )}
-                                                    <div className="px-3 xl:px-4 py-2">
-                                                        <h4 className="text-xs font-semibold text-teal-100 uppercase tracking-wider mb-3">
-                                                            {category.category}
-                                                        </h4>
-                                                        <div className="space-y-1">
-                                                            {category.links.map((link, linkIndex) => (
-                                                                <Link
-                                                                    key={linkIndex}
-                                                                    to={link.to}
-                                                                    onClick={closeDropdown}
-                                                                    className="group block p-3 rounded-lg xl:rounded-xl transition-all duration-300 hover:bg-teal-700/50"
-                                                                >
-                                                                    <div className="flex items-start">
-                                                                        <div className="flex-1">
-                                                                            <div className="text-sm font-medium text-white group-hover:text-teal-50 transition-colors duration-300">
-                                                                                {link.label}
-                                                                            </div>
-                                                                            {link.desc && (
-                                                                                <div className="text-xs text-teal-100 mt-1 group-hover:text-teal-50 transition-colors duration-300">
-                                                                                    {link.desc}
-                                                                                </div>
-                                                                            )}
+                                        <span className="whitespace-nowrap mr-2">{item.label}</span>
+                                        <span
+                                            className={`transition-all duration-300 ${activeDropdown === item.name ? "rotate-180" : ""
+                                                }`}
+                                        >
+                                            ▼
+                                        </span>
+                                    </button>
+
+                                    {/* Dropdown Menu - Simplified */}
+                                    <div
+                                        className={`absolute top-full left-0 mt-2 w-72 xl:w-80 transition-all duration-300 transform ${activeDropdown === item.name
+                                            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                                            : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                                            }`}
+                                        style={{ zIndex: 9999 }}
+                                        data-dropdown
+                                    >
+                                        <div
+                                            className="rounded-xl shadow-xl overflow-hidden max-h-96 overflow-y-auto"
+                                            style={{
+                                                backgroundColor: PRIMARY[700],
+                                                border: `1px solid ${PRIMARY[500]}`
+                                            }}
+                                        >
+                                            <div className="p-2 xl:p-3">
+                                                {filteredSubItems.map((category, categoryIndex) => (
+                                                    <div key={categoryIndex} className="mb-2 last:mb-0">
+                                                        {categoryIndex > 0 && (
+                                                            <div className="border-t border-teal-400/30 my-3"></div>
+                                                        )}
+                                                        <div className="px-3 xl:px-4 py-2">
+                                                            <h4 className="text-xs font-semibold text-teal-100 uppercase tracking-wider mb-3">
+                                                                {category.category}
+                                                            </h4>
+                                                            <div className="space-y-1">
+                                                                {category.links.map((link, linkIndex) => (
+                                                                    <Link
+                                                                        key={linkIndex}
+                                                                        to={link.to}
+                                                                        onClick={closeDropdown}
+                                                                        className="block p-3 rounded-lg transition-all duration-300"
+                                                                        style={{
+                                                                            color: COMMON.WHITE,
+                                                                            backgroundColor: 'transparent'
+                                                                        }}
+                                                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                                    >
+                                                                        <div className="text-sm font-medium">
+                                                                            {link.label}
                                                                         </div>
-                                                                        <svg
-                                                                            className="w-4 h-4 text-teal-200 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 ml-2 mt-0.5"
-                                                                            fill="none"
-                                                                            stroke="currentColor"
-                                                                            viewBox="0 0 24 24"
-                                                                        >
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                        </svg>
-                                                                    </div>
-                                                                </Link>
-                                                            ))}
+                                                                        {link.desc && (
+                                                                            <div className="text-xs mt-1 opacity-80">
+                                                                                {link.desc}
+                                                                            </div>
+                                                                        )}
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* Auth Links - Better responsive */}
                     <div className="hidden xl:flex items-center space-x-3 xl:space-x-4">
                         {isAuthenticated() ? (
-                            <div className="flex items-center space-x-3">
-                                <span className="text-white text-sm xl:text-base font-medium">
-                                    Xin chào, {user?.name || user?.username}
-                                </span>
+                            <div className="relative" data-user-dropdown>
+                                {/* User Dropdown Button */}
                                 <button
-                                    onClick={handleLogout}
-                                    className="group relative px-4 xl:px-6 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center overflow-hidden text-sm xl:text-base text-white bg-red-600 hover:bg-red-700"
+                                    onClick={toggleUserDropdown}
+                                    className="px-4 xl:px-6 py-2.5 xl:py-3.5 rounded-lg font-semibold transition-all duration-300 flex items-center text-sm xl:text-base"
                                     style={{
-                                        boxShadow: '0 4px 16px rgba(220, 38, 38, 0.3)'
+                                        backgroundColor: PRIMARY[500],
+                                        border: `1px solid ${PRIMARY[400]}`,
+                                        color: COMMON.WHITE
                                     }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[500]}
                                 >
-                                    <svg
-                                        className="w-4 h-4 xl:w-5 xl:h-5 mr-2 relative z-10 transition-colors duration-300"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                        />
-                                    </svg>
-                                    <span className="relative z-10 transition-colors duration-300">Đăng xuất</span>
+                                    <div className="flex items-center">
+                                        <div className="flex flex-col items-start mr-3">
+                                            <span className="text-xs font-medium opacity-90">Xin chào</span>
+                                            <span className="font-bold">
+                                                {user?.name || user?.username}
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`transition-all duration-300 ${userDropdown ? "rotate-180" : ""
+                                                }`}
+                                        >
+                                            ▼
+                                        </span>
+                                    </div>
                                 </button>
+
+                                {/* User Dropdown Menu */}
+                                <div
+                                    className={`absolute top-full right-0 mt-2 w-56 xl:w-64 transition-all duration-300 transform ${userDropdown
+                                        ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+                                        : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+                                        }`}
+                                    style={{ zIndex: 9999 }}
+                                    data-user-dropdown
+                                >
+                                    <div
+                                        className="rounded-xl shadow-xl overflow-hidden"
+                                        style={{
+                                            backgroundColor: PRIMARY[700],
+                                            border: `1px solid ${PRIMARY[500]}`
+                                        }}
+                                    >
+                                        <div className="p-3 xl:p-4 space-y-2">
+                                            {/* Dashboard Link */}
+                                            <Link
+                                                to={getDashboardLink()}
+                                                onClick={closeUserDropdown}
+                                                className="block w-full p-4 xl:p-5 rounded-lg transition-all duration-300 font-bold text-base xl:text-lg"
+                                                style={{
+                                                    color: COMMON.WHITE,
+                                                    backgroundColor: 'transparent'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            >
+                                                Tổng quan
+                                            </Link>
+
+                                            {/* Profile Link */}
+                                            <Link
+                                                to="/profile"
+                                                onClick={closeUserDropdown}
+                                                className="block w-full p-4 xl:p-5 rounded-lg transition-all duration-300 font-bold text-base xl:text-lg"
+                                                style={{
+                                                    color: COMMON.WHITE,
+                                                    backgroundColor: 'transparent'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            >
+                                                Hồ sơ cá nhân
+                                            </Link>
+
+                                            {/* Divider */}
+                                            <div
+                                                className="my-3"
+                                                style={{
+                                                    borderTop: `1px solid ${PRIMARY[500]}`
+                                                }}
+                                            ></div>
+
+                                            {/* Logout Button */}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="block w-full p-4 xl:p-5 rounded-lg transition-all duration-300 font-bold text-base xl:text-lg text-left"
+                                                style={{
+                                                    color: ERROR[500],
+                                                    backgroundColor: 'transparent'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            >
+                                                Đăng xuất
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             <Link
                                 to="/login"
-                                className="group relative px-4 xl:px-6 py-2 xl:py-3 rounded-lg xl:rounded-xl font-medium transition-all duration-300 flex items-center overflow-hidden text-sm xl:text-base text-teal-700"
+                                className="px-4 xl:px-6 py-2 xl:py-3 rounded-lg font-medium transition-all duration-300 text-sm xl:text-base"
                                 style={{
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)',
-                                    boxShadow: '0 4px 16px rgba(255, 255, 255, 0.2)'
+                                    backgroundColor: COMMON.WHITE,
+                                    color: PRIMARY[700]
                                 }}
+                                onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
+                                onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
                             >
-                                <div
-                                    className="absolute inset-0 bg-gradient-to-r from-white to-teal-50 opacity-0 group-hover:opacity-100 transition-all duration-300"
-                                ></div>
-                                <svg
-                                    className="w-4 h-4 xl:w-5 xl:h-5 mr-2 relative z-10 group-hover:text-teal-800 transition-colors duration-300"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                                    />
-                                </svg>
-                                <span className="relative z-10 group-hover:text-teal-800 transition-colors duration-300">Đăng nhập</span>
+                                Đăng nhập
                             </Link>
                         )}
                     </div>
@@ -453,133 +575,157 @@ const Navbar = () => {
                 >
                     <div className="pb-4 sm:pb-6 pt-2">
                         <div
-                            className="rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xl border border-teal-300 mobile-dropdown-scroll max-h-80 overflow-y-auto"
+                            className="rounded-xl p-3 sm:p-4 shadow-xl max-h-80 overflow-y-auto"
                             style={{
-                                backgroundColor: '#006666',
-                                boxShadow: '0 20px 40px -12px rgba(0, 128, 128, 0.3)'
+                                backgroundColor: PRIMARY[600],
+                                border: `1px solid ${PRIMARY[400]}`
                             }}
                         >
-                            {/* Mobile Home Link */}
-                            <Link
-                                to="/"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="group flex items-center px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl transition-all duration-300 mb-2 text-white"
-                            >
-                                <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-teal-700/50 to-cyan-700/50 opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 sm:h-6 sm:w-6 mr-3 relative z-10"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
+                            {/* Mobile Home Link - Chỉ hiển thị khi đã đăng nhập */}
+                            {isAuthenticated() && (
+                                <Link
+                                    to="/"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="block px-3 sm:px-4 py-3 sm:py-4 rounded-lg transition-all duration-300 mb-2 font-medium text-sm sm:text-base"
+                                    style={{
+                                        color: COMMON.WHITE,
+                                        backgroundColor: 'transparent'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                    />
-                                </svg>
-                                <span className="font-medium text-sm sm:text-base relative z-10">Trang chủ</span>
-                            </Link>
+                                    Trang chủ
+                                </Link>
+                            )}
 
                             {/* Mobile Menu Items */}
-                            {menuItems.map((item) => (
-                                <div key={item.name} className="mb-2">
-                                    <button
-                                        onClick={(e) => toggleDropdown(`mobile-${item.name}`, e)}
-                                        className="group w-full flex items-center justify-between px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl transition-all duration-300 text-white hover:text-teal-100"
-                                    >
-                                        <div className="absolute inset-0 rounded-lg sm:rounded-xl bg-gradient-to-r from-teal-700/50 to-cyan-700/50 opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
-                                        <div className="flex items-center relative z-10">
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="h-5 w-5 sm:h-6 sm:w-6 mr-3"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                            >
-                                                {item.icon}
-                                            </svg>
-                                            <span className="font-medium text-sm sm:text-base">{item.label}</span>
-                                        </div>
-                                        <svg
-                                            className={`h-4 w-4 sm:h-5 sm:w-5 relative z-10 transition-transform duration-300 ${activeDropdown === `mobile-${item.name}` ? "rotate-180" : ""
-                                                }`}
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </button>
+                            {visibleMenuItems.map((item) => {
+                                const filteredSubItems = getFilteredSubItems(item.subItems);
 
-                                    {/* Mobile Dropdown */}
-                                    <div
-                                        className={`overflow-hidden transition-all duration-300 ${activeDropdown === `mobile-${item.name}` ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                                            }`}
-                                    >
-                                        <div className="pl-4 sm:pl-6 pr-3 sm:pr-4 pb-2 space-y-2">
-                                            {item.subItems.map((category, categoryIndex) => (
-                                                <div key={categoryIndex}>
-                                                    <p className="text-xs font-semibold text-teal-100 uppercase tracking-wider px-3 py-2">
-                                                        {category.category}
-                                                    </p>
-                                                    {category.links.map((link, linkIndex) => (
-                                                        <Link
-                                                            key={linkIndex}
-                                                            to={link.to}
-                                                            onClick={() => {
-                                                                setIsMobileMenuOpen(false);
-                                                                setActiveDropdown(null);
-                                                            }}
-                                                            className="group block p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all duration-300 hover:bg-teal-700/50"
-                                                        >
-                                                            <div className="text-sm font-medium text-white group-hover:text-teal-50 transition-colors duration-300">
-                                                                {link.label}
-                                                            </div>
-                                                            {link.desc && (
-                                                                <div className="text-xs text-teal-100 mt-1 group-hover:text-teal-50 transition-colors duration-300">
-                                                                    {link.desc}
+                                return (
+                                    <div key={item.name} className="mb-2">
+                                        <button
+                                            onClick={(e) => toggleDropdown(`mobile-${item.name}`, e)}
+                                            className="w-full flex items-center justify-between px-3 sm:px-4 py-3 sm:py-4 rounded-lg transition-all duration-300 font-medium text-sm sm:text-base"
+                                            style={{
+                                                color: COMMON.WHITE,
+                                                backgroundColor: 'transparent'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                        >
+                                            <span>{item.label}</span>
+                                            <span
+                                                className={`transition-transform duration-300 ${activeDropdown === `mobile-${item.name}` ? "rotate-180" : ""
+                                                    }`}
+                                            >
+                                                ▼
+                                            </span>
+                                        </button>
+
+                                        {/* Mobile Dropdown */}
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ${activeDropdown === `mobile-${item.name}` ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                                                }`}
+                                        >
+                                            <div className="pl-4 sm:pl-6 pr-3 sm:pr-4 pb-2 space-y-2">
+                                                {filteredSubItems.map((category, categoryIndex) => (
+                                                    <div key={categoryIndex}>
+                                                        <p className="text-xs font-semibold text-teal-100 uppercase tracking-wider px-3 py-2">
+                                                            {category.category}
+                                                        </p>
+                                                        {category.links.map((link, linkIndex) => (
+                                                            <Link
+                                                                key={linkIndex}
+                                                                to={link.to}
+                                                                onClick={() => {
+                                                                    setIsMobileMenuOpen(false);
+                                                                    setActiveDropdown(null);
+                                                                }}
+                                                                className="block p-2 sm:p-3 rounded-lg transition-all duration-300"
+                                                                style={{
+                                                                    color: COMMON.WHITE,
+                                                                    backgroundColor: 'transparent'
+                                                                }}
+                                                                onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                                            >
+                                                                <div className="text-sm font-medium">
+                                                                    {link.label}
                                                                 </div>
-                                                            )}
-                                                        </Link>
-                                                    ))}
-                                                </div>
-                                            ))}
+                                                                {link.desc && (
+                                                                    <div className="text-xs mt-1 opacity-80">
+                                                                        {link.desc}
+                                                                    </div>
+                                                                )}
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
 
                             {/* Mobile Auth Links */}
                             <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-teal-400/30">
                                 {isAuthenticated() ? (
                                     <div className="space-y-3">
-                                        <div className="text-center text-white text-sm font-medium">
-                                            Xin chào, {user?.name || user?.username}
+                                        {/* Dashboard Link */}
+                                        <Link
+                                            to={getDashboardLink()}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block w-full px-4 py-4 rounded-xl font-bold transition-all duration-300 text-base mb-3 text-center"
+                                            style={{
+                                                backgroundColor: PRIMARY[500],
+                                                color: COMMON.WHITE
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[600]}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[500]}
+                                        >
+                                            Tổng quan
+                                        </Link>
+
+                                        {/* Profile Link */}
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block w-full px-4 py-4 rounded-xl font-bold transition-all duration-300 text-base mb-3 text-center"
+                                            style={{
+                                                backgroundColor: PRIMARY[400],
+                                                color: COMMON.WHITE
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[500]}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = PRIMARY[400]}
+                                        >
+                                            Hồ sơ cá nhân
+                                        </Link>
+
+                                        <div
+                                            className="text-center p-4 rounded-xl mb-3"
+                                            style={{
+                                                backgroundColor: PRIMARY[600],
+                                                border: `1px solid ${PRIMARY[500]}`
+                                            }}
+                                        >
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xs font-medium opacity-90" style={{ color: PRIMARY[200] }}>Xin chào</span>
+                                                <span className="font-bold text-sm" style={{ color: COMMON.WHITE }}>
+                                                    {user?.name || user?.username}
+                                                </span>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={handleLogout}
-                                            className="group w-full flex items-center justify-center px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl font-medium transition-all duration-300 text-sm sm:text-base text-white bg-red-600 hover:bg-red-700"
+                                            className="block w-full px-4 py-4 rounded-xl font-bold transition-all duration-300 text-base text-center"
+                                            style={{
+                                                backgroundColor: ERROR[500],
+                                                color: COMMON.WHITE
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.backgroundColor = ERROR[600]}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = ERROR[500]}
                                         >
-                                            <svg
-                                                className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                                />
-                                            </svg>
                                             Đăng xuất
                                         </button>
                                     </div>
@@ -587,24 +733,14 @@ const Navbar = () => {
                                     <Link
                                         to="/login"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="group w-full flex items-center justify-center px-6 py-3 sm:py-4 rounded-lg sm:rounded-xl font-medium transition-all duration-300 text-sm sm:text-base text-teal-700"
+                                        className="block w-full text-center px-6 py-3 sm:py-4 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base"
                                         style={{
-                                            background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)'
+                                            backgroundColor: COMMON.WHITE,
+                                            color: PRIMARY[700]
                                         }}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
                                     >
-                                        <svg
-                                            className="w-4 h-4 sm:w-5 sm:h-5 mr-2"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                                            />
-                                        </svg>
                                         Đăng nhập
                                     </Link>
                                 )}
