@@ -398,91 +398,84 @@ const VaccinationListManagement = () => {
 
                 {/* Updated Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {/* Kế hoạch sắp tới */}
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-2xl shadow-lg"
                         style={{
-                            background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                            borderColor: PRIMARY[200]
+                            background: '#00897B',
+                            height: '120px'
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-6 relative z-10 h-full flex flex-col justify-between">
+                            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                                Kế hoạch sắp tới
+                            </p>
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Kế hoạch sắp tới
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.upcoming}
-                                    </p>
-                                    <p className="text-sm mt-2 opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        +2 so với tháng trước
-                                    </p>
-                                </div>
+                                <p className="text-3xl font-bold" style={{ color: 'white' }}>
+                                    {stats.upcoming}
+                                </p>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 w-12 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiCalendar className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiCalendar className="h-6 w-6" style={{ color: 'white' }} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* Đã hoàn thành */}
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-2xl shadow-lg"
                         style={{
-                            background: `linear-gradient(135deg, ${SUCCESS[400]} 0%, ${SUCCESS[500]} 100%)`,
-                            borderColor: SUCCESS[200]
+                            background: '#4CAF50',
+                            height: '120px'
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-6 relative z-10 h-full flex flex-col justify-between">
+                            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                                Đã hoàn thành
+                            </p>
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Đã hoàn thành
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.completed}
-                                    </p>
-                                    <p className="text-sm mt-2 opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        +5 so với tháng trước
-                                    </p>
-                                </div>
+                                <p className="text-3xl font-bold" style={{ color: 'white' }}>
+                                    {stats.completed}
+                                </p>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 w-12 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiCheckCircle className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiCheckCircle className="h-6 w-6" style={{ color: 'white' }} />
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* Tổng học sinh */}
                     <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                        className="relative overflow-hidden rounded-2xl shadow-lg"
                         style={{
-                            background: `linear-gradient(135deg, ${WARNING[400]} 0%, ${WARNING[500]} 100%)`,
-                            borderColor: WARNING[200]
+                            background: '#FFA726',
+                            height: '120px'
                         }}
                     >
-                        <div className="p-6 relative z-10">
+                        <div className="p-6 relative z-10 h-full flex flex-col justify-between">
+                            <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                                Tổng học sinh
+                            </p>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Tổng học sinh
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-3xl font-bold" style={{ color: 'white' }}>
                                         {stats.totalStudents}
                                     </p>
-                                    <p className="text-sm mt-2 opacity-90" style={{ color: TEXT.INVERSE }}>
+                                    <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.9)' }}>
                                         92% đã tiêm chủng
                                     </p>
                                 </div>
                                 <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
+                                    className="h-12 w-12 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiUsers className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiUsers className="h-6 w-6" style={{ color: 'white' }} />
                                 </div>
                             </div>
                         </div>
