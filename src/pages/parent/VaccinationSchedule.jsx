@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiClock, FiMapPin, FiSearch, FiEye, FiAlertCircle } from "react-icons/fi";
+import { FiCalendar, FiClock, FiMapPin, FiSearch, FiEye, FiAlertCircle, FiX } from "react-icons/fi";
 import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth } from "../../utils/AuthContext";
@@ -20,7 +20,6 @@ const VaccinationSchedule = () => {
     const [error, setError] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
 
-    // Fetch students from API
     useEffect(() => {
         const fetchStudents = async () => {
             if (!user || !user.id) {
@@ -33,12 +32,10 @@ const VaccinationSchedule = () => {
                 setLoading(true);
                 const response = await vaccinationScheduleApi.getParentStudents(user.id, {
                     pageIndex: 1,
-                    pageSize: 100, // Get all students of parent
+                    pageSize: 100,
                 });
-
                 if (response.success) {
                     setStudents(response.data);
-
                     // Auto-select first student if available
                     if (response.data.length > 0) {
                         const firstStudent = response.data[0];
@@ -50,7 +47,6 @@ const VaccinationSchedule = () => {
                     setShowAlert(true);
                 }
             } catch (error) {
-                console.error('Error fetching students:', error);
                 setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
                 setShowAlert(true);
             } finally {
@@ -61,34 +57,26 @@ const VaccinationSchedule = () => {
         fetchStudents();
     }, [user]);
 
-    // Fetch vaccination sessions when selected student changes
     useEffect(() => {
         const fetchVaccinationSessions = async () => {
             if (!selectedStudentData) {
                 setVaccinationSchedule([]);
                 return;
             }
-
             try {
                 setLoadingVaccinations(true);
                 const response = await vaccinationScheduleApi.getStudentVaccinationSessions(
                     selectedStudentData.id,
-                    {
-                        pageIndex: 1,
-                        pageSize: 100, // Get all vaccination sessions
-                    }
+                    { pageIndex: 1, pageSize: 100 }
                 );
 
                 if (response.success) {
-                    // Transform API data to component format
                     const transformedSchedule = transformVaccinationData(response.data, selectedStudentData);
                     setVaccinationSchedule(transformedSchedule);
                 } else {
-                    console.error('Error fetching vaccination sessions:', response.message);
                     setVaccinationSchedule([]);
                 }
             } catch (error) {
-                console.error('Error fetching vaccination sessions:', error);
                 setVaccinationSchedule([]);
             } finally {
                 setLoadingVaccinations(false);
@@ -98,51 +86,40 @@ const VaccinationSchedule = () => {
         fetchVaccinationSessions();
     }, [selectedStudentData]);
 
-    // Transform API vaccination data to component format
     const transformVaccinationData = (apiData, studentData) => {
         return apiData.map((session, index) => {
             const startDate = new Date(session.startTime);
             const endDate = new Date(session.endTime);
             const now = new Date();
-
-            // Calculate days until vaccination
             const dueIn = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
-
-            // Format time
             const timeFormatter = new Intl.DateTimeFormat('vi-VN', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
             });
-
+            const finalStudentId = studentData.id;
             return {
                 id: session.id,
                 studentName: studentData.fullName,
-                studentId: studentData.studentCode,
+                studentId: finalStudentId,
                 class: studentData.currentClassName || 'N/A',
                 vaccineName: session.vaccineTypeName || session.sessionName || 'Vaccine không xác định',
-                date: startDate.toISOString().split('T')[0],
                 displayDate: startDate.toLocaleDateString('vi-VN'),
                 time: timeFormatter.format(startDate),
                 endTime: timeFormatter.format(endDate),
                 location: session.location || "Phòng y tế trường",
                 status: mapApiStatusToComponentStatus(session.status),
-                statusText: getStatusText(mapApiStatusToComponentStatus(session.status)),
                 description: session.notes || `Tiêm chủng ${session.vaccineTypeName || session.sessionName}`,
                 dueIn: dueIn,
-                priority: dueIn <= 7 ? "high" : dueIn <= 30 ? "medium" : "low",
                 avatar: studentData.fullName.charAt(0).toUpperCase(),
                 sessionName: session.sessionName,
-                vaccineTypeId: session.vaccineTypeId,
                 classes: session.classes || []
             };
         });
     };
 
-    // Map API status to component status
     const mapApiStatusToComponentStatus = (apiStatus) => {
         if (!apiStatus) return 'waiting';
-
         const statusMap = {
             'pendingapproval': 'planning',
             'waitingforparentconsent': 'waiting',
@@ -150,22 +127,9 @@ const VaccinationSchedule = () => {
             'declined': 'declined',
             'completed': 'completed'
         };
-
         return statusMap[apiStatus.toLowerCase()] || 'waiting';
     };
 
-    const getStatusText = (status) => {
-        switch (status) {
-            case 'planning': return 'Lên kế hoạch';
-            case 'waiting': return 'Chờ xác nhận';
-            case 'scheduled': return 'Đã lên lịch';
-            case 'declined': return 'Từ chối';
-            case 'completed': return 'Đã hoàn thành';
-            default: return 'Chờ xác nhận từ phụ huynh';
-        }
-    };
-
-    // Handle student selection change
     const handleStudentChange = (studentName) => {
         setSelectedStudent(studentName);
         const studentData = students.find(s => s.fullName === studentName);
@@ -193,7 +157,7 @@ const VaccinationSchedule = () => {
             const matchesStudent = !selectedStudent || item.studentName === selectedStudent;
             return matchesSearch && matchesStudent;
         })
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+        .sort((a, b) => a.dueIn - b.dueIn);
 
     const getStatusBadge = (status) => {
         if (status === "planning") {
@@ -260,7 +224,6 @@ const VaccinationSchedule = () => {
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            {/* Alert Modal for errors */}
             <AlertModal
                 isOpen={showAlert}
                 onClose={() => setShowAlert(false)}
@@ -327,11 +290,7 @@ const VaccinationSchedule = () => {
                                     value={selectedStudent}
                                     onChange={(e) => handleStudentChange(e.target.value)}
                                     className="px-4 py-4 lg:py-5 text-base lg:text-lg rounded-xl lg:rounded-2xl border-2 focus:outline-none transition-all duration-300 font-medium shadow-sm min-w-[200px]"
-                                    style={{
-                                        borderColor: GRAY[200],
-                                        backgroundColor: GRAY[25] || '#fafafa',
-                                        color: TEXT.PRIMARY
-                                    }}
+                                    style={{ borderColor: GRAY[200], backgroundColor: GRAY[25] || '#fafafa', color: TEXT.PRIMARY }}
                                 >
                                     {uniqueStudents.map((student, index) => (
                                         <option key={index} value={student}>{student}</option>
@@ -349,21 +308,7 @@ const VaccinationSchedule = () => {
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-12 lg:pl-14 pr-12 py-4 lg:py-5 text-base lg:text-lg rounded-xl lg:rounded-2xl border-2 focus:outline-none transition-all duration-300 font-medium shadow-sm"
-                                    style={{
-                                        borderColor: GRAY[200],
-                                        backgroundColor: GRAY[25] || '#fafafa',
-                                        color: TEXT.PRIMARY
-                                    }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = PRIMARY[400];
-                                        e.target.style.backgroundColor = 'white';
-                                        e.target.style.boxShadow = `0 0 0 4px ${PRIMARY[50]}`;
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = GRAY[200];
-                                        e.target.style.backgroundColor = GRAY[25] || '#fafafa';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
+                                    style={{ borderColor: GRAY[200], backgroundColor: GRAY[25] || '#fafafa', color: TEXT.PRIMARY }}
                                 />
                                 {searchTerm && (
                                     <button
@@ -371,7 +316,7 @@ const VaccinationSchedule = () => {
                                         className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors duration-200 text-lg"
                                         style={{ color: GRAY[400] }}
                                     >
-                                        ×
+                                        <FiX className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
@@ -402,20 +347,15 @@ const VaccinationSchedule = () => {
                                                         {vaccination.studentName}
                                                     </h4>
                                                     <p className="text-sm font-medium" style={{ color: GRAY[500] }}>
-                                                        {vaccination.studentId} • Lớp {vaccination.class}
+                                                        Lớp {vaccination.class}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="ml-14 lg:ml-16">
-                                                <h5 className="font-bold text-base lg:text-lg mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                    {vaccination.vaccineName}
+                                                <h5 className="font-bold text-lg lg:text-xl mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                    {vaccination.sessionName}
                                                 </h5>
-                                                {vaccination.sessionName && vaccination.sessionName !== vaccination.vaccineName && (
-                                                    <p className="text-sm font-medium mb-2" style={{ color: PRIMARY[600] }}>
-                                                        Buổi: {vaccination.sessionName}
-                                                    </p>
-                                                )}
 
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                                                     <div className="flex items-center">
@@ -476,12 +416,9 @@ const VaccinationSchedule = () => {
 
                                             <Link
                                                 to={`/parent/vaccination/details/${vaccination.id}`}
+                                                state={{ studentId: vaccination.studentId }}
                                                 className="group flex items-center px-4 py-2 font-semibold text-sm rounded-lg border transition-all duration-300 hover:scale-105"
-                                                style={{
-                                                    borderColor: PRIMARY[500],
-                                                    color: PRIMARY[600],
-                                                    backgroundColor: 'white'
-                                                }}
+                                                style={{ borderColor: PRIMARY[500], color: PRIMARY[600], backgroundColor: 'white' }}
                                             >
                                                 <FiEye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                                                 Xem chi tiết

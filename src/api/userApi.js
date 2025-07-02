@@ -256,6 +256,23 @@ const userApi = {
         }
     },
 
+    getStudentById: async (studentId) => {
+        try {
+            const response = await apiClient.get(`/users/students/${studentId}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy thông tin học sinh",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
     deleteStudent: async (studentId) => {
         try {
             const response = await apiClient.delete(`/users/students/${studentId}`);
