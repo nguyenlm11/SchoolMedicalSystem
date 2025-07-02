@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiUsers, FiPlus, FiUserCheck, FiEdit, FiTrash2, FiEye, FiUpload, FiFileText, FiSearch, FiRefreshCw } from "react-icons/fi";
+import { FiUsers, FiPlus, FiUserCheck, FiEdit, FiTrash2, FiEye, FiUpload, FiFileText, FiSearch, FiRefreshCw, FiLoader, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, SUCCESS, INFO, GRAY, TEXT, BACKGROUND, BORDER, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -12,25 +12,19 @@ import { useNavigate } from "react-router-dom";
 const ClassManagement = () => {
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterStatus, setFilterStatus] = useState("all");
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [stats, setStats] = useState({
-        total: 0,
-        totalStudents: 0,
-        gradeStats: {},
-    });
+    const [stats, setStats] = useState({ total: 0, totalStudents: 0, gradeStats: {} });
+    const [paginationState, setPaginationState] = useState({ totalPages: 1, totalCount: 0, currentPage: 1, pageSize: 10 });
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
     const [showAddClassModal, setShowAddClassModal] = useState(false);
     const [classToEdit, setClassToEdit] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
     const [classToDelete, setClassToDelete] = useState(null);
     const [showAddFileClassModal, setShowAddFileClassModal] = useState(false);
     const navigate = useNavigate();
     const [sortColumn, setSortColumn] = useState("name");
-    const [pageSize] = useState(10);
     const [filterGrade, setFilterGrade] = useState("");
     const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
     const [availableGrades, setAvailableGrades] = useState([]);
@@ -38,19 +32,19 @@ const ClassManagement = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
-            setCurrentPage(1);
+            setPaginationState(prev => ({ ...prev, currentPage: 1 }));
         }, 500);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
     useEffect(() => {
-        setCurrentPage(1);
+        setPaginationState(prev => ({ ...prev, currentPage: 1 }));
     }, [filterGrade, academicYear]);
 
     useEffect(() => {
         fetchClasses();
-    }, [filterGrade, academicYear, debouncedSearchTerm, sortColumn, currentPage]);
+    }, [filterGrade, academicYear, debouncedSearchTerm, sortColumn, paginationState.currentPage]);
     const [grade, setGrade] = useState([]);
 
     // Fetch lớp học từ API
@@ -59,8 +53,8 @@ const ClassManagement = () => {
         try {
             const orderBy = sortColumn;
             const params = {
-                pageIndex: currentPage,
-                pageSize: pageSize,
+                pageIndex: paginationState.currentPage,
+                pageSize: paginationState.pageSize,
                 searchTerm: debouncedSearchTerm,
                 orderBy: orderBy,
                 grade: filterGrade,
@@ -69,6 +63,15 @@ const ClassManagement = () => {
             }
             const response = await classApi.getSchoolClass(params);
             setClasses(response.data);
+
+            // Update pagination state
+            setPaginationState(prev => ({
+                ...prev,
+                totalPages: response.totalPages || 1,
+                totalCount: response.totalCount || 0,
+                currentPage: response.currentPage || 1,
+                pageSize: response.pageSize || 10
+            }));
 
             const total = response.totalCount || 0;
             const totalStudents = response.data.reduce((acc, item) => acc + item.studentCount, 0);
@@ -127,16 +130,16 @@ const ClassManagement = () => {
     };
 
     const handleExportClassList = async () => {
-        if(!grade) {
+        if (!grade) {
             showAlert('error', 'Lỗi', 'Vui lòng nhập khối.');
             return;
         }
-        if(!academicYear) {
+        if (!academicYear) {
             showAlert('error', 'Lỗi', 'Vui lòng nhập năm.');
         }
 
         setLoading(true);
-        try{
+        try {
             const formData = new FormData();
             formData.append('grade', grade);
             formData.append('academicYear', academicYear);
@@ -144,7 +147,7 @@ const ClassManagement = () => {
             const result = await classApi.exportClassList(formData);
 
             if (result.success) {
-                
+
                 const blob = new Blob([result.data]);
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -328,7 +331,7 @@ const ClassManagement = () => {
                                     />
                                     {searchTerm !== debouncedSearchTerm && (
                                         <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                                            <FiLoader className="animate-spin h-4 w-4" style={{ color: PRIMARY[500] }} />
                                         </div>
                                     )}
                                 </div>
@@ -564,6 +567,58 @@ const ClassManagement = () => {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    {paginationState.totalPages > 0 && (
+                        <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                            <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                Hiển thị {(paginationState.currentPage - 1) * paginationState.pageSize + 1}-{Math.min(paginationState.currentPage * paginationState.pageSize, paginationState.totalCount)} trong tổng số {paginationState.totalCount} lớp học
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => setPaginationState(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
+                                    disabled={paginationState.currentPage === 1}
+                                    className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: paginationState.currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: paginationState.currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
+                                    }}
+                                >
+                                    <FiChevronLeft className="h-4 w-4" />
+                                </button>
+
+                                {Array.from({ length: paginationState.totalPages }, (_, i) => i + 1).map((number) => (
+                                    <button
+                                        key={number}
+                                        onClick={() => setPaginationState(prev => ({ ...prev, currentPage: number }))}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                        style={{
+                                            borderColor: paginationState.currentPage === number ? PRIMARY[500] : BORDER.DEFAULT,
+                                            backgroundColor: paginationState.currentPage === number ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                            color: paginationState.currentPage === number ? TEXT.INVERSE : TEXT.PRIMARY
+                                        }}
+                                    >
+                                        {number}
+                                    </button>
+                                ))}
+
+                                <button
+                                    onClick={() => setPaginationState(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
+                                    disabled={paginationState.currentPage === paginationState.totalPages}
+                                    className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: paginationState.currentPage === paginationState.totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: paginationState.currentPage === paginationState.totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
+                                    }}
+                                >
+                                    <FiChevronRight className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Modals */}

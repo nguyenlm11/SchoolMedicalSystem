@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiUsers, FiUser, FiUserPlus, FiFileText, FiCheck, FiX, FiSearch, FiRefreshCw, FiEye } from "react-icons/fi";
+import { FiArrowLeft, FiUsers, FiUser, FiUserPlus, FiFileText, FiCheck, FiX, FiSearch, FiRefreshCw, FiEye, FiLoader } from "react-icons/fi";
 import classApi from "../../api/classApi";
 import { PRIMARY, SUCCESS, ERROR, GRAY, SECONDARY, BACKGROUND, TEXT, INFO, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
@@ -244,7 +244,7 @@ const ClassDetails = () => {
                     />
                     {searchTerm !== debouncedSearchTerm && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                        <FiLoader className="animate-spin h-4 w-4" style={{ color: PRIMARY[500] }} />
                       </div>
                     )}
                   </div>

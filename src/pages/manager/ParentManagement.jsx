@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiUser, FiUsers, FiUserCheck, FiUserX, FiEdit, FiTrash2, FiSearch, FiRefreshCw, FiEye } from "react-icons/fi";
+import { FiPlus, FiUser, FiUsers, FiUserCheck, FiUserX, FiEdit, FiTrash2, FiSearch, FiRefreshCw, FiEye, FiArrowUp, FiArrowDown, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -285,8 +285,8 @@ const ParentManagement = () => {
                                             <div className="flex items-center">
                                                 <span>HỌ TÊN</span>
                                                 {sortBy === "fullName" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
+                                                    <span className="ml-2">
+                                                        {sortOrder === "asc" ? <FiArrowUp className="h-3 w-3" /> : <FiArrowDown className="h-3 w-3" />}
                                                     </span>
                                                 )}
                                             </div>
@@ -294,58 +294,26 @@ const ParentManagement = () => {
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("relationship")}
                                         >
-                                            <div className="flex items-center justify-center">
-                                                <span>MỐI QUAN HỆ</span>
-                                                {sortBy === "relationship" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            MỐI QUAN HỆ
                                         </th>
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("email")}
                                         >
-                                            <div className="flex items-center justify-center">
-                                                <span>EMAIL</span>
-                                                {sortBy === "email" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            EMAIL
                                         </th>
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("phoneNumber")}
                                         >
-                                            <div className="flex items-center justify-center">
-                                                <span>SỐ ĐIỆN THOẠI</span>
-                                                {sortBy === "phoneNumber" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            SỐ ĐIỆN THOẠI
                                         </th>
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("address")}
                                         >
-                                            <div className="flex items-center justify-center">
-                                                <span>ĐỊA CHỈ</span>
-                                                {sortBy === "address" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            ĐỊA CHỈ
                                         </th>
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
@@ -470,7 +438,7 @@ const ParentManagement = () => {
                             </table>
                         </div>
 
-                        {paginationState.totalPages > 1 && (
+                        {paginationState.totalPages > 0 && (
                             <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
                                 <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
                                     Hiển thị {(paginationState.currentPage - 1) * paginationState.pageSize + 1}-{Math.min(paginationState.currentPage * paginationState.pageSize, paginationState.totalCount)} trong tổng số {paginationState.totalCount} phụ huynh
@@ -487,7 +455,7 @@ const ParentManagement = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        Trước
+                                        <FiChevronLeft className="h-4 w-4" />
                                     </button>
 
                                     {Array.from({ length: paginationState.totalPages }, (_, i) => i + 1).map((number) => (
@@ -515,7 +483,7 @@ const ParentManagement = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        Sau
+                                        <FiChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
