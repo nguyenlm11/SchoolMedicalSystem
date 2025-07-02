@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiCheck, FiEye, FiMoreVertical } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiCheck, FiEye, FiMoreVertical, FiLoader, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -24,16 +24,10 @@ const SupplyInventory = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [filters, setFilters] = useState({
-        approvalStatus: '',
-        priority: ''
-    });
+    const [filters, setFilters] = useState({ approvalStatus: '', priority: '' });
     const [openActionId, setOpenActionId] = useState(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [confirmAction, setConfirmAction] = useState({
-        type: 'approve',
-        itemId: null
-    });
+    const [confirmAction, setConfirmAction] = useState({ type: 'approve', itemId: null });
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -330,7 +324,7 @@ const SupplyInventory = () => {
                                     />
                                     {searchTerm !== debouncedSearchTerm && (
                                         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                                            <FiLoader className="animate-spin h-4 w-4" style={{ color: PRIMARY[500] }} />
                                         </div>
                                     )}
                                 </div>
@@ -606,7 +600,7 @@ const SupplyInventory = () => {
                             </table>
                         </div>
 
-                        {totalPages > 1 && (
+                        {totalPages > 0 && (
                             <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
                                 <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
                                     Hiển thị{" "}
@@ -633,19 +627,7 @@ const SupplyInventory = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronLeft className="h-4 w-4" />
                                     </button>
 
                                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -685,19 +667,7 @@ const SupplyInventory = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
@@ -719,7 +689,7 @@ const SupplyInventory = () => {
                     onClose={() => setShowConfirmModal(false)}
                     onConfirm={confirmAction.type === 'approve' ? handleApprove : handleReject}
                     title={confirmAction.type === 'approve' ? "Phê duyệt vật tư" : "Từ chối vật tư"}
-                    message={confirmAction.type === 'approve' 
+                    message={confirmAction.type === 'approve'
                         ? "Bạn có chắc chắn muốn phê duyệt vật tư này? Vui lòng nhập lý do phê duyệt."
                         : "Bạn có chắc chắn muốn từ chối vật tư này? Vui lòng nhập lý do từ chối."
                     }

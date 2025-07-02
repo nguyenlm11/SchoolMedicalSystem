@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiPlus, FiSearch, FiRefreshCw, FiUser, FiUsers, FiUserCheck, FiUserX, FiTrash2, FiEye, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
+import { FiPlus, FiSearch, FiRefreshCw, FiUser, FiUsers, FiUserCheck, FiUserX, FiTrash2, FiEye, FiDownload, FiUpload, FiFileText, FiLoader, FiChevronDown, FiChevronLeft, FiChevronRight, FiArrowUp, FiArrowDown } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -14,10 +14,10 @@ const StudentManagement = () => {
     const navigate = useNavigate();
     const queryParams = new URLSearchParams(location.search);
     const initialFilter = queryParams.get("filter") || "all";
-    const [students, setStudents] = useState([]);
+    const [allStudents, setAllStudents] = useState([]);
     const [totalStudents, setTotalStudents] = useState(0);
     const [totalPages, setTotalPages] = useState(1);
-    const studentsPerPage = 10;
+    const ITEMS_PER_PAGE = 10;
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [filterGrade, setFilterGrade] = useState("all");
@@ -38,12 +38,11 @@ const StudentManagement = () => {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [importLoading, setImportLoading] = useState(false);
-    const [importResult, setImportResult] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
 
     useEffect(() => {
         fetchStudents();
-    }, [currentPage, debouncedSearchTerm, sortBy, sortOrder, selectedClass, selectedAcademicYear, filterGrade]);
+    }, [debouncedSearchTerm, sortBy, sortOrder, selectedClass, selectedAcademicYear, filterGrade]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -67,8 +66,8 @@ const StudentManagement = () => {
         // setLoading(true);
         try {
             const params = {
-                pageIndex: currentPage,
-                pageSize: studentsPerPage,
+                pageIndex: 1,
+                pageSize: 1000,
                 searchTerm: debouncedSearchTerm,
                 orderBy: `${sortBy}_${sortOrder}`,
                 classId: selectedClass !== "all" ? selectedClass : undefined
@@ -87,32 +86,22 @@ const StudentManagement = () => {
                     }
                     return true;
                 });
-                setStudents(filteredData);
-                setTotalStudents(filteredData.length);
-                setTotalPages(Math.ceil(filteredData.length / studentsPerPage));
-                const total = filteredData.length;
-                const active = filteredData.filter(item =>
-                    item.classes.some(c =>
-                        c.academicYear === selectedAcademicYear &&
-                        c.isActive &&
-                        (filterGrade === "all" || c.grade === parseInt(filterGrade))
-                    )
-                ).length;
-                const inactive = total - active;
-                setStats({ total, active, inactive });
+
+                setAllStudents(filteredData);
             }
             else {
                 showAlert("error", "Lỗi", response.message || "Không thể tải danh sách học sinh");
+                setAllStudents([]);
             }
         } catch (error) {
             showAlert("error", "Lỗi", "Không thể tải danh sách học sinh. Vui lòng thử lại.");
+            setAllStudents([]);
         } finally {
             setLoading(false);
         }
     };
 
     const fetchClasses = async () => {
-        // setLoadingClasses(true);
         try {
             const response = await classApi.getSchoolClass({
                 pageIndex: 1,
@@ -127,8 +116,6 @@ const StudentManagement = () => {
             }
         } catch (error) {
             showAlert("error", "Lỗi", "Không thể tải danh sách lớp học. Vui lòng thử lại.");
-        } finally {
-            // setLoadingClasses(false);
         }
     };
 
@@ -164,7 +151,7 @@ const StudentManagement = () => {
     };
 
     const filteredStudents = useMemo(() => {
-        return students.filter((student) => {
+        return allStudents.filter((student) => {
             const currentClass = getCurrentClass(student);
             if (!currentClass) return false;
             if (filterStatus === "active") {
@@ -174,17 +161,7 @@ const StudentManagement = () => {
             }
             return true;
         });
-    }, [students, filterStatus, selectedAcademicYear, filterGrade]);
-
-    useEffect(() => {
-        const total = filteredStudents.length;
-        const active = filteredStudents.filter(student => {
-            const currentClass = getCurrentClass(student);
-            return currentClass?.isActive;
-        }).length;
-        const inactive = total - active;
-        setStats({ total, active, inactive });
-    }, [filteredStudents]);
+    }, [allStudents, filterStatus, selectedAcademicYear, filterGrade]);
 
     const sortedStudents = useMemo(() => {
         return [...filteredStudents].sort((a, b) => {
@@ -195,12 +172,38 @@ const StudentManagement = () => {
                     const fullNameB = `${b.lastName || ""} ${b.firstName || ""}`.trim();
                     comparison = fullNameA.localeCompare(fullNameB);
                     break;
+                case "studentCode":
+                    comparison = (a.studentCode || "").localeCompare(b.studentCode || "");
+                    break;
+                case "gender":
+                    comparison = (a.gender || "").localeCompare(b.gender || "");
+                    break;
                 default:
                     comparison = 0;
             }
             return sortOrder === "asc" ? comparison : -comparison;
         });
     }, [filteredStudents, sortBy, sortOrder]);
+
+    const paginatedStudents = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return sortedStudents.slice(startIndex, endIndex);
+    }, [sortedStudents, currentPage]);
+
+    useEffect(() => {
+        const total = filteredStudents.length;
+        const active = filteredStudents.filter(student => {
+            const currentClass = getCurrentClass(student);
+            return currentClass?.isActive;
+        }).length;
+        const inactive = total - active;
+
+        setStats({ total, active, inactive });
+        setTotalStudents(total);
+        setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
+        if (currentPage > Math.ceil(total / ITEMS_PER_PAGE) && total > 0) { setCurrentPage(1) }
+    }, [filteredStudents, currentPage]);
 
     function handleSortChange(column) {
         if (sortBy === column) {
@@ -299,16 +302,10 @@ const StudentManagement = () => {
                 const response = await userApi.importStudentList(file);
                 if (response.success) {
                     const resultData = response.data;
-                    setImportResult({
-                        totalRows: resultData.totalRows,
-                        successRows: resultData.successRows,
-                        errorRows: resultData.errorRows,
-                        validData: resultData.validData,
-                        invalidData: resultData.invalidData,
-                        errors: resultData.errors
-                    });
                     showAlert("success", "Thành công", "Nhập danh sách học sinh thành công!");
-                    if (resultData.successRows > 0) { fetchStudents() }
+                    if (resultData.successRows > 0) {
+                        fetchStudents();
+                    }
                 } else {
                     throw new Error(response.message || 'Có lỗi xảy ra khi nhập file');
                 }
@@ -393,10 +390,7 @@ const StudentManagement = () => {
                             >
                                 {importLoading ? (
                                     <>
-                                        <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
+                                        <FiLoader className="animate-spin h-4 w-4 mr-2" />
                                         Đang nhập...
                                     </>
                                 ) : (
@@ -553,7 +547,7 @@ const StudentManagement = () => {
                                     className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
                                     style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                 >
-                                    <FiRefreshCw className="h-4 w-4 mr-2" />
+                                    <FiRefreshCw className="h-4 w-4 mr-1" />
                                     Đặt lại bộ lọc
                                 </button>
                             </div>
@@ -572,14 +566,10 @@ const StudentManagement = () => {
                                         <span className="text-sm">
                                             {showFilters ? 'Thu gọn' : 'Mở rộng'}
                                         </span>
-                                        <div
-                                            className="transform transition-transform duration-200"
+                                        <FiChevronDown
+                                            className="w-5 h-5 transform transition-transform duration-200"
                                             style={{ transform: showFilters ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        </div>
+                                        />
                                     </div>
                                 </div>
 
@@ -677,13 +667,13 @@ const StudentManagement = () => {
                                         <th
                                             className="py-4 px-6 text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("name")}
+                                            onClick={() => handleSortChange("fullName")}
                                         >
                                             <div className="flex items-center">
                                                 <span>HỌ TÊN</span>
-                                                {sortBy === "name" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
+                                                {sortBy === "fullName" && (
+                                                    <span className="ml-2">
+                                                        {sortOrder === "asc" ? <FiArrowUp className="w-3 h-3" /> : <FiArrowDown className="w-3 h-3" />}
                                                     </span>
                                                 )}
                                             </div>
@@ -691,13 +681,13 @@ const StudentManagement = () => {
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("dob")}
+                                            onClick={() => handleSortChange("studentCode")}
                                         >
                                             <div className="flex items-center justify-center">
                                                 <span>MÃ HỌC SINH</span>
                                                 {sortBy === "studentCode" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
+                                                    <span className="ml-2">
+                                                        {sortOrder === "asc" ? <FiArrowUp className="w-3 h-3" /> : <FiArrowDown className="w-3 h-3" />}
                                                     </span>
                                                 )}
                                             </div>
@@ -711,16 +701,8 @@ const StudentManagement = () => {
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-opacity-80 transition-all duration-200 whitespace-nowrap"
                                             style={{ color: TEXT.PRIMARY }}
-                                            onClick={() => handleSortChange("dob")}
                                         >
-                                            <div className="flex items-center justify-center">
-                                                <span>GIỚI TÍNH</span>
-                                                {sortBy === "gender" && (
-                                                    <span className="ml-2 text-xs">
-                                                        {sortOrder === "asc" ? "↑" : "↓"}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            GIỚI TÍNH
                                         </th>
                                         <th
                                             className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap"
@@ -755,8 +737,8 @@ const StudentManagement = () => {
                                                 <Loading type="medical" size="large" color="primary" text="Đang tải danh sách học sinh..." />
                                             </td>
                                         </tr>
-                                    ) : students.length > 0 ? (
-                                        students.map((student) => {
+                                    ) : paginatedStudents.length > 0 ? (
+                                        paginatedStudents.map((student) => {
                                             const currentClass = getCurrentClass(student);
                                             return (
                                                 <tr
@@ -866,11 +848,11 @@ const StudentManagement = () => {
                     </div>
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
+                    {totalPages > 0 && (
                         <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
                             <div className="mb-4 sm:mb-0" style={{ color: TEXT.SECONDARY }}>
                                 <span className="text-sm">
-                                    Hiển thị {(currentPage - 1) * studentsPerPage + 1}-{Math.min(currentPage * studentsPerPage, totalStudents)} trong tổng số {totalStudents} học sinh
+                                    Hiển thị {(currentPage - 1) * ITEMS_PER_PAGE + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, totalStudents)} trong tổng số {totalStudents} học sinh
                                 </span>
                             </div>
 
@@ -880,25 +862,9 @@ const StudentManagement = () => {
                                         onClick={() => setCurrentPage(currentPage - 1)}
                                         disabled={currentPage === 1}
                                         className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
-                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
+                                        style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                     >
-                                        <svg
-                                            className="h-4 w-4 lg:h-5 lg:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
                                     </button>
 
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
@@ -920,25 +886,9 @@ const StudentManagement = () => {
                                         onClick={() => setCurrentPage(currentPage + 1)}
                                         disabled={currentPage === totalPages}
                                         className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{
-                                            borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
-                                            color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
-                                            backgroundColor: BACKGROUND.DEFAULT
-                                        }}
+                                        style={{ borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                     >
-                                        <svg
-                                            className="h-4 w-4 lg:h-5 lg:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronRight className="h-4 w-4 lg:h-5 lg:w-5" />
                                     </button>
                                 </div>
                             </div>

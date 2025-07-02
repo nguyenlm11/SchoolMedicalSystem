@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiCheck, FiInfo, FiEye, FiMoreVertical } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiCheck, FiInfo, FiEye, FiMoreVertical, FiLoader, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -15,10 +15,7 @@ const MedicineInventory = () => {
     const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-    const [sortConfig, setSortConfig] = useState({
-        key: null,
-        direction: 'asc'
-    });
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [stats, setStats] = useState({ total: 0, inactive: 0, lowStock: 0 });
     const [showAlertModal, setShowAlertModal] = useState(false);
@@ -26,17 +23,11 @@ const MedicineInventory = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [filters, setFilters] = useState({
-        approvalStatus: '',
-        priority: ''
-    });
+    const [filters, setFilters] = useState({ approvalStatus: '', priority: '' });
     const [openActionId, setOpenActionId] = useState(null);
     const dropdownRef = useRef(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [confirmAction, setConfirmAction] = useState({
-        type: 'approve',
-        itemId: null
-    });
+    const [confirmAction, setConfirmAction] = useState({ type: 'approve', itemId: null });
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -55,7 +46,6 @@ const MedicineInventory = () => {
         fetchMedicines();
     }, [filters, currentPage, pageSize, searchTerm]);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -358,7 +348,7 @@ const MedicineInventory = () => {
                                     />
                                     {searchTerm !== debouncedSearchTerm && (
                                         <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                                            <FiLoader className="animate-spin h-4 w-4" style={{ color: PRIMARY[500] }} />
                                         </div>
                                     )}
                                 </div>
@@ -659,7 +649,7 @@ const MedicineInventory = () => {
                             </table>
                         </div>
 
-                        {totalPages > 1 && (
+                        {totalPages > 0 && (
                             <div
                                 className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t bg-gray-50/50"
                                 style={{ borderColor: BORDER.DEFAULT }}
@@ -687,19 +677,7 @@ const MedicineInventory = () => {
                                         className="p-1 sm:p-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
                                         style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
                                     >
-                                        <svg
-                                            className="h-4 w-4 sm:h-5 sm:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                                     </button>
 
                                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -741,19 +719,7 @@ const MedicineInventory = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4 sm:h-5 sm:w-5"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                                     </button>
                                 </div>
                             </div>
@@ -774,7 +740,7 @@ const MedicineInventory = () => {
                     onClose={() => setShowConfirmModal(false)}
                     onConfirm={confirmAction.type === 'approve' ? handleApprove : handleReject}
                     title={confirmAction.type === 'approve' ? "Phê duyệt thuốc" : "Từ chối thuốc"}
-                    message={confirmAction.type === 'approve' 
+                    message={confirmAction.type === 'approve'
                         ? "Bạn có chắc chắn muốn phê duyệt thuốc này? Vui lòng nhập lý do phê duyệt."
                         : "Bạn có chắc chắn muốn từ chối thuốc này? Vui lòng nhập lý do từ chối."
                     }
