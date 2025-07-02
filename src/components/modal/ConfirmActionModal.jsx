@@ -7,7 +7,7 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
     const [error, setError] = useState("");
 
     const handleConfirm = () => {
-        if (!reason.trim()) {
+        if (type === "decline" && !reason.trim()) {
             setError("Vui lòng nhập lý do");
             return;
         }
@@ -59,37 +59,39 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
                         <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
                             {message}
                         </p>
-                        <div className="mt-4">
-                            <label
-                                htmlFor="reason"
-                                className="block text-sm font-medium mb-2"
-                                style={{ color: TEXT.PRIMARY }}
-                            >
-                                Lý do {type === "approve" ? "phê duyệt" : "từ chối"}
-                            </label>
-                            <textarea
-                                id="reason"
-                                rows={3}
-                                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                style={{
-                                    borderColor: error ? ERROR[300] : BORDER.DEFAULT,
-                                    backgroundColor: BACKGROUND.DEFAULT,
-                                    color: TEXT.PRIMARY,
-                                    focusRingColor: error ? ERROR[200] : PRIMARY[200]
-                                }}
-                                placeholder={`Nhập lý do ${type === "approve" ? "phê duyệt" : "từ chối"}...`}
-                                value={reason}
-                                onChange={(e) => {
-                                    setReason(e.target.value);
-                                    setError("");
-                                }}
-                            />
-                            {error && (
-                                <p className="mt-2 text-sm" style={{ color: ERROR[500] }}>
-                                    {error}
-                                </p>
-                            )}
-                        </div>
+                        {type === "decline" && (
+                            <div className="mt-4">
+                                <label
+                                    htmlFor="reason"
+                                    className="block text-sm font-medium mb-2"
+                                    style={{ color: TEXT.PRIMARY }}
+                                >
+                                    Lý do từ chối
+                                </label>
+                                <textarea
+                                    id="reason"
+                                    rows={3}
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                    style={{
+                                        borderColor: error ? ERROR[300] : BORDER.DEFAULT,
+                                        backgroundColor: BACKGROUND.DEFAULT,
+                                        color: TEXT.PRIMARY,
+                                        focusRingColor: error ? ERROR[200] : PRIMARY[200]
+                                    }}
+                                    placeholder="Nhập lý do từ chối..."
+                                    value={reason}
+                                    onChange={(e) => {
+                                        setReason(e.target.value);
+                                        setError("");
+                                    }}
+                                />
+                                {error && (
+                                    <p className="mt-2 text-sm" style={{ color: ERROR[500] }}>
+                                        {error}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-end space-x-3">
@@ -121,4 +123,4 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
     );
 };
 
-export default ConfirmActionModal; 
+export default ConfirmActionModal;

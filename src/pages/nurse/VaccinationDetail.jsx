@@ -31,6 +31,7 @@ import {
 import { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from "../../constants/colors";
 import vaccineSessionApi from '../../api/vaccineSessionApi';
 import Loading from "../../components/Loading";
+import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 
 const VaccinationDetail = () => {
     const { id } = useParams();
@@ -43,104 +44,186 @@ const VaccinationDetail = () => {
     const [sortBy, setSortBy] = useState("index");
     const [sortOrder, setSortOrder] = useState("asc");
     const [error, setError] = useState(null);
+    const [modalType, setModalType] = useState("approve");
+    const [actionType, setActionType] = useState("");
+    const [modalTitle, setModalTitle] = useState("");
+    const [modalMessage, setModalMessage] = useState("");
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userRole = user?.role;
 
     // Fetch details by id 
-    // useEffect(() => {
-    //     const fetchVaccinationDetails = async () => {
-    //         try {
-    //             setLoading(true);
-    //             const response = await vaccineSessionApi.getVaccineSessionDetails(id);
-    //             setVaccination(response.data);
-    //             setLoading(false);
-    //         } catch (err) {
-    //             console.error("Error fetching vaccination details:", err);
-    //             setError("Không thể tải thông tin tiêm chủng.");
-    //             setLoading(false);
-    //         }
-    //     };
-
-    //     fetchVaccinationDetails();
-    // }, [id]);
-
-    // if (loading) {
-    //     return (
-    //     <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-    //         <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
-    //     </div>
-    //     );
-    // }
-
-    // if (error) {
-    //     return (
-    //         <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-    //             <div className="text-center">
-    //                 <h3 className="text-xl font-semibold mb-2" style={{ color: ERROR[600] }}>{error}</h3>
-    //                 <button
-    //                 onClick={() => navigate('/manager/vaccination-list-management')}
-    //                 className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
-    //                 style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
-    //                 >
-    //                 <FiArrowLeft className="mr-2" />
-    //                 Quay lại danh sách tiêm chủng
-    //                 </button>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-    // Mock data - in a real application, this would come from an API
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            const mockVaccination = {
-                id: parseInt(id),
-                title: id === "1" ? "Tiêm vắc-xin cúm mùa mùa" : "Tiêm nhắc vắc-xin MMR",
-                scheduledDate: id === "1" ? "2023-07-15" : "2023-06-30",
-                status: id === "1" ? "upcoming" : id === "2" ? "upcoming" : "completed",
-                grades: id === "1" ? ["1A", "1B", "1C"] : ["5A", "5B"],
-                totalStudents: id === "1" ? 75 : 52,
-                confirmedParents: id === "1" ? 68 : 45,
-                vaccineInfo:
-                    id === "1"
-                        ? "Vắc-xin cúm mùa 2023"
-                        : "Vắc-xin MMR (Sởi - Quai bị - Rubella)",
-                description:
-                    id === "1"
-                        ? "Tiêm phòng cúm mùa cho học sinh khối lớp 1"
-                        : "Tiêm nhắc mũi 2 vắc-xin MMR cho học sinh khối lớp 5",
-                location: "Phòng y tế trường học",
-                startTime: "08:00",
-                endTime: "11:30",
-                healthcareProvider: "Trung tâm Y tế Dự phòng Quận 1",
-                notes:
-                    "Học sinh cần mang theo sổ tiêm chủng. Phụ huynh có thể đến cùng nếu muốn.",
-                vaccinationMethod: "Tiêm bắp",
-                sideEffects: "Có thể gây sốt nhẹ, đau tại chỗ tiêm trong 1-2 ngày",
-                contraindications:
-                    "Không tiêm cho học sinh đang sốt hoặc có tiền sử dị ứng với thành phần của vắc-xin",
-                createdAt: "2023-06-01",
-                createdBy: "Nguyễn Thị An - Y tá trường",
-                lastUpdated: "2023-06-10",
-                students: Array(id === "1" ? 75 : 52)
-                    .fill()
-                    .map((_, i) => ({
-                        id: i + 1,
-                        name: `Học sinh ${i + 1}`,
-                        class:
-                            id === "1"
-                                ? ["1A", "1B", "1C"][Math.floor(i / 25)]
-                                : ["5A", "5B"][Math.floor(i / 26)],
-                        parentConfirmed: Math.random() > 0.1,
-                        vaccinated: false,
-                        parentNote: Math.random() > 0.8 ? "Cháu bị dị ứng với..." : "",
-                        healthStatus: "Bình thường",
-                    })),
-            };
+        const fetchVaccinationDetails = async () => {
+            try {
+                setLoading(true);
+                const response = await vaccineSessionApi.getVaccineSessionDetails(id);
+                setVaccination(response.data);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching vaccination details:", err);
+                setError("Không thể tải thông tin tiêm chủng.");
+                setLoading(false);
+            }
+        };
 
-            setVaccination(mockVaccination);
-            setLoading(false);
-        }, 1000);
+        fetchVaccinationDetails();
     }, [id]);
+
+    const handleApprove = async () => {
+        try {
+            const response = await vaccineSessionApi.approveVaccineSession(id);
+            if (response.success) {
+                setVaccination({ ...vaccination, status: "WaitingForParentConsent" });
+                setConfirmationModal(false);
+            } else {
+                setError(response.message);
+            }
+        } catch (err) {
+            setError("Không thể duyệt buổi tiêm.");
+        }
+    };
+
+    const handleDecline = async (reason) => {
+        try {
+            const response = await vaccineSessionApi.declineVaccineSession(id, reason);
+            if (response.success) {
+                setVaccination({ ...vaccination, status: "Declined" });
+                setConfirmationModal(false);
+            } else {
+                setError(response.message); 
+            }
+        } catch (err) {
+            setError("Không thể từ chối buổi tiêm.");
+        }
+    };
+
+    const handleFinalize = async () => {
+        try {
+            const response = await vaccineSessionApi.finalizeVaccineSession(id);
+            if (response.success) {
+                setVaccination({ ...vaccination, status: "Scheduled" });
+            } else {
+                setError(response.message);
+            }
+        } catch (err) {
+            setError("Không thể chốt danh sách buổi tiêm.");
+        }
+    };
+
+    const handleComplete = async () => {
+        try {
+            const response = await vaccineSessionApi.completeVaccineSession(id);
+            if (response.success) {
+                setVaccination({ ...vaccination, status: "Completed" });
+            } else {
+                setError(response.message);
+            }
+        } catch (err) {
+            setError("Không thể xác nhận hoàn thành.");
+        }
+    };
+
+    if (loading) {
+        return (
+        <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+            <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
+        </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <div className="text-center">
+                    <h3 className="text-xl font-semibold mb-2" style={{ color: ERROR[600] }}>{error}</h3>
+                    <button
+                    onClick={() => navigate('/manager/vaccination-list-management')}
+                    className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
+                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
+                    >
+                    <FiArrowLeft className="mr-2" />
+                    Quay lại danh sách tiêm chủng
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Modal control
+    const handleOpenConfirmModal = (actionType) => {
+        if (actionType === "approve") {
+            setModalType("approve");
+            setModalTitle("Duyệt buổi tiêm");
+            setModalMessage("Bạn có chắc chắn muốn duyệt buổi tiêm này?");
+        } else if (actionType === "decline") {
+            setModalType("decline");
+            setModalTitle("Từ chối buổi tiêm");
+            setModalMessage("Bạn có chắc chắn muốn từ chối buổi tiêm này?");
+        } else if (actionType === "finalize") {
+            setModalType("finalize");
+            setModalTitle("Chốt danh sách");
+            setModalMessage("Bạn có chắc chắn muốn chốt danh sách buổi tiêm này?");
+        } else if (actionType === "complete") {
+            setModalType("complete");
+            setModalTitle("Xác nhận hoàn thành");
+            setModalMessage("Bạn có chắc chắn muốn đánh dấu buổi tiêm này là đã hoàn thành?");
+        }
+        setConfirmationModal(true);
+    };
+    // Mock data - in a real application, this would come from an API
+    // useEffect(() => {
+    //     // Simulate API call
+    //     setTimeout(() => {
+    //         const mockVaccination = {
+    //             id: parseInt(id),
+    //             sessionName: id === "1" ? "Tiêm vắc-xin cúm mùa mùa" : "Tiêm nhắc vắc-xin MMR",
+    //             scheduledDate: id === "1" ? "2023-07-15" : "2023-06-30",
+    //             status: id === "1" ? "upcoming" : id === "2" ? "upcoming" : "completed",
+    //             grades: id === "1" ? ["1A", "1B", "1C"] : ["5A", "5B"],
+    //             totalStudents: id === "1" ? 75 : 52,
+    //             confirmedParents: id === "1" ? 68 : 45,
+    //             vaccineTypeName:
+    //                 id === "1"
+    //                     ? "Vắc-xin cúm mùa 2023"
+    //                     : "Vắc-xin MMR (Sởi - Quai bị - Rubella)",
+    //             description:
+    //                 id === "1"
+    //                     ? "Tiêm phòng cúm mùa cho học sinh khối lớp 1"
+    //                     : "Tiêm nhắc mũi 2 vắc-xin MMR cho học sinh khối lớp 5",
+    //             location: "Phòng y tế trường học",
+    //             startTime: "08:00",
+    //             endTime: "11:30",
+    //             healthcareProvider: "Trung tâm Y tế Dự phòng Quận 1",
+    //             notes:
+    //                 "Học sinh cần mang theo sổ tiêm chủng. Phụ huynh có thể đến cùng nếu muốn.",
+    //             vaccinationMethod: "Tiêm bắp",
+    //             sideEffects: "Có thể gây sốt nhẹ, đau tại chỗ tiêm trong 1-2 ngày",
+    //             contraindications:
+    //                 "Không tiêm cho học sinh đang sốt hoặc có tiền sử dị ứng với thành phần của vắc-xin",
+    //             createdAt: "2023-06-01",
+    //             createdBy: "Nguyễn Thị An - Y tá trường",
+    //             lastUpdated: "2023-06-10",
+    //             students: Array(id === "1" ? 75 : 52)
+    //                 .fill()
+    //                 .map((_, i) => ({
+    //                     id: i + 1,
+    //                     name: `Học sinh ${i + 1}`,
+    //                     class:
+    //                         id === "1"
+    //                             ? ["1A", "1B", "1C"][Math.floor(i / 25)]
+    //                             : ["5A", "5B"][Math.floor(i / 26)],
+    //                     parentConfirmed: Math.random() > 0.1,
+    //                     vaccinated: false,
+    //                     parentNote: Math.random() > 0.8 ? "Cháu bị dị ứng với..." : "",
+    //                     healthStatus: "Bình thường",
+    //                 })),
+    //         };
+
+    //         setVaccination(mockVaccination);
+    //         setLoading(false);
+    //     }, 1000);
+    // }, [id]);
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -153,19 +236,25 @@ const VaccinationDetail = () => {
             case "WaitingForParentConsent":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        Sắp diễn ra
+                        Chờ xác nhận
                     </span>
                 );
             case "Scheduled":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        Đã hoàn thành
+                        Đã lên lịch
                     </span>
                 );
-            case "cancelled":
+            case "Declined":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                        Đã hủy
+                        Từ chối
+                    </span>
+                );
+            case "Completed":
+                return (
+                    <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-red-100 text-green-800">
+                        Đã hoàn thành
                     </span>
                 );
             default:
@@ -185,18 +274,18 @@ const VaccinationDetail = () => {
         // Display a success message or notification
     };
 
-    const filteredStudents = vaccination
-        ? vaccination.students.filter(
-            (student) =>
-                (selectedClass === "all" || student.class === selectedClass) &&
-                (student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    student.class.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-        : [];
+    // const filteredStudents = vaccination
+    //     ? vaccination.students.filter(
+    //         (student) =>
+    //             (selectedClass === "all" || student.class === selectedClass) &&
+    //             (student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //                 student.class.toLowerCase().includes(searchTerm.toLowerCase()))
+    //     )
+    //     : [];
 
-    const uniqueClasses = vaccination
-        ? [...new Set(vaccination.students.map(student => student.class))].sort()
-        : [];
+    // const uniqueClasses = vaccination
+    //     ? [...new Set(vaccination.students.map(student => student.class))].sort()
+    //     : [];
 
     const ActionMenu = ({ student }) => {
         const [isOpen, setIsOpen] = useState(false);
@@ -328,47 +417,77 @@ const VaccinationDetail = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex space-x-4">
-                            <Link
-                                to={`/schoolnurse/vaccination/${id}/edit`}
-                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                style={{
-                                    backgroundColor: PRIMARY[500],
-                                    color: TEXT.INVERSE,
-                                    border: `1px solid ${PRIMARY[600]}`
-                                }}
-                            >
-                                <FiEdit className="h-4 w-4 mr-2" />
-                                Chỉnh sửa
-                            </Link>
-                            <button
-                                onClick={() => {
-                                    // Handle assignment
-                                    console.log("Phân công clicked");
-                                }}
-                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                style={{
-                                    backgroundColor: WARNING[500],
-                                    color: TEXT.INVERSE,
-                                    border: `1px solid ${WARNING[600]}`
-                                }}
-                            >
-                                <FiUserPlus className="h-4 w-4 mr-2" />
-                                Phân công
-                            </button>
-                            {vaccination.status === "upcoming" && (
-                                <button
-                                    onClick={() => setConfirmationModal(true)}
+                        <div className="flex space-x-4"> 
+                            {/* Phân quyền cho nút "Chỉnh sửa" và "Phân công" */}
+                            {userRole === "schoolnurse" && (
+                                <Link
+                                    to={`/schoolnurse/vaccination/${id}/edit`}
                                     className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
                                     style={{
-                                        backgroundColor: SUCCESS[500],
+                                        backgroundColor: PRIMARY[500],
                                         color: TEXT.INVERSE,
-                                        border: `1px solid ${SUCCESS[600]}`
+                                        border: `1px solid ${PRIMARY[600]}`
                                     }}
                                 >
-                                    <FiCheckCircle className="h-4 w-4 mr-2" />
-                                    Đánh dấu hoàn thành
-                                </button>
+                                    <FiEdit className="h-4 w-4 mr-2" />
+                                    Chỉnh sửa
+                                </Link>
+                            )}
+                            {userRole === "manager" && (
+                                <>
+                                    {vaccination.status === "PendingApproval" && (
+                                        <>
+                                            <button
+                                                onClick={() => handleOpenConfirmModal("approve")}
+                                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                                style={{
+                                                    backgroundColor: SUCCESS[500],
+                                                    color: TEXT.INVERSE,
+                                                    border: `1px solid ${SUCCESS[600]}`
+                                                }}
+                                            >
+                                                Duyệt
+                                            </button>
+                                            <button
+                                                onClick={() => handleOpenConfirmModal("decline")}
+                                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                                style={{
+                                                    backgroundColor: ERROR[500],
+                                                    color: TEXT.INVERSE,
+                                                    border: `1px solid ${ERROR[600]}`
+                                                }}
+                                            >
+                                                Từ chối
+                                            </button>
+                                        </>
+                                    )}
+                                    {vaccination.status === "WaitingForParentConsent" && (
+                                        <button
+                                            onClick={() => handleOpenConfirmModal("finalize")}
+                                            className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                            style={{
+                                                backgroundColor: SUCCESS[500],
+                                                color: TEXT.INVERSE,
+                                                border: `1px solid ${SUCCESS[600]}`
+                                            }}
+                                        >
+                                            Chốt danh sách
+                                        </button>
+                                    )}
+                                    {vaccination.status === "Scheduled" && (
+                                        <button
+                                            onClick={() => handleOpenConfirmModal("complete")}
+                                            className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                            style={{
+                                                backgroundColor: SUCCESS[500],
+                                                color: TEXT.INVERSE,
+                                                border: `1px solid ${SUCCESS[600]}`
+                                            }}
+                                        >
+                                            Xác nhận hoàn thành
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -413,7 +532,7 @@ const VaccinationDetail = () => {
                         </div>
                     </div>
 
-                    <div className="p-6">
+                    {/* <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <StatCard
                                 icon={<FiCalendar />}
@@ -434,7 +553,7 @@ const VaccinationDetail = () => {
                                 bgColor="#F59E0B"
                             />
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Info Grid */}
@@ -506,7 +625,7 @@ const VaccinationDetail = () => {
                                                 {vaccination.location}
                                             </p>
                                             <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                Thời gian: {vaccination.startTime} - {vaccination.endTime}
+                                                Thời gian: {new Date(vaccination.startTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })} - {new Date(vaccination.endTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                             </p>
                                         </div>
                                     </div>
@@ -578,9 +697,9 @@ const VaccinationDetail = () => {
                                             <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                                 Tác dụng phụ có thể xảy ra
                                             </p>
-                                            {/* <p className="text-lg font-semibold mt-1" style={{ color: WARNING[700] }}>
-                                                {vaccination.sideEffects}
-                                            </p> */}
+                                            <p className="text-lg font-semibold mt-1" style={{ color: WARNING[700] }}>
+                                                {vaccination.sideEffect}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -600,7 +719,7 @@ const VaccinationDetail = () => {
                                                 Chống chỉ định
                                             </p>
                                             <p className="text-lg font-semibold mt-1" style={{ color: ERROR[700] }}>
-                                                {vaccination.contraindications}
+                                                {vaccination.contraindication}
                                             </p>
                                         </div>
                                     </div>
@@ -660,7 +779,7 @@ const VaccinationDetail = () => {
                                 >
                                     Tất cả
                                 </button>
-                                {uniqueClasses.map((className) => (
+                                {/* {uniqueClasses.map((className) => (
                                     <button
                                         key={className}
                                         onClick={() => setSelectedClass(className)}
@@ -673,7 +792,7 @@ const VaccinationDetail = () => {
                                     >
                                         {className}
                                     </button>
-                                ))}
+                                ))} */}
                             </div>
 
                             <div className="relative">
@@ -693,14 +812,14 @@ const VaccinationDetail = () => {
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between text-sm" style={{ color: TEXT.SECONDARY }}>
+                            {/* <div className="flex items-center justify-between text-sm" style={{ color: TEXT.SECONDARY }}>
                                 <span>
                                     Hiển thị {filteredStudents.length} học sinh {selectedClass !== "all" ? `của lớp ${selectedClass}` : ""}
                                 </span>
                                 <span>
                                     Tổng số: {vaccination?.students.length || 0} học sinh
                                 </span>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
 
@@ -754,7 +873,7 @@ const VaccinationDetail = () => {
                                         ))}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
+                                {/* <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {filteredStudents.length > 0 ? (
                                         filteredStudents.map((student, index) => (
                                             <tr
@@ -830,27 +949,23 @@ const VaccinationDetail = () => {
                                             </td>
                                         </tr>
                                     )}
-                                </tbody>
+                                </tbody> */}
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Modals */}
-            {confirmationModal && (
-                <Modal
-                    title="Xác nhận hoàn thành"
-                    onClose={() => setConfirmationModal(false)}
-                    onConfirm={handleMarkAsCompleted}
-                    confirmText="Xác nhận"
-                    confirmColor={SUCCESS}
-                >
-                    <p style={{ color: TEXT.SECONDARY }}>
-                        Bạn có chắc chắn muốn đánh dấu kế hoạch tiêm chủng này là đã hoàn thành?
-                    </p>
-                </Modal>
-            )}
+            {/* Confirm Action Modal */}
+            <ConfirmActionModal
+                isOpen={confirmationModal}
+                onClose={() => setConfirmationModal(false)}
+                onConfirm={modalType === "approve" ? handleApprove : modalType === "decline" ? handleDecline : modalType === "finalize" ? handleFinalize : handleComplete}
+                title={modalTitle}
+                message={modalMessage}
+                type={modalType}
+                confirmText={modalType === "approve" ? "Duyệt" : modalType === "decline" ? "Từ chối" : modalType === "finalize" ? "Chốt" : "Hoàn thành"}
+            />
         </div>
     );
 };
@@ -886,27 +1001,27 @@ const StatCard = ({ icon, title, value, bgColor }) => (
 );
 
 // Component cho các mục thông tin
-const InfoItem = ({ icon, label, value, color }) => (
-    <div className="flex items-start">
-        <div
-            className="p-2 rounded-lg mr-4 mt-1"
-            style={{ backgroundColor: `${color[500]}10` }}
-        >
-            {React.cloneElement(icon, {
-                className: "h-5 w-5",
-                style: { color: color[600] }
-            })}
-        </div>
-        <div className="flex-1">
-            <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>
-                {label}
-            </p>
-            <p className="text-base" style={{ color: TEXT.PRIMARY }}>
-                {value}
-            </p>
-        </div>
-    </div>
-);
+// const InfoItem = ({ icon, label, value, color }) => (
+//     <div className="flex items-start">
+//         <div
+//             className="p-2 rounded-lg mr-4 mt-1"
+//             style={{ backgroundColor: `${color[500]}10` }}
+//         >
+//             {React.cloneElement(icon, {
+//                 className: "h-5 w-5",
+//                 style: { color: color[600] }
+//             })}
+//         </div>
+//         <div className="flex-1">
+//             <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>
+//                 {label}
+//             </p>
+//             <p className="text-base" style={{ color: TEXT.PRIMARY }}>
+//                 {value}
+//             </p>
+//         </div>
+//     </div>
+// );
 
 // Component cho badge trạng thái
 const StatusBadge = ({ status, textTrue, textFalse, colorTrue, colorFalse }) => {
