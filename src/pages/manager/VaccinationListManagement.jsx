@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import ReactDOM from "react-dom";
-import { FiSearch, FiFilter, FiCalendar, FiUsers, FiCheckCircle, FiClock, FiAlertCircle, FiDownload, FiUpload, FiPrinter, FiMoreVertical, FiCheck, FiX, FiEye, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiFilter, FiCalendar, FiUsers, FiCheckCircle, FiClock, FiAlertCircle, FiDownload, FiUpload, FiPrinter, FiMoreVertical, FiCheck, FiX, FiEye, FiRefreshCw, FiXCircle } from "react-icons/fi";
 import { PRIMARY, TEXT, BACKGROUND, BORDER, SUCCESS, WARNING, ERROR, INFO, SHADOW, GRAY } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
-import vaccineSessionApi from '../../api/vaccineSessionApi';
+import vaccineSessionApi from '../../api/vaccineSessionApi'; 
 
 const VaccinationListManagement = () => {
     const [vaccinationList, setVaccinationList] = useState([]);
@@ -83,18 +83,30 @@ const VaccinationListManagement = () => {
             WaitingForParentConsent: {
                 bg: WARNING[50],
                 text: WARNING[700],
-                label: "Sắp diễn ra",
+                label: "Chờ xác nhận",
                 icon: FiClock
             },
             Scheduled: {
+                bg: SUCCESS[50],
+                text: SUCCESS[700],
+                label: "Đã lên lịch",
+                icon: FiCalendar
+            },
+            Declined: {
+                bg: ERROR[50],
+                text: ERROR[700],
+                label: "Từ chối",
+                icon: FiXCircle
+            },
+            Completed: {
                 bg: SUCCESS[50],
                 text: SUCCESS[700],
                 label: "Đã hoàn thành",
                 icon: FiCheckCircle
             },
             PendingApproval: {
-                bg: PRIMARY[50],
-                text: PRIMARY[700],
+                bg: WARNING[50],
+                text: WARNING[700],
                 label: "Lên kế hoạch",
                 icon: FiAlertCircle
             },

@@ -96,6 +96,26 @@
             }
         },
 
+        // Xuất danh sách lớp học
+        exportClassList: async (classData) => {
+            try {
+                const response = await apiClient.get('/school-classes/export', classData, {
+                    responseType: 'blob'
+                });
+                return {
+                    success: true,
+                    data: response.data,
+                    headers: response.headers
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    message: "Không thể xuất danh sách quản lý",
+                    error: error.response?.data || error
+                };
+            }
+        },
+
         // Thêm lớp bằng import file
         addSchoolClassByFile: async (classData) => {
             try {

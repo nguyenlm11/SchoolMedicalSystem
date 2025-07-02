@@ -83,6 +83,21 @@ const vaccineSessionApi = {
         }
     },
     
+    // Xác nhận đã hoàn thành buổi tiêm chủng
+    completeVaccineSession: async (sessionId) => {
+        try {
+            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/complete`);
+            return response.data;
+        } catch (error) {
+            console.error('Error complete vaccine session:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể xác nhận hoàn thành.',
+                data: null
+            };
+        }
+    },
+
     // Từ chối buổi tiêm chủng
     declineVaccineSession: async (sessionId, reason) => {
         try {
