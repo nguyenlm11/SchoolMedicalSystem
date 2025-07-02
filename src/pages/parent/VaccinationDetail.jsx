@@ -1,55 +1,104 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { FiArrowLeft, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 import { PRIMARY, GRAY, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
+import userApi from "../../api/userApi";
+import vaccinationScheduleApi from "../../api/VaccinationScheduleApi";
 
 const VaccinationDetail = () => {
     const { id } = useParams();
+    const location = useLocation();
     const [vaccination, setVaccination] = useState(null);
+    const [vaccinationSession, setVaccinationSession] = useState(null);
+    const [vaccineType, setVaccineType] = useState(null);
+    const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [consentGiven, setConsentGiven] = useState(null);
-    const [signature, setSignature] = useState("");
     const [submitted, setSubmitted] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
+    const [consentStatus, setConsentStatus] = useState(null);
+    const [consentData, setConsentData] = useState(null);
+
+    const formatDate = (dateString) => {
+        if (!dateString) return "";
+        return new Date(dateString).toLocaleDateString('vi-VN');
+    };
+
+    const formatDateTime = (dateString) => {
+        if (!dateString) return { date: "", time: "" };
+        const date = new Date(dateString);
+        return {
+            date: date.toLocaleDateString('vi-VN'),
+            time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false })
+        };
+    };
 
     useEffect(() => {
-        setTimeout(() => {
-            const mockVaccinationDetail = {
-                id: parseInt(id),
-                studentName: "Nguyễn Văn An",
-                studentId: "HS12345",
-                class: "2A",
-                dateOfBirth: "15/05/2017",
-                parentName: "Nguyễn Văn Bình",
-                parentPhone: "0123456789",
-                vaccineName: "Sởi-Rubella",
-                date: "2025-07-20",
-                displayDate: "20/07/2025",
-                time: "08:00",
-                location: "Phòng y tế trường",
-                address: "Trường Tiểu học ABC, 123 Đường XYZ, Quận 1, TP.HCM",
-                status: "scheduled",
-                statusText: "Đã lên lịch",
-                description: "Vaccine phòng bệnh Sởi và Rubella cho trẻ em trong độ tuổi tiểu học. Đây là vaccine được khuyến nghị trong chương trình tiêm chủng mở rộng quốc gia.",
-                sideEffects: "Có thể gây sốt nhẹ, đau tại chỗ tiêm, mệt mỏi trong vòng 24-48 giờ sau tiêm. Các tác dụng phụ này thường nhẹ và tự khỏi.",
-                contraindications: "Không tiêm cho trẻ đang sốt cao, có tiền sử dị ứng nghiêm trọng với vaccine, hoặc đang điều trị ức chế miễn dịch.",
-                preparation: "Trẻ cần được nghỉ ngơi đầy đủ, không sốt trong 24h trước khi tiêm. Mang theo thẻ BHYT và sổ tiêm chủng.",
-                dueIn: 15,
-                priority: "medium",
-                avatar: "A",
-                createdDate: "10/07/2025",
-                doctor: "BS. Nguyễn Thị Lan",
-                notes: "Học sinh cần được theo dõi sức khỏe trong 30 phút sau tiêm."
-            };
-            setVaccination(mockVaccinationDetail);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                if (!id) {
+                    setLoading(false);
+                    return;
+                }
+                const studentIdFromState = location.state?.studentId;
+                const finalStudentId = studentIdFromState || "14ac1093-8387-4485-b2c9-0b3f91c2b5dd";
+                // Fetch vaccination session details
+                const sessionResponse = await vaccinationScheduleApi.getVaccinationSessionDetails(id);
+                if (sessionResponse.success) {
+                    const sessionData = sessionResponse.data;
+                    setVaccinationSession(sessionData);
+                    setVaccination({
+                        id: parseInt(id),
+                        studentId: finalStudentId,
+                        vaccinationSessionId: id,
+                        status: sessionData.status || "scheduled",
+                        createdDate: sessionData.createdDate ? new Date(sessionData.createdDate).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN')
+                    });
+                    if (sessionData.vaccineTypeId) {
+                        const vaccineTypeResponse = await vaccinationScheduleApi.getVaccineTypeDetails(sessionData.vaccineTypeId);
+                        if (vaccineTypeResponse.success) {
+                            setVaccineType(vaccineTypeResponse.data);
+                        }
+                    }
+                    // Fetch student data
+                    const studentResponse = await userApi.getStudentById(finalStudentId);
+                    if (studentResponse.success) {
+                        setStudent(studentResponse.data);
+                    }
+                    // Fetch consent status
+                    const consentResponse = await vaccinationScheduleApi.getParentConsentStatus(id, finalStudentId);
+                    if (consentResponse.success) {
+                        setConsentData(consentResponse.data);
+                        setConsentStatus(consentResponse.data.consentStatus);
+                        if (consentResponse.data.consentStatus === "Approved") {
+                            setConsentGiven(true);
+                        } else if (consentResponse.data.consentStatus === "Declined") {
+                            setConsentGiven(false);
+                        }
+                    } else {
+                        setConsentStatus("Pending");
+                    }
+                } else {
+                    setConsentStatus("Pending");
+                }
+            } catch (error) {
+                setConsentStatus("Pending");
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) {
+            fetchData();
+        } else {
             setLoading(false);
-        }, 1000);
-    }, [id]);
+        }
+    }, [id, location.state?.studentId]);
 
     const getStatusBadge = (status) => {
         if (status === "scheduled") {
@@ -89,7 +138,7 @@ const VaccinationDetail = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (consentGiven !== null && (consentGiven === false || signature)) {
+        if (consentGiven !== null) {
             setShowConfirmModal(true);
         } else {
             setShowAlertModal(true);
@@ -98,11 +147,37 @@ const VaccinationDetail = () => {
 
     const handleConfirmSubmission = async () => {
         setIsSubmitting(true);
-        setTimeout(() => {
-            setSubmitted(true);
-            setShowConfirmModal(false);
+
+        try {
+            const consentDataToSubmit = {
+                consentStatus: consentGiven ? "Approved" : "Declined",
+                notes: null
+            };
+
+            const submitResponse = await vaccinationScheduleApi.submitParentConsent(
+                vaccination.vaccinationSessionId,
+                vaccination.studentId,
+                consentDataToSubmit
+            );
+            if (submitResponse.success) {
+                const consentResponse = await vaccinationScheduleApi.getParentConsentStatus(
+                    vaccination.vaccinationSessionId,
+                    vaccination.studentId
+                );
+                if (consentResponse.success) {
+                    setConsentData(consentResponse.data);
+                    setConsentStatus(consentResponse.data.consentStatus);
+                }
+                setSubmitted(true);
+                setShowConfirmModal(false);
+            } else {
+                setShowAlertModal(true);
+            }
+        } catch (error) {
+            setShowAlertModal(true);
+        } finally {
             setIsSubmitting(false);
-        }, 2000);
+        }
     };
 
     if (loading) {
@@ -158,7 +233,7 @@ const VaccinationDetail = () => {
 
                         <div className="text-center py-8">
                             <h2 className="text-5xl font-bold uppercase tracking-wider">PHIẾU ĐỒNG Ý TIÊM CHỦNG</h2>
-                            <p className="text-2xl mt-4 italic">Vaccine {vaccination.vaccineName}</p>
+                            <p className="text-2xl mt-4 italic">Vaccine {vaccinationSession?.vaccineTypeName || "Đang tải..."}</p>
                         </div>
 
                         <div className="px-12 pb-8">
@@ -169,25 +244,25 @@ const VaccinationDetail = () => {
                                         <div className="space-y-4 text-xl">
                                             <div className="flex">
                                                 <span className="font-semibold w-40">Họ và tên:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.studentName}</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.fullName || "Đang tải..."}</span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-x-8">
                                                 <div className="flex">
                                                     <span className="font-semibold w-20">Lớp:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.class}</span>
+                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.currentClassName || "Đang tải..."}</span>
                                                 </div>
                                                 <div className="flex">
                                                     <span className="font-semibold w-24">Mã HS:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.studentId}</span>
+                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.studentCode || "Đang tải..."}</span>
                                                 </div>
                                             </div>
                                             <div className="flex">
                                                 <span className="font-semibold w-40">Ngày sinh:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.dateOfBirth}</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.dateOfBirth ? formatDate(student.dateOfBirth) : "Đang tải..."}</span>
                                             </div>
                                             <div className="flex">
                                                 <span className="font-semibold w-40">Phụ huynh:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.parentName}</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.parentName || "Đang tải..."}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -197,25 +272,25 @@ const VaccinationDetail = () => {
                                         <div className="space-y-4 text-xl">
                                             <div className="flex">
                                                 <span className="font-semibold w-40">Loại vaccine:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1 font-bold">{vaccination.vaccineName}</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1 font-bold">{vaccinationSession?.vaccineTypeName || "Đang tải..."}</span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-x-8">
                                                 <div className="flex">
                                                     <span className="font-semibold w-28">Ngày tiêm:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.displayDate}</span>
+                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).date : "Đang tải..."}</span>
                                                 </div>
                                                 <div className="flex">
                                                     <span className="font-semibold w-16">Giờ:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.time}</span>
+                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).time : "Đang tải..."}</span>
                                                 </div>
                                             </div>
                                             <div className="flex">
                                                 <span className="font-semibold w-40">Địa điểm:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.location}</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.location || "Đang tải..."}</span>
                                             </div>
                                             <div className="flex">
-                                                <span className="font-semibold w-40">Bác sĩ:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccination.doctor}</span>
+                                                <span className="font-semibold w-40">Đơn vị phụ trách:</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.responsibleOrganizationName || "Đang tải..."}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -225,19 +300,19 @@ const VaccinationDetail = () => {
                                         <div className="space-y-4 text-lg leading-relaxed">
                                             <div>
                                                 <p className="font-semibold text-xl">1. Mô tả vaccine:</p>
-                                                <p className="pl-4">{vaccination.description}</p>
+                                                <p className="pl-4">{vaccineType?.description || "Đang tải..."}</p>
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-xl">2. Tác dụng phụ có thể xảy ra:</p>
-                                                <p className="pl-4">{vaccination.sideEffects}</p>
+                                                <p className="pl-4">{vaccinationSession?.sideEffect || "Đang tải..."}</p>
                                             </div>
                                             <div>
                                                 <p className="font-semibold text-xl">3. Chống chỉ định:</p>
-                                                <p className="pl-4">{vaccination.contraindications}</p>
+                                                <p className="pl-4">{vaccinationSession?.contraindication || "Đang tải..."}</p>
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-xl">4. Chuẩn bị trước khi tiêm:</p>
-                                                <p className="pl-4">{vaccination.preparation}</p>
+                                                <p className="font-semibold text-xl">4. Ghi chú:</p>
+                                                <p className="pl-4">{vaccinationSession?.notes || "Không có ghi chú đặc biệt"}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -248,9 +323,9 @@ const VaccinationDetail = () => {
 
                                     <div className="space-y-6 text-xl">
                                         <p>
-                                            Tôi, <span className="font-bold border-b border-dotted border-gray-400 px-2">{vaccination.parentName}</span>,
-                                            là phụ huynh/người giám hộ của học sinh <span className="font-bold border-b border-dotted border-gray-400 px-2">{vaccination.studentName}</span>,
-                                            số điện thoại: <span className="border-b border-dotted border-gray-400 px-2">{vaccination.parentPhone}</span>
+                                            Tôi, <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.parentName || "Đang tải..."}</span>,
+                                            là phụ huynh/người giám hộ của học sinh <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.fullName || "Đang tải..."}</span>,
+                                            số điện thoại: <span className="border-b border-dotted border-gray-400 px-2">{student?.parentPhone || "Đang tải..."}</span>
                                         </p>
 
                                         <p className="font-semibold text-xl">Sau khi đã được tư vấn đầy đủ về vaccine, tôi:</p>
@@ -265,10 +340,23 @@ const VaccinationDetail = () => {
                                                         style={{ accentColor: PRIMARY[500], transform: 'scale(1.5)' }}
                                                         onChange={() => setConsentGiven(true)}
                                                         checked={consentGiven === true}
+                                                        disabled={consentStatus !== "Pending"}
                                                     />
                                                     <div className="flex-1">
                                                         <span className="font-semibold text-xl">ĐỒNG Ý</span>
-                                                        <span className="text-xl"> cho con tôi được tiêm vaccine {vaccination.vaccineName} theo lịch trình đã thông báo.</span>
+                                                        <span className="text-xl"> cho con tôi được tiêm vaccine {vaccinationSession?.vaccineTypeName || "..."} theo lịch trình đã thông báo.</span>
+                                                        {consentStatus === "Approved" && (
+                                                            <div className="mt-2">
+                                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: PRIMARY[100], color: PRIMARY[800] }}>
+                                                                    ✓ Đã xác nhận đồng ý
+                                                                </span>
+                                                                {consentData?.consentDate && (
+                                                                    <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                                        Ngày xác nhận: {formatDate(consentData.consentDate)}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </label>
 
@@ -280,6 +368,7 @@ const VaccinationDetail = () => {
                                                         style={{ accentColor: GRAY[500], transform: 'scale(1.5)' }}
                                                         onChange={() => setConsentGiven(false)}
                                                         checked={consentGiven === false}
+                                                        disabled={consentStatus !== "Pending"}
                                                     />
                                                     <div className="flex-1">
                                                         <span className="font-semibold text-xl">KHÔNG ĐỒNG Ý</span>
@@ -288,7 +377,7 @@ const VaccinationDetail = () => {
                                                 </label>
                                             </div>
 
-                                            {consentGiven === true && (
+                                            {consentGiven === true && consentStatus === "Pending" && (
                                                 <div className="border border-gray-300 p-6 bg-gray-50">
                                                     <p className="font-semibold mb-3 text-xl">Tôi cam kết:</p>
                                                     <ul className="list-disc pl-8 space-y-2 text-lg">
@@ -300,54 +389,70 @@ const VaccinationDetail = () => {
                                                 </div>
                                             )}
 
-                                            <div className="grid grid-cols-2 gap-8 pt-8">
-                                                <div className="text-center">
-                                                    <p className="font-semibold mb-4 text-xl">NHÂN VIÊN Y TẾ</p>
-                                                    <p className="text-lg italic mb-8">(Ký tên, ghi rõ họ tên)</p>
-                                                    <div className="h-20 border-b border-dotted border-gray-400"></div>
-                                                    <p className="text-lg mt-3">{vaccination.doctor}</p>
+                                            {consentStatus === "Approved" && (
+                                                <div className="border border-gray-300 p-6 bg-gray-50">
+                                                    <p className="font-semibold mb-3 text-xl">Phụ huynh đã cam kết:</p>
+                                                    <ul className="list-disc pl-8 space-y-2 text-lg">
+                                                        <li>Đã cung cấp thông tin chính xác về tình trạng sức khỏe của con</li>
+                                                        <li>Đã đọc và hiểu thông tin về vaccine.</li>
+                                                        <li>Con em không có tiền sử dị ứng với vaccine này</li>
+                                                        <li>Đồng ý cho phép nhà trường và nhân viên y tế tiến hành tiêm chủng cho con em.</li>
+                                                    </ul>
                                                 </div>
+                                            )}
 
-                                                <div className="text-center">
-                                                    <p className="font-semibold mb-4 text-xl">PHỤ HUYNH/NGƯỜI GIÁM HỘ</p>
-                                                    <p className="text-lg italic mb-3">(Ký tên, ghi rõ họ tên)</p>
-
-                                                    {consentGiven === true ? (
-                                                        <div className="mb-6">
-                                                            <input
-                                                                type="text"
-                                                                className="w-full p-3 text-center text-2xl border-b-2 border-gray-400 bg-transparent focus:outline-none focus:border-gray-600"
-                                                                style={{ fontFamily: 'serif' }}
-                                                                value={signature}
-                                                                onChange={(e) => setSignature(e.target.value)}
-                                                                placeholder="Ký tên đầy đủ"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="h-20 border-b border-dotted border-gray-400 mb-6"></div>
-                                                    )}
-
-                                                    <p className="text-lg">{vaccination.parentName}</p>
-                                                    <p className="text-base mt-2">Ngày ký: {new Date().toLocaleDateString('vi-VN')}</p>
-                                                </div>
+                                            <div className="text-center pt-6 border-t border-gray-300">
+                                                <p className="text-lg font-semibold mb-2">Phụ huynh xác nhận:</p>
+                                                <p className="text-xl font-bold" style={{ color: PRIMARY[700] }}>
+                                                    {student?.parentName || "Đang tải..."}
+                                                </p>
+                                                {(consentStatus === "Approved" || consentStatus === "Declined") && consentData?.consentDate && (
+                                                    <p className="text-sm mt-2" style={{ color: TEXT.SECONDARY }}>
+                                                        Ngày xác nhận: {formatDate(consentData.consentDate)}
+                                                    </p>
+                                                )}
                                             </div>
 
-                                            <div className="text-center pt-8">
-                                                <button
-                                                    type="submit"
-                                                    className="px-12 py-4 text-xl font-semibold text-white rounded-lg transition-all duration-300 hover:opacity-90"
-                                                    style={{ backgroundColor: PRIMARY[500] }}
-                                                >
-                                                    Xác nhận và Gửi Phiếu
-                                                </button>
-                                            </div>
+                                            {consentStatus === "Pending" && (
+                                                <div className="text-center pt-8">
+                                                    <button
+                                                        type="submit"
+                                                        className="px-12 py-4 text-xl font-semibold text-white rounded-lg transition-all duration-300 hover:opacity-90"
+                                                        style={{ backgroundColor: PRIMARY[500] }}
+                                                    >
+                                                        Xác nhận và Gửi Phiếu
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {(consentStatus === "Approved" || consentStatus === "Declined") && (
+                                                <div className="text-center pt-8">
+                                                    <div className="inline-flex items-center px-8 py-3 rounded-lg text-lg font-semibold"
+                                                        style={{
+                                                            backgroundColor: consentStatus === "Approved" ? PRIMARY[100] : GRAY[100],
+                                                            color: consentStatus === "Approved" ? PRIMARY[700] : GRAY[700]
+                                                        }}>
+                                                        {consentStatus === "Approved" ? (
+                                                            <>
+                                                                <FiCheckCircle className="w-5 h-5 mr-2" />
+                                                                Đã xác nhận đồng ý tiêm chủng
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <FiAlertCircle className="w-5 h-5 mr-2" />
+                                                                Đã xác nhận từ chối tiêm chủng
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </form>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="text-center text-base italic pt-8 border-t border-gray-300 mt-8">
-                                <p>Phiếu này có hiệu lực khi được ký đầy đủ và có dấu của nhà trường</p>
+                                <p>Phiếu này có hiệu lực khi được xác nhận trực tuyến</p>
                                 <p className="mt-2">Mọi thắc mắc xin liên hệ phòng y tế trường: (028) 1234-5678</p>
                             </div>
                         </div>
@@ -363,8 +468,8 @@ const VaccinationDetail = () => {
                             </h2>
                             <p className="text-base mb-6 max-w-md mx-auto" style={{ color: TEXT.SECONDARY }}>
                                 {consentGiven
-                                    ? `Phiếu đồng ý tiêm vaccine ${vaccination.vaccineName} cho ${vaccination.studentName} đã được gửi thành công.`
-                                    : `Phiếu từ chối tiêm vaccine ${vaccination.vaccineName} cho ${vaccination.studentName} đã được ghi nhận.`}
+                                    ? `Phiếu đồng ý tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được gửi thành công.`
+                                    : `Phiếu từ chối tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được ghi nhận.`}
                             </p>
                             <Link
                                 to="/parent/vaccination/schedule"
@@ -383,7 +488,7 @@ const VaccinationDetail = () => {
                     onClose={() => setShowConfirmModal(false)}
                     onConfirm={handleConfirmSubmission}
                     title={consentGiven ? "Xác nhận đồng ý tiêm chủng" : "Xác nhận từ chối tiêm chủng"}
-                    message={consentGiven ? `Bạn đồng ý cho ${vaccination?.studentName} tiêm vaccine ${vaccination?.vaccineName} vào ngày ${vaccination?.displayDate}?` : `Bạn xác nhận từ chối cho ${vaccination?.studentName} tiêm vaccine ${vaccination?.vaccineName}?`}
+                    message={consentGiven ? `Bạn đồng ý cho ${student?.fullName} tiêm vaccine ${vaccinationSession?.vaccineTypeName} vào ngày ${vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).date : "..."}?` : `Bạn xác nhận từ chối cho ${student?.fullName} tiêm vaccine ${vaccinationSession?.vaccineTypeName}?`}
                     confirmText="Xác nhận gửi"
                     cancelText="Kiểm tra lại"
                     type={consentGiven ? "success" : "warning"}
@@ -396,7 +501,7 @@ const VaccinationDetail = () => {
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
                     title="Thông báo"
-                    message="Vui lòng ký tên nếu đồng ý cho con tiêm chủng"
+                    message={consentGiven === null ? "Vui lòng chọn đồng ý hoặc không đồng ý" : "Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại."}
                     type="warning"
                     okText="Đã hiểu"
                 />
