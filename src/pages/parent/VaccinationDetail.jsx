@@ -76,7 +76,7 @@ const VaccinationDetail = () => {
                     if (consentResponse.success) {
                         setConsentData(consentResponse.data);
                         setConsentStatus(consentResponse.data.consentStatus);
-                        if (consentResponse.data.consentStatus === "Approved") {
+                        if (consentResponse.data.consentStatus === "Confirmed") {
                             setConsentGiven(true);
                         } else if (consentResponse.data.consentStatus === "Declined") {
                             setConsentGiven(false);
@@ -149,17 +149,17 @@ const VaccinationDetail = () => {
         setIsSubmitting(true);
 
         try {
-            const consentDataToSubmit = {
-                consentStatus: consentGiven ? "Approved" : "Declined",
-                notes: null
-            };
+            // Sử dụng API mới submitParentApproval
+            const status = consentGiven ? "Confirmed" : "Declined";
 
-            const submitResponse = await vaccinationScheduleApi.submitParentConsent(
+            const submitResponse = await vaccinationScheduleApi.submitParentApproval(
                 vaccination.vaccinationSessionId,
                 vaccination.studentId,
-                consentDataToSubmit
+                status
             );
+
             if (submitResponse.success) {
+                // Fetch lại để cập nhật trạng thái mới
                 const consentResponse = await vaccinationScheduleApi.getParentConsentStatus(
                     vaccination.vaccinationSessionId,
                     vaccination.studentId
@@ -174,6 +174,7 @@ const VaccinationDetail = () => {
                 setShowAlertModal(true);
             }
         } catch (error) {
+            console.error('Error submitting parent approval:', error);
             setShowAlertModal(true);
         } finally {
             setIsSubmitting(false);
@@ -345,18 +346,6 @@ const VaccinationDetail = () => {
                                                     <div className="flex-1">
                                                         <span className="font-semibold text-xl">ĐỒNG Ý</span>
                                                         <span className="text-xl"> cho con tôi được tiêm vaccine {vaccinationSession?.vaccineTypeName || "..."} theo lịch trình đã thông báo.</span>
-                                                        {consentStatus === "Approved" && (
-                                                            <div className="mt-2">
-                                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: PRIMARY[100], color: PRIMARY[800] }}>
-                                                                    ✓ Đã xác nhận đồng ý
-                                                                </span>
-                                                                {consentData?.consentDate && (
-                                                                    <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                                        Ngày xác nhận: {formatDate(consentData.consentDate)}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </label>
 
@@ -389,7 +378,7 @@ const VaccinationDetail = () => {
                                                 </div>
                                             )}
 
-                                            {consentStatus === "Approved" && (
+                                            {consentStatus === "Confirmed" && (
                                                 <div className="border border-gray-300 p-6 bg-gray-50">
                                                     <p className="font-semibold mb-3 text-xl">Phụ huynh đã cam kết:</p>
                                                     <ul className="list-disc pl-8 space-y-2 text-lg">
@@ -406,7 +395,7 @@ const VaccinationDetail = () => {
                                                 <p className="text-xl font-bold" style={{ color: PRIMARY[700] }}>
                                                     {student?.parentName || "Đang tải..."}
                                                 </p>
-                                                {(consentStatus === "Approved" || consentStatus === "Declined") && consentData?.consentDate && (
+                                                {(consentStatus === "Confirmed" || consentStatus === "Declined") && consentData?.consentDate && (
                                                     <p className="text-sm mt-2" style={{ color: TEXT.SECONDARY }}>
                                                         Ngày xác nhận: {formatDate(consentData.consentDate)}
                                                     </p>
@@ -425,14 +414,14 @@ const VaccinationDetail = () => {
                                                 </div>
                                             )}
 
-                                            {(consentStatus === "Approved" || consentStatus === "Declined") && (
+                                            {(consentStatus === "Confirmed" || consentStatus === "Declined") && (
                                                 <div className="text-center pt-8">
                                                     <div className="inline-flex items-center px-8 py-3 rounded-lg text-lg font-semibold"
                                                         style={{
-                                                            backgroundColor: consentStatus === "Approved" ? PRIMARY[100] : GRAY[100],
-                                                            color: consentStatus === "Approved" ? PRIMARY[700] : GRAY[700]
+                                                            backgroundColor: consentStatus === "Confirmed" ? PRIMARY[100] : GRAY[100],
+                                                            color: consentStatus === "Confirmed" ? PRIMARY[700] : GRAY[700]
                                                         }}>
-                                                        {consentStatus === "Approved" ? (
+                                                        {consentStatus === "Confirmed" ? (
                                                             <>
                                                                 <FiCheckCircle className="w-5 h-5 mr-2" />
                                                                 Đã xác nhận đồng ý tiêm chủng
