@@ -255,13 +255,13 @@ const vaccinationScheduleApi = {
 
             const requestData = {
                 studentId: studentId,
-                consentStatus: consentData.consentStatus, // "Approved" or "Declined"
+                consentStatus: consentData.consentStatus, // "Confirmed" or "Declined"
                 parentSignature: consentData.parentSignature || null,
                 consentDate: new Date().toISOString(),
                 notes: consentData.notes || null
             };
 
-            const response = await apiClient.post(`/vaccination-sessions/${sessionId}/parent-consent`, requestData);
+            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/parent-consent`, requestData);
             return response.data;
         } catch (error) {
             console.error('Error submitting parent consent:', error);
@@ -274,6 +274,75 @@ const vaccinationScheduleApi = {
             return {
                 success: false,
                 message: error.message || 'Không thể gửi quyết định đồng ý',
+                data: null,
+                errors: [error.message || 'Lỗi kết nối server']
+            };
+        }
+    },
+
+    // API chính thức: Phê duyệt/Từ chối tiêm chủng của phụ huynh
+    submitParentApproval: async (sessionId, studentId, status) => {
+        try {
+            // Validate parameters
+            if (!sessionId) {
+                return {
+                    success: false,
+                    message: 'Session ID là bắt buộc',
+                    data: null,
+                    errors: ['Session ID không được để trống']
+                };
+            }
+
+            if (!studentId) {
+                return {
+                    success: false,
+                    message: 'Student ID là bắt buộc',
+                    data: null,
+                    errors: ['Student ID không được để trống']
+                };
+            }
+
+            if (!status) {
+                return {
+                    success: false,
+                    message: 'Trạng thái phê duyệt là bắt buộc',
+                    data: null,
+                    errors: ['Status không được để trống']
+                };
+            }
+
+            // Validate status values
+            const validStatuses = ['Confirmed', 'Declined'];
+            if (!validStatuses.includes(status)) {
+                return {
+                    success: false,
+                    message: 'Trạng thái không hợp lệ',
+                    data: null,
+                    errors: ['Status phải là: Confirmed, Declined']
+                };
+            }
+
+            const requestData = {
+                status: status
+            };
+
+            const response = await apiClient.put(
+                `/vaccination-sessions/${sessionId}/parent-approval?studentId=${studentId}`,
+                requestData
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error('Error submitting parent approval:', error);
+
+            // Handle different error types
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+
+            return {
+                success: false,
+                message: error.message || 'Không thể gửi quyết định phê duyệt',
                 data: null,
                 errors: [error.message || 'Lỗi kết nối server']
             };
