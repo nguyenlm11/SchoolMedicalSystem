@@ -48,6 +48,7 @@ const VaccinationDetail = () => {
     const [actionType, setActionType] = useState("");
     const [modalTitle, setModalTitle] = useState("");
     const [modalMessage, setModalMessage] = useState("");
+    const [studentConsentData, setStudentConsentData] = useState([]);
 
     const user = JSON.parse(localStorage.getItem("user"));
     const userRole = user?.role;
@@ -83,6 +84,33 @@ const VaccinationDetail = () => {
             setError("Không thể duyệt buổi tiêm.");
         }
     };
+
+    useEffect(() => {
+        const fetchVaccinationDetails = async () => {
+            try {
+                setLoading(true);
+                const response = await vaccineSessionApi.getVaccineSessionDetails(id);
+                const session = response.data;
+                setVaccination(session);
+
+                if (session?.classIds?.length > 0) {
+                    const classConsentResponses = await vaccineSessionApi.getAllClassStudentConsents(id, session.classIds);
+                    const validData = classConsentResponses
+                        .filter(res => res.success && res.data?.length > 0)
+                        .flatMap(res => res.data);
+                    setStudentConsentData(validData);
+                }
+
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching vaccination details:", err);
+                setError("Không thể tải thông tin tiêm chủng.");
+                setLoading(false);
+            }
+        };
+
+        fetchVaccinationDetails();
+    }, [id]);
 
     const handleDecline = async (reason) => {
         try {
@@ -171,60 +199,7 @@ const VaccinationDetail = () => {
         }
         setConfirmationModal(true);
     };
-    // Mock data - in a real application, this would come from an API
-    // useEffect(() => {
-    //     // Simulate API call
-    //     setTimeout(() => {
-    //         const mockVaccination = {
-    //             id: parseInt(id),
-    //             sessionName: id === "1" ? "Tiêm vắc-xin cúm mùa mùa" : "Tiêm nhắc vắc-xin MMR",
-    //             scheduledDate: id === "1" ? "2023-07-15" : "2023-06-30",
-    //             status: id === "1" ? "upcoming" : id === "2" ? "upcoming" : "completed",
-    //             grades: id === "1" ? ["1A", "1B", "1C"] : ["5A", "5B"],
-    //             totalStudents: id === "1" ? 75 : 52,
-    //             confirmedParents: id === "1" ? 68 : 45,
-    //             vaccineTypeName:
-    //                 id === "1"
-    //                     ? "Vắc-xin cúm mùa 2023"
-    //                     : "Vắc-xin MMR (Sởi - Quai bị - Rubella)",
-    //             description:
-    //                 id === "1"
-    //                     ? "Tiêm phòng cúm mùa cho học sinh khối lớp 1"
-    //                     : "Tiêm nhắc mũi 2 vắc-xin MMR cho học sinh khối lớp 5",
-    //             location: "Phòng y tế trường học",
-    //             startTime: "08:00",
-    //             endTime: "11:30",
-    //             healthcareProvider: "Trung tâm Y tế Dự phòng Quận 1",
-    //             notes:
-    //                 "Học sinh cần mang theo sổ tiêm chủng. Phụ huynh có thể đến cùng nếu muốn.",
-    //             vaccinationMethod: "Tiêm bắp",
-    //             sideEffects: "Có thể gây sốt nhẹ, đau tại chỗ tiêm trong 1-2 ngày",
-    //             contraindications:
-    //                 "Không tiêm cho học sinh đang sốt hoặc có tiền sử dị ứng với thành phần của vắc-xin",
-    //             createdAt: "2023-06-01",
-    //             createdBy: "Nguyễn Thị An - Y tá trường",
-    //             lastUpdated: "2023-06-10",
-    //             students: Array(id === "1" ? 75 : 52)
-    //                 .fill()
-    //                 .map((_, i) => ({
-    //                     id: i + 1,
-    //                     name: `Học sinh ${i + 1}`,
-    //                     class:
-    //                         id === "1"
-    //                             ? ["1A", "1B", "1C"][Math.floor(i / 25)]
-    //                             : ["5A", "5B"][Math.floor(i / 26)],
-    //                     parentConfirmed: Math.random() > 0.1,
-    //                     vaccinated: false,
-    //                     parentNote: Math.random() > 0.8 ? "Cháu bị dị ứng với..." : "",
-    //                     healthStatus: "Bình thường",
-    //                 })),
-    //         };
-
-    //         setVaccination(mockVaccination);
-    //         setLoading(false);
-    //     }, 1000);
-    // }, [id]);
-
+    
     const getStatusBadge = (status) => {
         switch (status) {
             case "PendingApproval":
@@ -262,6 +237,66 @@ const VaccinationDetail = () => {
         }
     };
 
+    const ConsentStatusBadge = ({ status }) => {
+        let bgColor, text;
+
+        switch (status) {
+            case "Confirm":
+                bgColor = SUCCESS[500];
+                text = "Đã xác nhận";
+                break;
+            case "Declined":
+                bgColor = ERROR[500];
+                text = "Từ chối";
+                break;
+            case "Pending":
+            default:
+                bgColor = WARNING[500];
+                text = "Chưa phản hồi";
+                break;
+        }
+
+        return (
+            <div
+                className="px-3 py-1 rounded-full inline-flex items-center"
+                style={{
+                    backgroundColor: bgColor,
+                    color: COMMON.WHITE
+                }}
+            >
+                <span className="text-sm font-medium">{text}</span>
+            </div>
+        );
+    };
+
+    const VaccinationStatusBadge = ({ status }) => {
+        let bgColor, text;
+
+        switch (status) {
+            case "Completed":
+                bgColor = PRIMARY[600];
+                text = "Đã tiêm";
+                break;
+            case "InProgress":
+            default:
+                bgColor = GRAY[400];
+                text = "Chưa tiêm";
+                break;
+        }
+
+        return (
+            <div
+                className="px-3 py-1 rounded-full inline-flex items-center"
+                style={{
+                    backgroundColor: bgColor,
+                    color: COMMON.WHITE
+                }}
+            >
+                <span className="text-sm font-medium">{text}</span>
+            </div>
+        );
+    };
+
     const handleDeleteVaccination = () => {
         // In a real app, this would be an API call
         // and you'd show a confirmation dialog
@@ -274,18 +309,23 @@ const VaccinationDetail = () => {
         // Display a success message or notification
     };
 
-    // const filteredStudents = vaccination
-    //     ? vaccination.students.filter(
-    //         (student) =>
-    //             (selectedClass === "all" || student.class === selectedClass) &&
-    //             (student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //                 student.class.toLowerCase().includes(searchTerm.toLowerCase()))
-    //     )
-    //     : [];
+    const filteredStudents = studentConsentData
+        .filter(item => selectedClass === "all" || item.classId === selectedClass)
+        .flatMap(item =>
+            item.students.map(student => ({
+                ...student,
+                classId: item.classId,
+                className: item.className
+            }))
+        )
+        .filter(student =>
+            student.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-    // const uniqueClasses = vaccination
-    //     ? [...new Set(vaccination.students.map(student => student.class))].sort()
-    //     : [];
+    const uniqueClasses = studentConsentData.map(item => ({
+        id: item.classId,
+        name: item.className
+    }));
 
     const ActionMenu = ({ student }) => {
         const [isOpen, setIsOpen] = useState(false);
@@ -327,43 +367,49 @@ const VaccinationDetail = () => {
                             zIndex: 50
                         }}
                     >
-                        <button
-                            onClick={() => {
-                                // Handle view details
-                                setIsOpen(false);
-                                console.log("Xem chi tiết");
-                            }}
+                        {/* Xem chi tiết – CHO MANAGER & SCHOOLNURSE */}
+                        {(userRole === 'manager' || userRole === 'schoolnurse') && (
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    console.log("Xem chi tiết");
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                style={{ color: PRIMARY[600] }}
+                            >
+                                <FiEye className="w-4 h-4 flex-shrink-0" />
+                                <span>Xem chi tiết</span>
+                            </button>
+                        )}
 
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                            style={{ color: PRIMARY[600] }}
-                        >
-                            <FiEye className="w-4 h-4 flex-shrink-0" />
-                            <span>Xem chi tiết</span>
-                        </button>
+                        {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
+                        {userRole === 'schoolnurse' && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        console.log("Tiến hành tiêm");
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                    style={{ color: SUCCESS[600] }}
+                                >
+                                    <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>Tiến hành tiêm</span>
+                                </button>
 
-                        <button
-                            onClick={() => {
-                                // Handle vaccination
-                                setIsOpen(false);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                            style={{ color: SUCCESS[600] }}
-                        >
-                            <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>Tiến hành tiêm</span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                // Handle not vaccinated
-                                setIsOpen(false);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                            style={{ color: ERROR[600] }}
-                        >
-                            <FiXCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>Chưa tiêm</span>
-                        </button>
+                                <button
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        console.log("Chưa tiêm");
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                    style={{ color: ERROR[600] }}
+                                >
+                                    <FiXCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>Chưa tiêm</span>
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -645,9 +691,9 @@ const VaccinationDetail = () => {
                                             <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
                                                 Đơn vị thực hiện
                                             </p>
-                                            {/* <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
-                                                {vaccination.healthcareProvider}
-                                            </p> */}
+                                            <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
+                                                {vaccination.responsibleOrganizationName}
+                                            </p>
                                             <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                 Đơn vị y tế được cấp phép
                                             </p>
@@ -779,20 +825,21 @@ const VaccinationDetail = () => {
                                 >
                                     Tất cả
                                 </button>
-                                {/* {uniqueClasses.map((className) => (
+
+                                {uniqueClasses.map(({ id, name }) => (
                                     <button
-                                        key={className}
-                                        onClick={() => setSelectedClass(className)}
+                                        key={id}
+                                        onClick={() => setSelectedClass(id)}
                                         className={`px-4 py-2 rounded-lg flex items-center transition-all duration-200`}
                                         style={{
-                                            backgroundColor: selectedClass === className ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                            color: selectedClass === className ? TEXT.INVERSE : TEXT.PRIMARY,
-                                            border: `1px solid ${selectedClass === className ? PRIMARY[500] : BORDER.DEFAULT}`
+                                            backgroundColor: selectedClass === id ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                            color: selectedClass === id ? TEXT.INVERSE : TEXT.PRIMARY,
+                                            border: `1px solid ${selectedClass === id ? PRIMARY[500] : BORDER.DEFAULT}`
                                         }}
                                     >
-                                        {className}
+                                        {name}
                                     </button>
-                                ))} */}
+                                ))}
                             </div>
 
                             <div className="relative">
@@ -873,50 +920,22 @@ const VaccinationDetail = () => {
                                         ))}
                                     </tr>
                                 </thead>
-                                {/* <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
+                                <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {filteredStudents.length > 0 ? (
                                         filteredStudents.map((student, index) => (
-                                            <tr
-                                                key={student.id || index}
-                                                className="hover:bg-primary-50 transition-all duration-200"
-                                                style={{ backgroundColor: index % 2 === 0 ? 'transparent' : `${PRIMARY[50]}30` }}
-                                            >
-                                                <td className="py-4 px-6 whitespace-nowrap">
-                                                    <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                                        {index + 1}
-                                                    </span>
+                                            <tr key={student.studentId} className="hover:bg-primary-50 transition-all duration-200">
+                                                <td className="py-4 px-6">{index + 1}</td>
+                                                <td className="py-4 px-6">{student.studentName}</td>
+                                                <td className="py-4 px-6">
+                                                    {student.className || "Không xác định"}
                                                 </td>
-                                                <td className="py-4 px-6 whitespace-nowrap">
-                                                    <div className="flex items-center">
-                                                        <span className="text-sm font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {student.name}
-                                                        </span>
-                                                    </div>
+                                                <td className="py-4 px-6">
+                                                    <ConsentStatusBadge status={student.status} />
                                                 </td>
-                                                <td className="py-4 px-6 whitespace-nowrap">
-                                                    <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                        {student.class}
-                                                    </span>
+                                                <td className="py-4 px-6">
+                                                    <VaccinationStatusBadge status={student.vaccinationStatus} />
                                                 </td>
-                                                <td className="py-4 px-6 whitespace-nowrap">
-                                                    <StatusBadge
-                                                        status={student.parentConfirmed}
-                                                        textTrue="Đã xác nhận"
-                                                        textFalse="Chưa xác nhận"
-                                                        colorTrue={SUCCESS}
-                                                        colorFalse={ERROR}
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-6 whitespace-nowrap">
-                                                    <StatusBadge
-                                                        status={student.vaccinated}
-                                                        textTrue="Đã tiêm"
-                                                        textFalse="Chưa tiêm"
-                                                        colorTrue={PRIMARY}
-                                                        colorFalse={GRAY}
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-6 whitespace-nowrap overflow-visible">
+                                                <td className="py-4 px-6">
                                                     <ActionMenu student={student} />
                                                 </td>
                                             </tr>
@@ -949,7 +968,7 @@ const VaccinationDetail = () => {
                                             </td>
                                         </tr>
                                     )}
-                                </tbody> */}
+                                </tbody>
                             </table>
                         </div>
                     </div>
