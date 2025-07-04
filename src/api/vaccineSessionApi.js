@@ -115,6 +115,35 @@ const vaccineSessionApi = {
         }
     },
 
+    // Lấy danh sách học sinh và trạng thái tiêm trong 1 lớp thuộc buổi tiêm
+    getStudentConsentStatusByClass: async (sessionId, classId) => {
+        try {
+            const response = await apiClient.get(`/vaccination-sessions/${sessionId}/class/${classId}/student-consent-status`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching student consent status:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy thông tin trạng thái học sinh.',
+                data: []
+            };
+        }
+    },
+
+    // Lấy thông tin trạng thái học sinh cho tất cả các lớp trong buổi tiêm
+    getAllClassStudentConsents: async (sessionId, classIds = []) => {
+        try {
+            const requests = classIds.map(classId =>
+                vaccineSessionApi.getStudentConsentStatusByClass(sessionId, classId)
+            );
+            const results = await Promise.all(requests);
+            return results;
+        } catch (error) {
+            console.error('Error fetching all class consent statuses:', error);
+            return [];
+        }
+    }
+
 };
 
 export default vaccineSessionApi; 
