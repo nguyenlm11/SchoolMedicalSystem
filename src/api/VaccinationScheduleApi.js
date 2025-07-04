@@ -347,6 +347,47 @@ const vaccinationScheduleApi = {
                 errors: [error.message || 'Lỗi kết nối server']
             };
         }
+    },
+
+    // Lấy kết quả tiêm chủng
+    getVaccineResult: async (sessionId, studentId) => {
+        try {
+            // Validate parameters
+            if (!sessionId) {
+                return {
+                    success: false,
+                    message: 'Session ID là bắt buộc',
+                    data: null,
+                    errors: ['Session ID không được để trống']
+                };
+            }
+
+            if (!studentId) {
+                return {
+                    success: false,
+                    message: 'Student ID là bắt buộc',
+                    data: null,
+                    errors: ['Student ID không được để trống']
+                };
+            }
+
+            const response = await apiClient.get(`/vaccination-sessions/${sessionId}/students/${studentId}/vaccination-result`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching vaccination result:', error);
+
+            // Handle different error types
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+
+            return {
+                success: false,
+                message: error.message || 'Không thể tải kết quả tiêm chủng',
+                data: null,
+                errors: [error.message || 'Lỗi kết nối server']
+            };
+        }
     }
 };
 
