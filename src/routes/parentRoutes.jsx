@@ -5,6 +5,7 @@ import HealthProfileList from "../pages/parent/HealthProfileList";
 import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 import VaccinationSchedule from "../pages/parent/VaccinationSchedule";
 import VaccinationDetail from "../pages/parent/VaccinationDetail";
+import VaccinationResult from "../pages/parent/VaccinationResult";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -25,10 +26,8 @@ const parentRoutes = (
     
     {/* Vaccination routes */}
     <Route path="/parent/vaccination/schedule" element={<VaccinationSchedule />} />
-    <Route path="/parent/vaccination/upcoming" element={<PlaceholderPage title="Tiêm chủng sắp tới (đang phát triển)" />} />
-    <Route path="/parent/vaccination/history" element={<PlaceholderPage title="Lịch sử tiêm chủng (đang phát triển)" />} />
     <Route path="/parent/vaccination/details/:id" element={<VaccinationDetail />} />
-    <Route path="/parent/vaccination/confirm/:id" element={<PlaceholderPage title="Xác nhận lịch tiêm chủng (đang phát triển)" />} />
+    <Route path="/parent/vaccination/result/:id" element={<VaccinationResult />} />
     
     {/* Health check routes */}
     <Route path="/parent/health-check" element={<PlaceholderPage title="Xác nhận kiểm tra (đang phát triển)" />} />

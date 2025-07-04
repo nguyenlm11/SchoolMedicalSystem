@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiClock, FiMapPin, FiSearch, FiEye, FiAlertCircle, FiX } from "react-icons/fi";
+import { FiCalendar, FiClock, FiMapPin, FiSearch, FiEye, FiAlertCircle, FiX, FiCheck } from "react-icons/fi";
 import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth } from "../../utils/AuthContext";
@@ -219,7 +219,11 @@ const VaccinationSchedule = () => {
     };
 
     if (loading) {
-        return <Loading type="medical" size="large" color="primary" text="Đang tải lịch tiêm chủng..." fullScreen={true} />;
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách tiêm chủng..." />
+            </div>
+        );
     }
 
     return (
@@ -414,6 +418,7 @@ const VaccinationSchedule = () => {
                                                 </div>
                                             </div>
 
+                                            {/* {vaccination.status !== 'completed' ? ( */}
                                             <Link
                                                 to={`/parent/vaccination/details/${vaccination.id}`}
                                                 state={{ studentId: vaccination.studentId }}
@@ -423,6 +428,17 @@ const VaccinationSchedule = () => {
                                                 <FiEye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                                                 Xem chi tiết
                                             </Link>
+                                            {/* ) : ( */}
+                                            <Link
+                                                to={`/parent/vaccination/result/${vaccination.id}`}
+                                                state={{ studentId: vaccination.studentId }}
+                                                className="group flex items-center px-4 py-2 font-semibold text-sm rounded-lg border transition-all duration-300 hover:scale-105"
+                                                style={{ borderColor: PRIMARY[500], color: PRIMARY[600], backgroundColor: 'white' }}
+                                            >
+                                                <FiCheck className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                                                Xem kết quả
+                                            </Link>
+                                            {/* )} */}
                                         </div>
                                     </div>
                                 </div>

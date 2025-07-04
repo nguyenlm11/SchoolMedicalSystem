@@ -182,7 +182,11 @@ const VaccinationDetail = () => {
     };
 
     if (loading) {
-        return <Loading type="medical" size="large" color="primary" text="Đang tải thông tin chi tiết..." fullScreen={true} />;
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách tiêm chủng..." />
+            </div>
+        );
     }
 
     if (!vaccination) {
