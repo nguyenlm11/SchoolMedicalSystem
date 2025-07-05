@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye, FiTrash2 } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -26,10 +26,7 @@ const NurseMedicationPage = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [filters, setFilters] = useState({
-        approvalStatus: '',
-        priority: ''
-    });
+    const [filters, setFilters] = useState({ approvalStatus: '', priority: '' });
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState(null);
 
@@ -58,11 +55,7 @@ const NurseMedicationPage = () => {
     const fetchMedicines = async () => {
         try {
             setLoading(true);
-            const params = {
-                pageIndex: currentPage,
-                pageSize: pageSize,
-                type: 'Medication'
-            };
+            const params = { pageIndex: currentPage, pageSize: pageSize, type: 'Medication' };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
             }
@@ -92,7 +85,6 @@ const NurseMedicationPage = () => {
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching medicines:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách thuốc. Vui lòng thử lại.");
             setMedicines([]);
             setTotalCount(0);
@@ -141,7 +133,6 @@ const NurseMedicationPage = () => {
                 showAlert("error", "Lỗi", response.message || "Không thể xóa thuốc. Vui lòng thử lại.");
             }
         } catch (error) {
-            console.error('Error deleting medicine:', error);
             showAlert("error", "Lỗi", "Không thể xóa thuốc. Vui lòng thử lại.");
         }
     };
@@ -542,47 +533,34 @@ const NurseMedicationPage = () => {
                             </table>
                         </div>
 
-                        {totalPages > 1 && (
-                            <div
-                                className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
-                                style={{ borderColor: BORDER.DEFAULT }}
-                            >
-                                <div className="mb-4 sm:mb-0">
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                        Hiển thị{" "}
-                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
-                                            {((currentPage - 1) * pageSize) + 1}
-                                        </span>{" "}
-                                        -{" "}
-                                        <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
-                                            {Math.min(currentPage * pageSize, totalCount)}
-                                        </span>{" "}
-                                        trong tổng số{" "}
-                                        <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
-                                        thuốc cần cấp phát
-                                    </p>
+                        {totalPages > 0 && (
+                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                    Hiển thị{" "}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {((currentPage - 1) * pageSize) + 1}
+                                    </span>{" "}
+                                    -{" "}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {Math.min(currentPage * pageSize, totalCount)}
+                                    </span>{" "}
+                                    trong tổng số{" "}
+                                    <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
+                                    vật tư
                                 </div>
 
-                                <div className="flex items-center space-x-1">
+                                <div className="flex items-center space-x-2">
                                     <button
                                         onClick={() => paginate(currentPage - 1)}
                                         disabled={currentPage === 1}
-                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
-                                        style={{ borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300], color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600], backgroundColor: BACKGROUND.DEFAULT }}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: currentPage === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                            color: currentPage === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                            backgroundColor: BACKGROUND.DEFAULT
+                                        }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronLeft className="h-4 w-4" />
                                     </button>
 
                                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -596,17 +574,15 @@ const NurseMedicationPage = () => {
                                         } else {
                                             pageNumber = currentPage - 2 + i;
                                         }
-
                                         return (
                                             <button
                                                 key={pageNumber}
                                                 onClick={() => paginate(pageNumber)}
-                                                className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 hover:shadow-sm"
+                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
                                                 style={{
                                                     borderColor: currentPage === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
                                                     backgroundColor: currentPage === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                                    color: currentPage === pageNumber ? 'white' : TEXT.PRIMARY,
-                                                    boxShadow: currentPage === pageNumber ? `0 2px 4px ${PRIMARY[200]}` : 'none'
+                                                    color: currentPage === pageNumber ? TEXT.INVERSE : TEXT.PRIMARY
                                                 }}
                                             >
                                                 {pageNumber}
@@ -617,26 +593,14 @@ const NurseMedicationPage = () => {
                                     <button
                                         onClick={() => paginate(currentPage + 1)}
                                         disabled={currentPage === totalPages}
-                                        className="px-3 py-2 text-sm font-semibold border rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-sm"
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                         style={{
                                             borderColor: currentPage === totalPages ? BORDER.DEFAULT : PRIMARY[300],
                                             color: currentPage === totalPages ? TEXT.SECONDARY : PRIMARY[600],
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
@@ -661,10 +625,7 @@ const NurseMedicationPage = () => {
                 <ConfirmModal
                     isOpen={showConfirmModal}
                     onClose={() => setShowConfirmModal(false)}
-                    onConfirm={() => {
-                        handleDelete(selectedItemId);
-                        setShowConfirmModal(false);
-                    }}
+                    onConfirm={() => { handleDelete(selectedItemId); setShowConfirmModal(false) }}
                     title="Xác nhận xóa"
                     message="Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác."
                     confirmText="Xóa"

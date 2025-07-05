@@ -142,7 +142,7 @@ const AddStudentModal = ({ isOpen, onClose, onSuccess }) => {
     const fetchParents = async () => {
         setLoadingParents(true);
         try {
-            const response = await userApi.getParents({ pageSize: 1000, pageIndex: 1 });
+            const response = await userApi.getParents({ pageSize: 1000, pageIndex: 1, timestamp: Date.now() });
             if (response.success) {
                 setParents(response.data);
             }

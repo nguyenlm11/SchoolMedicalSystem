@@ -50,6 +50,24 @@ const vaccineApi = {
                 data: null
             };
         }
+    },
+
+    // Xóa buổi tiêm chủng
+    deleteVaccinationSession: async (sessionId) => {
+        try {
+            const response = await apiClient.delete(`/vaccination-sessions/${sessionId}`);
+            return {
+                success: true,
+                message: 'Đã xóa buổi tiêm chủng thành công.',
+                data: response.data
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể xóa buổi tiêm chủng.',
+                data: null
+            };
+        }
     }
 };
 
