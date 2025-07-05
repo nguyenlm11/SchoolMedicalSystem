@@ -157,6 +157,7 @@ const Navbar = () => {
                 {
                     category: "Nhân viên y tế",
                     links: [
+                        { to: "/schoolnurse/vaccination/create", label: "Tạo buổi tiêm chủng", desc: "Tạo buổi tiêm chủng mới" },
                         { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
                         { to: "/schoolnurse/vaccination/flow", label: "Quy trình tiêm chủng", desc: "Hướng dẫn quy trình" },
                     ],

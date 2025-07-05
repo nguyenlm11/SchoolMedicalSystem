@@ -10,7 +10,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO 
 import Loading from "../../components/Loading";
 // import medicalApi from "../../api/medicalApi"; // Will be implemented when API is ready
 
-const HealthEventList = () => {
+const HealthEventManagement = () => {
     const [activeTab, setActiveTab] = useState("all");
     const [healthEvents, setHealthEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -779,4 +779,4 @@ const HealthEventList = () => {
     );
 };
 
-export default HealthEventList;
+export default HealthEventManagement;

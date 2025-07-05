@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye, FiTrash2 } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -501,7 +501,7 @@ const NurseSupplyPage = () => {
                             </table>
                         </div>
 
-                        {totalPages > 1 && (
+                        {totalPages > 0 && (
                             <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
                                 <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
                                     Hiển thị{" "}
@@ -528,19 +528,7 @@ const NurseSupplyPage = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronLeft className="h-4 w-4" />
                                     </button>
 
                                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -580,19 +568,7 @@ const NurseSupplyPage = () => {
                                             backgroundColor: BACKGROUND.DEFAULT
                                         }}
                                     >
-                                        <svg
-                                            className="h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                            aria-hidden="true"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
+                                        <FiChevronRight className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
