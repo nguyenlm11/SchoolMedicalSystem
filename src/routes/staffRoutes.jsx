@@ -32,7 +32,7 @@ const staffRoutes = (
     {/* Health Event Routes */}
     <Route path="/schoolnurse/health-events/create" element={<HealthEventCreate />} />
     <Route path="/schoolnurse/health-events" element={<HealthEventManagement />} />
-
+    <Route path="/schoolnurse/health-events/:id" element={<PlaceholderPage title="Chi tiết sự kiện y tế" />} />
 
     {/* Staff Profile Routes */}
     <Route path="/schoolnurse/profile" element={<UserProfilePage />} />
