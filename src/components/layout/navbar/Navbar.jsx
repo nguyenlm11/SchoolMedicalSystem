@@ -176,7 +176,7 @@ const Navbar = () => {
                     category: "Nhân viên y tế",
                     links: [
                         { to: "/schoolnurse/health-events", label: "Danh sách sự kiện y tế", desc: "Xem tất cả sự kiện" },
-                        { to: "/schoolnurse/health-events/new", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
+                        { to: "/schoolnurse/health-events/create", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
                     ],
                 },
                 {

@@ -85,14 +85,7 @@ const VaccinationPlanCreate = () => {
         setClassesLoading(true);
         setClassesError(null);
         try {
-            const response = await classApi.getSchoolClass({
-                pageIndex: 1,
-                pageSize: 1000,
-                searchTerm: "",
-                orderBy: "name",
-                grade: "",
-                academicYear: parseInt(formData.academicYear)
-            });
+            const response = await classApi.getSchoolClass({ pageIndex: 1, pageSize: 1000, searchTerm: "", orderBy: "name", grade: "", academicYear: parseInt(formData.academicYear) });
             if (response.success) {
                 setAvailableGrades(response.data || []);
             } else {
@@ -110,12 +103,7 @@ const VaccinationPlanCreate = () => {
         setVaccineTypesLoading(true);
         setVaccineTypesError(null);
         try {
-            const response = await vaccineApi.getVaccineTypes({
-                pageIndex: 1,
-                pageSize: 1000,
-                searchTerm: vaccineTypesSearch,
-                orderBy: 'name'
-            });
+            const response = await vaccineApi.getVaccineTypes({ pageIndex: 1, pageSize: 1000, searchTerm: vaccineTypesSearch, orderBy: 'name' });
             if (response.success) {
                 setVaccineTypes(response.data);
             } else {
@@ -318,7 +306,6 @@ const VaccinationPlanCreate = () => {
                 notes: formData.notes,
                 classIds: formData.classIds
             };
-            // console.log("Creating vaccination plan with data:", requestData);
             const response = await vaccineApi.createVaccinationSession(requestData);
             if (response.success) {
                 setAlertConfig({ type: "success", title: "Thành công", message: "Đã tạo buổi tiêm chủng thành công" });
@@ -376,12 +363,7 @@ const VaccinationPlanCreate = () => {
                             value={formData.sessionName}
                             onChange={handleInputChange}
                             className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.sessionName ? 'border-red-500' : ''}`}
-                            style={{
-                                borderColor: errors.sessionName ? '#ef4444' : BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: errors.sessionName ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Ví dụ: Tiêm vắc-xin cúm mùa 2024"
                             required
                         />
@@ -408,7 +390,6 @@ const VaccinationPlanCreate = () => {
                                         borderColor: errors.vaccineTypeId ? '#ef4444' : (formData.vaccineTypeId ? PRIMARY[500] : BORDER.DEFAULT),
                                         backgroundColor: formData.vaccineTypeId ? PRIMARY[50] : BACKGROUND.DEFAULT,
                                         color: TEXT.PRIMARY,
-                                        focusRingColor: PRIMARY[500] + '40'
                                     }}
                                     required
                                 />
@@ -498,12 +479,7 @@ const VaccinationPlanCreate = () => {
                             value={formData.location}
                             onChange={handleInputChange}
                             className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.location ? 'border-red-500' : ''}`}
-                            style={{
-                                borderColor: errors.location ? '#ef4444' : BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: errors.location ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Ví dụ: Phòng y tế trường"
                             required
                         />
@@ -524,12 +500,7 @@ const VaccinationPlanCreate = () => {
                                 onChange={handleInputChange}
                                 min={new Date().toISOString().split('T')[0]}
                                 className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.startDate ? 'border-red-500' : ''}`}
-                                style={{
-                                    borderColor: errors.startDate ? '#ef4444' : BORDER.DEFAULT,
-                                    backgroundColor: BACKGROUND.DEFAULT,
-                                    color: TEXT.PRIMARY,
-                                    focusRingColor: PRIMARY[500] + '40'
-                                }}
+                                style={{ borderColor: errors.startDate ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 required
                             />
                             {errors.startDate && (
@@ -547,12 +518,7 @@ const VaccinationPlanCreate = () => {
                                 value={formData.startTime}
                                 onChange={handleInputChange}
                                 className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.startTime ? 'border-red-500' : ''}`}
-                                style={{
-                                    borderColor: errors.startTime ? '#ef4444' : BORDER.DEFAULT,
-                                    backgroundColor: BACKGROUND.DEFAULT,
-                                    color: TEXT.PRIMARY,
-                                    focusRingColor: PRIMARY[500] + '40'
-                                }}
+                                style={{ borderColor: errors.startTime ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 required
                             />
                             {errors.startTime && (
@@ -570,12 +536,7 @@ const VaccinationPlanCreate = () => {
                                 value={formData.endTime}
                                 onChange={handleInputChange}
                                 className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.endTime ? 'border-red-500' : ''}`}
-                                style={{
-                                    borderColor: errors.endTime ? '#ef4444' : BORDER.DEFAULT,
-                                    backgroundColor: BACKGROUND.DEFAULT,
-                                    color: TEXT.PRIMARY,
-                                    focusRingColor: PRIMARY[500] + '40'
-                                }}
+                                style={{ borderColor: errors.endTime ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 required
                             />
                             {errors.endTime && (
@@ -617,12 +578,7 @@ const VaccinationPlanCreate = () => {
                             value={formData.responsibleOrganizationName}
                             onChange={handleInputChange}
                             className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors.responsibleOrganizationName ? 'border-red-500' : ''}`}
-                            style={{
-                                borderColor: errors.responsibleOrganizationName ? '#ef4444' : BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: errors.responsibleOrganizationName ? '#ef4444' : BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Tên đơn vị thực hiện tiêm chủng"
                             required
                         />
@@ -633,7 +589,7 @@ const VaccinationPlanCreate = () => {
 
                     <div>
                         <label className="block text-base font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                            Liều lượng và cách dùng
+                            Liều lượng
                         </label>
                         <input
                             type="text"
@@ -641,12 +597,7 @@ const VaccinationPlanCreate = () => {
                             value={formData.posology}
                             onChange={handleInputChange}
                             className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                            style={{
-                                borderColor: BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Ví dụ: 0.5ml, tiêm bắp"
                         />
                     </div>
@@ -663,12 +614,7 @@ const VaccinationPlanCreate = () => {
                                 onChange={handleInputChange}
                                 rows={3}
                                 className="w-full pl-12 pr-4 py-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                                style={{
-                                    borderColor: BORDER.DEFAULT,
-                                    backgroundColor: BACKGROUND.DEFAULT,
-                                    color: TEXT.PRIMARY,
-                                    focusRingColor: PRIMARY[500] + '40'
-                                }}
+                                style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 placeholder="Mô tả các tác dụng phụ có thể xảy ra..."
                             />
                         </div>
@@ -684,12 +630,7 @@ const VaccinationPlanCreate = () => {
                             onChange={handleInputChange}
                             rows={3}
                             className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                            style={{
-                                borderColor: BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Các trường hợp không nên tiêm..."
                         />
                     </div>
@@ -704,12 +645,7 @@ const VaccinationPlanCreate = () => {
                             onChange={handleInputChange}
                             rows={4}
                             className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                            style={{
-                                borderColor: BORDER.DEFAULT,
-                                backgroundColor: BACKGROUND.DEFAULT,
-                                color: TEXT.PRIMARY,
-                                focusRingColor: PRIMARY[500] + '40'
-                            }}
+                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                             placeholder="Ghi chú thêm về buổi tiêm chủng..."
                         />
                     </div>
@@ -751,7 +687,7 @@ const VaccinationPlanCreate = () => {
                         value={formData.academicYear}
                         onChange={handleInputChange}
                         className="w-full md:w-64 p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
+                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                         required
                     >
                         <option value="">Chọn năm học</option>
