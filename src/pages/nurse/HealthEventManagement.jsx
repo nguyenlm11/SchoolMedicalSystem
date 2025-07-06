@@ -1,32 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import {
-    FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock,
-    FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiUser,
-    FiMapPin, FiCalendar, FiHeart, FiTrendingUp,
-    FiFilter, FiPhone, FiBell
-} from "react-icons/fi";
+import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiMapPin, FiHeart, FiTrendingUp, FiPhone, FiBell } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
+import { useNavigate } from "react-router-dom";
 // import medicalApi from "../../api/medicalApi"; // Will be implemented when API is ready
 
 const HealthEventManagement = () => {
     const [activeTab, setActiveTab] = useState("all");
+    const navigate = useNavigate();
     const [healthEvents, setHealthEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [error, setError] = useState(null);
-    const [pagination, setPagination] = useState({
-        pageIndex: 1,
-        pageSize: 10,
-        totalCount: 0,
-        totalPages: 0
-    });
+    const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [openActionId, setOpenActionId] = useState(null);
     const [filterEmergency, setFilterEmergency] = useState("all");
     const [filterEventType, setFilterEventType] = useState("all");
 
-    // Mock data for demonstration (replace with real API call)
     const mockData = {
         success: true,
         message: "Thành công",
@@ -330,6 +320,7 @@ const HealthEventManagement = () => {
                             <button
                                 className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                                 style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                onClick={() => navigate('/schoolnurse/health-events/create')}
                             >
                                 <FiPlus className="mr-2 h-5 w-5" />
                                 Tạo sự kiện mới
@@ -677,7 +668,7 @@ const HealthEventManagement = () => {
                                                         <button
                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                             style={{ color: PRIMARY[600] }}
-                                                            onClick={() => setOpenActionId(null)}
+                                                            onClick={() => navigate(`/schoolnurse/health-events/${event.id}`)}
                                                         >
                                                             <FiEye className="w-4 h-4 flex-shrink-0" />
                                                             <span>Xem chi tiết</span>
@@ -766,6 +757,7 @@ const HealthEventManagement = () => {
                                 <button
                                     className="inline-flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                    onClick={() => navigate('/schoolnurse/health-events/create')}
                                 >
                                     <FiPlus className="mr-2 h-4 w-4" />
                                     Tạo sự kiện đầu tiên
