@@ -29,6 +29,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/vaccination/create" element={<VaccinationPlanCreate />} />
 
     {/* Health Event Routes */}
+    {/* <Route path="/schoolnurse/health-events/create" element={<HealthEventCreate />} /> */}
     <Route path="/schoolnurse/health-events" element={<HealthEventManagement />} />
 
 

@@ -92,6 +92,7 @@ export const INFO = {
 export const COMMON = {
     WHITE: '#ffffff',
     BLACK: '#000000',
+    RED: '#ff0000',
     TRANSPARENT: 'transparent',
 };
 
