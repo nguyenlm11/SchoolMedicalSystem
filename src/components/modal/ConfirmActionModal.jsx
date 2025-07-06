@@ -59,7 +59,7 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
                         <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
                             {message}
                         </p>
-                        {type === "decline" && (
+                        {type === "decline" || type === "reject" && (
                             <div className="mt-4">
                                 <label
                                     htmlFor="reason"
