@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/colors';
-import { FiPlus, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiFileText, FiUser, FiActivity, FiSave, FiX, FiChevronDown, FiCheck, FiTablet, FiBox } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiFileText, FiUser, FiActivity, FiSave, FiX, FiChevronDown, FiCheck, FiTablet, FiBox, FiThermometer, FiHeart, FiWind } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import AlertModal from '../../components/modal/AlertModal';
 import userApi from '../../api/userApi';
 import medicalApi from '../../api/medicalApi';
+import healthEventApi from '../../api/healtheventApi';
 
 const STYLES = {
     input: {
@@ -27,8 +28,9 @@ const STYLES = {
 
 const EVENT_TYPES = [
     { value: 'Injury', label: 'Chấn thương' },
-    { value: 'Illness', label: 'Bệnh tật' },
+    { value: 'Illness', label: 'Bệnh, ốm' },
     { value: 'Allergic Reaction', label: 'Phản ứng dị ứng' },
+    { value: 'Fall', label: 'Té ngã' },
     { value: 'Emergency', label: 'Cấp cứu' },
     { value: 'Other', label: 'Khác' }
 ];
@@ -76,6 +78,10 @@ const HealthEventCreate = () => {
         relatedMedicalConditionId: '',
         currentHealthStatus: '',
         parentNotice: '',
+        temperature: '',
+        bloodPressure: '',
+        respiratoryRate: '',
+        heartRate: '',
         medicalItemUsages: []
     });
 
@@ -89,18 +95,31 @@ const HealthEventCreate = () => {
         });
     };
 
+    const buildCurrentHealthStatus = () => {
+        const healthMetrics = [];
+        if (formData.temperature) {
+            healthMetrics.push(`Nhiệt độ: ${formData.temperature}°C`);
+        }
+        if (formData.bloodPressure) {
+            healthMetrics.push(`Huyết áp: ${formData.bloodPressure} mmHg`);
+        }
+        if (formData.respiratoryRate) {
+            healthMetrics.push(`Nhịp thở: ${formData.respiratoryRate}/phút`);
+        }
+        if (formData.heartRate) {
+            healthMetrics.push(`Nhịp tim: ${formData.heartRate}/phút`);
+        }
+        return healthMetrics.length > 0 ? healthMetrics.join(', ') : '';
+    };
+
     const fetchData = async (apiCall, setData, setLoading) => {
         setLoading(true);
         try {
             const response = await apiCall();
-            if (response.success) {
-                setData(response.data);
-            }
+            if (response.success) { setData(response.data) }
         } catch (error) {
             console.error('Error fetching data:', error);
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false) }
     };
 
     const fetchStudents = async () => {
@@ -167,7 +186,7 @@ const HealthEventCreate = () => {
 
     const handleStudentSelect = (student) => {
         setFormData(prev => ({ ...prev, userId: student.id }));
-        setStudentSearch(`${student.name} - ${student.className || 'Chưa có lớp'}`);
+        setStudentSearch(`${student.fullName} - Lớp ${student.currentClassName}`);
         setShowStudentDropdown(false);
         clearError('userId');
     };
@@ -189,9 +208,11 @@ const HealthEventCreate = () => {
                 {
                     id: newId,
                     medicalItemId: '',
-                    quantity: 0,
+                    quantity: 1,
                     notes: '',
                     usedAt: new Date().toISOString(),
+                    dose: 1,
+                    medicalPerOnce: 1,
                     itemType
                 }
             ]
@@ -253,10 +274,13 @@ const HealthEventCreate = () => {
             { field: 'occurredAt', message: 'Vui lòng chọn thời gian xảy ra' },
             { field: 'location', message: 'Vui lòng nhập địa điểm' },
             { field: 'actionTaken', message: 'Vui lòng nhập hành động đã thực hiện' },
-            { field: 'outcome', message: 'Vui lòng nhập kết quả' },
-            { field: 'currentHealthStatus', message: 'Vui lòng nhập tình trạng sức khỏe hiện tại' }
+            { field: 'outcome', message: 'Vui lòng nhập kết quả' }
         ];
-
+        const hasHealthMetrics = formData.temperature || formData.bloodPressure ||
+            formData.respiratoryRate || formData.heartRate;
+        if (!hasHealthMetrics) {
+            newErrors['healthMetrics'] = 'Vui lòng nhập ít nhất một chỉ số sức khỏe (nhiệt độ, huyết áp, nhịp thở, nhịp tim)';
+        }
         requiredFields.forEach(({ field, message }) => {
             if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
                 newErrors[field] = message;
@@ -271,6 +295,14 @@ const HealthEventCreate = () => {
                 }
                 if (!usage.quantity || usage.quantity <= 0) {
                     newErrors[`${itemType}Usage_${index}_quantity`] = `Vui lòng nhập số lượng hợp lệ cho mục #${index + 1}`;
+                }
+                if (itemType === 'medicine') {
+                    if (!usage.dose || usage.dose <= 0) {
+                        newErrors[`${itemType}Usage_${index}_dose`] = `Vui lòng nhập liều lượng hợp lệ cho mục #${index + 1}`;
+                    }
+                    if (!usage.medicalPerOnce || usage.medicalPerOnce <= 0) {
+                        newErrors[`${itemType}Usage_${index}_medicalPerOnce`] = `Vui lòng nhập số lần dùng/ngày hợp lệ cho mục #${index + 1}`;
+                    }
                 }
             });
         });
@@ -292,20 +324,62 @@ const HealthEventCreate = () => {
         try {
             const medicalItemUsages = formData.medicalItemUsages.map(item => {
                 const { itemType, id, ...cleanItem } = item;
-                return cleanItem;
+                return {
+                    ...cleanItem,
+                    usedAt: cleanItem.usedAt || new Date().toISOString(),
+                    dose: cleanItem.dose || 1,
+                    medicalPerOnce: cleanItem.medicalPerOnce || 1
+                };
             });
-
             const submitData = {
                 ...formData,
                 relatedMedicalConditionId: formData.relatedMedicalConditionId || null,
+                occurredAt: formData.occurredAt ? new Date(formData.occurredAt).toISOString() : new Date().toISOString(),
+                currentHealthStatus: buildCurrentHealthStatus(),
                 medicalItemUsages
             };
-            console.log('Submit Data:', submitData);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setAlertConfig({ type: "success", title: "Thành công", message: "Đã tạo sự kiện y tế thành công" });
-            setShowAlert(true);
+            console.log('Submit Data:', JSON.stringify(submitData, null, 2));
+            const response = await healthEventApi.createHealthEventWithMedicalItems(submitData);
+            if (response.success) {
+                setAlertConfig({ type: "success", title: "Tạo sự kiện y tế thành công!", message: "Sự kiện y tế đã được lưu vào hệ thống. Nhấn OK để về trang quản lý sự kiện y tế." });
+                setShowAlert(true);
+                setFormData({
+                    userId: '',
+                    eventType: 'Injury',
+                    description: '',
+                    occurredAt: '',
+                    location: '',
+                    actionTaken: '',
+                    outcome: '',
+                    isEmergency: false,
+                    relatedMedicalConditionId: '',
+                    currentHealthStatus: '',
+                    parentNotice: '',
+                    temperature: '',
+                    bloodPressure: '',
+                    respiratoryRate: '',
+                    heartRate: '',
+                    medicalItemUsages: []
+                });
+                setStudentSearch('');
+                setItemSearches({});
+                setShowDropdowns({});
+                setErrors({});
+            } else {
+                let errorMessage = response.message || "Có lỗi xảy ra khi tạo sự kiện y tế";
+                if (response.errors && response.errors.length > 0) {
+                    const validationErrors = {};
+                    response.errors.forEach(error => {
+                        validationErrors[error.field] = error.message;
+                    });
+                    setErrors(validationErrors);
+                    errorMessage = "Vui lòng kiểm tra lại thông tin đã nhập";
+                }
+                setAlertConfig({ type: "error", title: "Lỗi", message: errorMessage });
+                setShowAlert(true);
+            }
         } catch (error) {
-            setAlertConfig({ type: "error", title: "Lỗi", message: error.message });
+            setAlertConfig({ type: "error", title: "Lỗi hệ thống", message: "Có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau." });
             setShowAlert(true);
         } finally {
             setLoading(false);
@@ -404,7 +478,7 @@ const HealthEventCreate = () => {
                                     </button>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className={`grid gap-4 ${itemType === 'medicine' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 md:grid-cols-2'}`}>
                                     <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
                                             {itemType === 'medicine' ? 'Tên thuốc' : 'Tên vật tư'}
@@ -431,24 +505,40 @@ const HealthEventCreate = () => {
                                             )}
 
                                             {showDropdowns[item.id] && (
-                                                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                                                    style={{ borderColor: BORDER.DEFAULT }}>
-                                                    {(itemType === 'medicine' ? medicines : supplies)
-                                                        .filter(medItem => medItem.name.toLowerCase().includes((itemSearches[item.id] || '').toLowerCase()))
-                                                        .map((medItem) => (
-                                                            <div
-                                                                key={medItem.id}
-                                                                className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-0"
-                                                                onClick={() => handleItemSelect(item, medItem)}
-                                                            >
-                                                                <div className="font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                                    {medItem.name}
-                                                                </div>
-                                                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                                    {itemType === 'medicine' ? (medItem.dosage || 'N/A') : `Số lượng: ${medItem.quantity}`}
-                                                                </div>
+                                                <div
+                                                    className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl overflow-hidden"
+                                                    style={{ borderColor: BORDER.DEFAULT, maxHeight: '200px', minHeight: '120px' }}
+                                                >
+                                                    <div
+                                                        className="overflow-y-auto overflow-x-hidden"
+                                                        style={{ maxHeight: '140px' }}
+                                                    >
+                                                        {(itemType === 'medicine' ? medicines : supplies)
+                                                            .filter(medItem => medItem.name.toLowerCase().includes((itemSearches[item.id] || '').toLowerCase()))
+                                                            .length === 0 ? (
+                                                            <div className="p-4 text-center" style={{ color: TEXT.SECONDARY }}>
+                                                                Không tìm thấy {itemType === 'medicine' ? 'thuốc' : 'vật tư'} phù hợp
                                                             </div>
-                                                        ))}
+                                                        ) : (
+                                                            (itemType === 'medicine' ? medicines : supplies)
+                                                                .filter(medItem => medItem.name.toLowerCase().includes((itemSearches[item.id] || '').toLowerCase()))
+                                                                .map((medItem) => (
+                                                                    <div
+                                                                        key={medItem.id}
+                                                                        className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors duration-150"
+                                                                        onClick={() => handleItemSelect(item, medItem)}
+                                                                        style={{ minHeight: '60px' }}
+                                                                    >
+                                                                        <div className="font-medium text-sm" style={{ color: TEXT.PRIMARY }}>
+                                                                            {medItem.name}
+                                                                        </div>
+                                                                        <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                                            {itemType === 'medicine' ? (medItem.dosage || 'N/A') : `Số lượng: ${medItem.quantity}`}
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -463,7 +553,7 @@ const HealthEventCreate = () => {
                                         </label>
                                         <input
                                             type="number"
-                                            min="0"
+                                            min="1"
                                             value={item.quantity}
                                             onChange={(e) => updateMedicalItem(itemType, index, 'quantity', parseInt(e.target.value) || 0)}
                                             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
@@ -474,7 +564,47 @@ const HealthEventCreate = () => {
                                         )}
                                     </div>
 
-                                    <div className="col-span-2">
+                                    {itemType === 'medicine' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                    Số liều/ngày
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.dose}
+                                                    onChange={(e) => updateMedicalItem(itemType, index, 'dose', parseFloat(e.target.value) || 0)}
+                                                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                    placeholder="Ví dụ: 500"
+                                                />
+                                                {errors[`${itemType}Usage_${index}_dose`] && (
+                                                    <p className="mt-1 text-sm text-red-500">{errors[`${itemType}Usage_${index}_dose`]}</p>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                    Số thuốc/liều
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.medicalPerOnce}
+                                                    onChange={(e) => updateMedicalItem(itemType, index, 'medicalPerOnce', parseInt(e.target.value) || 0)}
+                                                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                    placeholder="Ví dụ: 3"
+                                                />
+                                                {errors[`${itemType}Usage_${index}_medicalPerOnce`] && (
+                                                    <p className="mt-1 text-sm text-red-500">{errors[`${itemType}Usage_${index}_medicalPerOnce`]}</p>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className={`${itemType === 'medicine' ? 'col-span-full' : 'col-span-2'}`}>
                                         <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
                                             Ghi chú
                                         </label>
@@ -572,43 +702,51 @@ const HealthEventCreate = () => {
                                         </div>
 
                                         {showStudentDropdown && (
-                                            <div className="absolute z-50 w-full mt-2 bg-white border rounded-lg shadow-lg overflow-hidden max-h-72 overflow-y-auto" style={{ borderColor: BORDER.DEFAULT }}>
-                                                {studentsError ? (
-                                                    <div className="p-4 text-center" style={{ color: ERROR[500] }}>
-                                                        <FiAlertTriangle className="h-6 w-6 mx-auto mb-2" />
-                                                        {studentsError}
-                                                    </div>
-                                                ) : students.length === 0 ? (
-                                                    <div className="p-4 text-center" style={{ color: TEXT.SECONDARY }}>
-                                                        {studentSearch ? 'Không tìm thấy học sinh' : 'Nhập để tìm kiếm học sinh'}
-                                                    </div>
-                                                ) : (
-                                                    students.map((student) => (
-                                                        <div
-                                                            key={student.id}
-                                                            onClick={() => handleStudentSelect(student)}
-                                                            className="p-4 cursor-pointer hover:bg-gray-50 transition-colors duration-150 border-b last:border-b-0"
-                                                            style={{ borderColor: BORDER.LIGHT }}
-                                                        >
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex-grow min-w-0">
-                                                                    <div className="font-medium text-base truncate" style={{ color: TEXT.PRIMARY }}>
-                                                                        {student.name}
-                                                                    </div>
-                                                                    <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                                        {student.className || 'Chưa có lớp'}
-                                                                        {student.dateOfBirth && (
-                                                                            <span className="ml-2">• SN: {new Date(student.dateOfBirth).getFullYear()}</span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                {formData.userId === student.id && (
-                                                                    <FiCheck className="h-5 w-5 ml-3 flex-shrink-0" style={{ color: PRIMARY[500] }} />
-                                                                )}
-                                                            </div>
+                                            <div
+                                                className="absolute z-50 w-full mt-2 bg-white border rounded-lg shadow-xl overflow-hidden"
+                                                style={{ borderColor: BORDER.DEFAULT, maxHeight: '288px', minHeight: '120px' }}
+                                            >
+                                                <div
+                                                    className="overflow-y-auto overflow-x-hidden"
+                                                    style={{ maxHeight: '288px' }}
+                                                >
+                                                    {studentsError ? (
+                                                        <div className="p-4 text-center" style={{ color: ERROR[500] }}>
+                                                            <FiAlertTriangle className="h-6 w-6 mx-auto mb-2" />
+                                                            {studentsError}
                                                         </div>
-                                                    ))
-                                                )}
+                                                    ) : students.length === 0 ? (
+                                                        <div className="p-4 text-center" style={{ color: TEXT.SECONDARY }}>
+                                                            {studentSearch ? 'Không tìm thấy học sinh' : 'Nhập để tìm kiếm học sinh'}
+                                                        </div>
+                                                    ) : (
+                                                        students.map((student) => (
+                                                            <div
+                                                                key={student.id}
+                                                                onClick={() => handleStudentSelect(student)}
+                                                                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors duration-150 border-b last:border-b-0"
+                                                                style={{ borderColor: BORDER.LIGHT }}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex-grow min-w-0">
+                                                                        <div className="font-medium text-base truncate" style={{ color: TEXT.PRIMARY }}>
+                                                                            {student.fullName}
+                                                                        </div>
+                                                                        <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                                            Lớp {student.currentClassName}
+                                                                            {student.dateOfBirth && (
+                                                                                <span className="ml-2">• SN: {new Date(student.dateOfBirth).getFullYear()}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    {formData.userId === student.id && (
+                                                                        <FiCheck className="h-5 w-5 ml-3 flex-shrink-0" style={{ color: PRIMARY[500] }} />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -672,9 +810,111 @@ const HealthEventCreate = () => {
 
                         <div className={STYLES.card.content}>
                             <div className="space-y-6">
+                                <div>
+                                    <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
+                                        Tình trạng sức khỏe hiện tại *
+                                    </label>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Nhiệt độ
+                                            </label>
+                                            <div className="relative">
+                                                <FiThermometer className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                                <input
+                                                    type="number"
+                                                    name="temperature"
+                                                    value={formData.temperature}
+                                                    onChange={handleInputChange}
+                                                    placeholder="36.5"
+                                                    min="30"
+                                                    max="45"
+                                                    className="w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                />
+                                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm" style={{ color: GRAY[500] }}>°C</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Huyết áp
+                                            </label>
+                                            <div className="relative">
+                                                <FiActivity className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                                <input
+                                                    type="text"
+                                                    name="bloodPressure"
+                                                    value={formData.bloodPressure}
+                                                    onChange={handleInputChange}
+                                                    placeholder="120/80"
+                                                    className="w-full pl-10 pr-16 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                />
+                                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm" style={{ color: GRAY[500] }}>mmHg</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Nhịp thở
+                                            </label>
+                                            <div className="relative">
+                                                <FiWind className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                                <input
+                                                    type="number"
+                                                    name="respiratoryRate"
+                                                    value={formData.respiratoryRate}
+                                                    onChange={handleInputChange}
+                                                    placeholder="20"
+                                                    min="5"
+                                                    max="60"
+                                                    className="w-full pl-10 pr-16 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                />
+                                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm" style={{ color: GRAY[500] }}>/phút</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                                Nhịp tim
+                                            </label>
+                                            <div className="relative">
+                                                <FiHeart className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                                <input
+                                                    type="number"
+                                                    name="heartRate"
+                                                    value={formData.heartRate}
+                                                    onChange={handleInputChange}
+                                                    placeholder="80"
+                                                    min="40"
+                                                    max="200"
+                                                    className="w-full pl-10 pr-16 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                                />
+                                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm" style={{ color: GRAY[500] }}>/phút</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {errors['healthMetrics'] && (
+                                        <p className="mt-2 text-sm text-red-500">{errors['healthMetrics']}</p>
+                                    )}
+                                    {buildCurrentHealthStatus() && (
+                                        <div className="mt-3 p-3 rounded-lg border" style={{ backgroundColor: PRIMARY[50], borderColor: PRIMARY[200] }}>
+                                            <p className="text-sm font-medium mb-1" style={{ color: PRIMARY[700] }}>
+                                                Tình trạng sức khỏe tổng hợp:
+                                            </p>
+                                            <p className="text-sm" style={{ color: PRIMARY[600] }}>
+                                                {buildCurrentHealthStatus()}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                                 {renderTextarea('actionTaken', 'Hành động đã thực hiện', 'Mô tả các biện pháp xử lý đã thực hiện...', 3, true)}
                                 {renderTextarea('outcome', 'Kết quả', 'Kết quả sau khi xử lý...', 3, true)}
-                                {renderInput('currentHealthStatus', 'Tình trạng sức khỏe hiện tại', 'text', 'Ví dụ: Ổn định, Cần theo dõi, Đã hồi phục...', null, true)}
                             </div>
                         </div>
                     </div>
