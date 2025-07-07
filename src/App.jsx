@@ -11,11 +11,11 @@ function App() {
         {authRoutes}
         {adminRoutes}
         {managerRoutes}
+        {parentRoutes}
+        {studentRoutes}
+        {staffRoutes}
         <Route element={<MainLayout />}>
           {guestRoutes}
-          {parentRoutes}
-          {studentRoutes}
-          {staffRoutes}
         </Route>
       </Routes>
     </div>
