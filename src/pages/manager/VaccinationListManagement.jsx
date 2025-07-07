@@ -19,11 +19,6 @@ const VaccinationListManagement = () => {
     const dropdownRef = useRef(null);
     const [showAlertModal, setShowAlertModal] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
-    // const [showConfirmModal, setShowConfirmModal] = useState(false);
-    // const [confirmAction, setConfirmAction] = useState({
-    //     type: 'approve',
-    //     itemId: null
-    // });
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize] = useState(10);
@@ -161,7 +156,7 @@ const VaccinationListManagement = () => {
         }).length;
 
         const totalStudentsCount = vaccinationList.reduce(
-            (sum, v) => sum + v.totalStudents,
+            (sum, v) => sum + (v.totalStudents || 0),
             0
         );
 
@@ -174,122 +169,6 @@ const VaccinationListManagement = () => {
     };
 
     const stats = getStats();
-
-    // const handleApprove = async (id) => {
-    //     try {
-    //         const response = await vaccineSessionApi.approveVaccineSession(id);
-    //         setAlertConfig({
-    //             type: "success",
-    //             title: "Thành công",
-    //             message: response.data.message
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //         setOpenActionId(null);
-    //     } catch (error) {
-    //         console.error('Error approving vaccination:', error);
-    //         setAlertConfig({
-    //             type: "error",
-    //             title: "Lỗi",
-    //             message: "Đã có lỗi xảy ra. Vui lòng thử lại."
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //     }
-    // };
-
-    // const handleFinalize = async (id) => {
-    //     try {
-    //         const response = await vaccineSessionApi.finalizeVaccineSession(id);
-    //         setAlertConfig({
-    //             type: "success",
-    //             title: "Thành công",
-    //             message: response.data.message
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //         setOpenActionId(null);
-    //     } catch (error) {
-    //         console.error('Error approving vaccination:', error);
-    //         setAlertConfig({
-    //             type: "error",
-    //             title: "Lỗi",
-    //             message: "Đã có lỗi xảy ra. Vui lòng thử lại."
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //     }
-    // };
-    
-    // const handleReject = async (id) => {
-    //     try {
-    //         const response = await vaccineSessionApi.declineVaccineSession(id);
-    //         setAlertConfig({
-    //             type: "info",
-    //             title: "Thành công",
-    //             message: response.data.message
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //         setOpenActionId(null);
-    //     } catch (error) {
-    //         console.error('Error rejecting vaccination:', error);
-    //         setAlertConfig({
-    //             type: "error",
-    //             title: "Lỗi",
-    //             message: "Đã có lỗi xảy ra. Vui lòng thử lại."
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //     }
-    // };
-
-    // const handleConfirmAction = async (reason) => {
-    //     try {
-    //         let response;
-    //         let message = '';
-
-    //         // Kiểm tra loại hành động và gọi đúng API
-    //         switch (confirmAction.type) {
-    //             case 'approve':
-    //                 response = await vaccineSessionApi.approveVaccineSession(confirmAction.itemId, { reason });
-    //                 message = "Đã duyệt kế hoạch tiêm chủng thành công";
-    //                 break;
-
-    //             case 'reject':
-    //                 response = await vaccineSessionApi.declineVaccineSession(confirmAction.itemId, { reason });
-    //                 message = "Đã từ chối kế hoạch tiêm chủng";
-    //                 break;
-
-    //             case 'finalize':
-    //                 response = await vaccineSessionApi.finalizeVaccineSession(confirmAction.itemId, { reason });
-    //                 message = "Đã chốt danh sách kế hoạch tiêm chủng";
-    //                 break;
-
-    //             default:
-    //                 throw new Error("Invalid action type");
-    //         }
-
-    //         // Hiển thị thông báo thành công
-    //         setAlertConfig({
-    //             type: "success",
-    //             title: "Thành công",
-    //             message: response.data.message || message
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //         setOpenActionId(null);
-    //     } catch (error) {
-    //         console.error('Error confirming action:', error);
-    //         setAlertConfig({
-    //             type: "error",
-    //             title: "Lỗi",
-    //             message: "Đã có lỗi xảy ra. Vui lòng thử lại."
-    //         });
-    //         setShowAlertModal(true);
-    //         setShowConfirmModal(false);
-    //     }
-    // };
 
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
@@ -523,7 +402,7 @@ const VaccinationListManagement = () => {
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {filteredVaccinations.length > 0 ? (
                                         filteredVaccinations.map((vaccination, index) => (
-                                            <tr key={vaccination.id || index} className="hover:bg-opacity-50 transition-all duration-200 group" style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}>
+                                            <tr key={`${vaccination.id}-${index}`} className="hover:bg-opacity-50 transition-all duration-200 group" style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}>
                                                 <td className="w-[250px] py-4 px-6">
                                                     <div className="flex flex-col">
                                                         <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
@@ -540,7 +419,7 @@ const VaccinationListManagement = () => {
                                                 <td className="w-[150px] py-4 px-6">
                                                     <div className="flex flex-wrap gap-1">
                                                         {vaccination.classes.map((classe) => (
-                                                            <span key={classe} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                                                            <span key={classe.id} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
                                                                 {classe.name}
                                                             </span>
                                                         ))}
@@ -602,101 +481,6 @@ const VaccinationListManagement = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-
-                                                {/* <td className="w-[100px] py-4 px-6">
-                                                    <div style={{ position: 'relative' }}>
-                                                        <div style={{ position: 'relative', display: 'inline-block' }}>
-                                                            <button
-                                                                onClick={() => toggleDropdown(vaccination.id)}
-                                                                className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
-                                                                style={{
-                                                                    backgroundColor: GRAY[100],
-                                                                    color: TEXT.PRIMARY
-                                                                }}
-                                                            >
-                                                                <FiMoreVertical className="w-4 sm:w-5 h-4 sm:h-5" />
-                                                            </button>
-                                                            
-
-                                                            {openActionId === vaccination.id && (
-                                                                <div
-                                                                    className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                                                                    style={{
-                                                                        borderColor: BORDER.DEFAULT,
-                                                                        backgroundColor: 'white',
-                                                                        position: 'absolute',
-                                                                        right: 'calc(100% + 10px)',
-                                                                        top: '50%',
-                                                                        transform: 'translateY(-50%)',
-                                                                        zIndex: 50
-                                                                    }}
-                                                                >
-                                                                    {vaccination.status === "PendingApproval" && (
-                                                                        <>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    onClose();
-                                                                                    setConfirmAction({
-                                                                                        type: 'approve',
-                                                                                        itemId: vaccination.id
-                                                                                    });
-                                                                                    setShowConfirmModal(true);
-                                                                                }}
-                                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                                style={{ color: SUCCESS[600] }}
-                                                                            >
-                                                                                <FiCheck className="w-4 h-4 flex-shrink-0" />
-                                                                                <span>Duyệt</span>
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    onClose();
-                                                                                    setConfirmAction({
-                                                                                        type: 'reject',
-                                                                                        itemId: vaccination.id
-                                                                                    });
-                                                                                    setShowConfirmModal(true);
-                                                                                }}
-                                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                                style={{ color: ERROR[600] }}
-                                                                            >
-                                                                                <FiX className="w-4 h-4 flex-shrink-0" />
-                                                                                <span>Từ chối</span>
-                                                                            </button>
-                                                                        </>
-                                                                    )}
-                                                                    {vaccination.status === "WaitingForParentConsent" &&( 
-                                                                        <>
-                                                                            <button
-                                                                                onClick={((e) => {
-                                                                                    e.stopPropagation();
-                                                                                    onClose();
-                                                                                    handleFinalize(vaccination.id); }  
-                                                                                )}
-                                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                                style={{ color: SUCCESS[600] }}
-                                                                            >
-                                                                                <FiCheck className="w-4 h-4 flex-shrink-0" />
-                                                                                <span>Chốt danh sách</span>
-                                                                            </button>
-                                                                        </>
-                                                                    )}
-                                                                    <Link
-                                                                        to={`/manager/vaccination/${vaccination.id}`}
-                                                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                        style={{ color: PRIMARY[600] }}
-                                                                        onClick={() => setOpenActionId(null)}
-                                                                    >
-                                                                        <FiEye className="w-4 h-4 flex-shrink-0" />
-                                                                        <span>Xem chi tiết</span>
-                                                                    </Link>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td> */}
                                             </tr>
                                         ))
                                     ) : (
@@ -843,18 +627,6 @@ const VaccinationListManagement = () => {
                 message={alertConfig.message}
                 type={alertConfig.type}
             />
-
-            {/* <ConfirmActionModal
-                isOpen={showConfirmModal}
-                onClose={() => setShowConfirmModal(false)}
-                onConfirm={handleConfirmAction}
-                title={confirmAction.type === 'approve' ? "Duyệt kế hoạch tiêm chủng" : "Từ chối kế hoạch tiêm chủng"}
-                message={confirmAction.type === 'approve'
-                    ? "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này? Vui lòng nhập lý do duyệt."
-                    : "Bạn có chắc chắn muốn từ chối kế hoạch tiêm chủng này? Vui lòng nhập lý do từ chối."
-                }
-                type={confirmAction.type}
-            /> */}
         </div>
     );
 };

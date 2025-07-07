@@ -32,6 +32,7 @@ import { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BO
 import vaccineSessionApi from '../../api/vaccineSessionApi';
 import Loading from "../../components/Loading";
 import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
+import AssignNurseModal from "../../components/modal/AssignNurseModal";
 
 const VaccinationDetail = () => {
     const { id } = useParams();
@@ -49,7 +50,9 @@ const VaccinationDetail = () => {
     const [modalTitle, setModalTitle] = useState("");
     const [modalMessage, setModalMessage] = useState("");
     const [studentConsentData, setStudentConsentData] = useState([]);
-
+    const [isAssignNurseModalOpen, setAssignNurseModalOpen] = useState(false);
+    const [selectedClassId, setSelectedClassId] = useState(null);
+ 
     const user = JSON.parse(localStorage.getItem("user"));
     const userRole = user?.role;
 
@@ -93,12 +96,25 @@ const VaccinationDetail = () => {
                 const session = response.data;
                 setVaccination(session);
 
+                
+                const classNurseAssignments = response.data.classNurseAssignments || [];
+
                 if (session?.classIds?.length > 0) {
                     const classConsentResponses = await vaccineSessionApi.getAllClassStudentConsents(id, session.classIds);
                     const validData = classConsentResponses
                         .filter(res => res.success && res.data?.length > 0)
                         .flatMap(res => res.data);
-                    setStudentConsentData(validData);
+
+                    // Map nurse assignments to students based on classId
+                    const studentsWithNurse = validData.map((item) => {
+                        item.students.forEach((student) => {
+                            const nurseAssignment = classNurseAssignments.find(assignment => assignment.classId === item.classId);
+                            student.classNurseAssignments = nurseAssignment ? nurseAssignment.nurseName : "Chưa có";
+                        });
+                        return item;
+                    });
+                    
+                    setStudentConsentData(studentsWithNurse);
                 }
 
                 setLoading(false);
@@ -166,12 +182,12 @@ const VaccinationDetail = () => {
                 <div className="text-center">
                     <h3 className="text-xl font-semibold mb-2" style={{ color: ERROR[600] }}>{error}</h3>
                     <button
-                    onClick={() => navigate('/manager/vaccination-list-management')}
+                    onClick={() => navigate(-1)}
                     className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
                     style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                     >
                     <FiArrowLeft className="mr-2" />
-                    Quay lại danh sách tiêm chủng
+                    Quay lại
                     </button>
                 </div>
             </div>
@@ -327,6 +343,24 @@ const VaccinationDetail = () => {
         name: item.className
     }));
 
+    const handleAssignNurse = (classId) => {
+        setSelectedClassId(classId);
+        setAssignNurseModalOpen(true);
+    };
+
+    const handleNurseAssigned = (assignedNurseData) => {
+        const updatedClassAssignments = vaccination.classNurseAssignments.map(assignment => 
+            assignment.classId === selectedClassId 
+                ? { ...assignment, nurseName: assignedNurseData.nurseName } 
+                : assignment
+        );
+        setVaccination(prevVaccination => ({
+            ...prevVaccination,
+            classNurseAssignments: updatedClassAssignments
+        }));
+    };
+
+
     const ActionMenu = ({ student }) => {
         const [isOpen, setIsOpen] = useState(false);
         const menuRef = useRef(null);
@@ -379,6 +413,16 @@ const VaccinationDetail = () => {
                             >
                                 <FiEye className="w-4 h-4 flex-shrink-0" />
                                 <span>Xem chi tiết</span>
+                            </button>
+                        )}
+
+                        {userRole === "manager" && student.classNurseAssignments === "Chưa có" && (
+                            <button
+                                onClick={() => handleAssignNurse(student.classId)}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                            >
+                                <FiUserPlus className="w-4 h-4 flex-shrink-0" />
+                                <span>Phân công NVYT</span>
                             </button>
                         )}
 
@@ -885,6 +929,7 @@ const VaccinationDetail = () => {
                                             { key: "class", label: "Lớp", width: "120px" },
                                             { key: "parentConfirmed", label: "Xác nhận PH", width: "150px" },
                                             { key: "vaccinated", label: "Trạng thái", width: "150px" },
+                                            { key: "classNurseAssignments", label: "Phân công NVYT", width: "150px" },
                                             { key: "action", label: "Thao tác", width: "100px" }
                                         ].map((col, idx) => (
                                             <th
@@ -923,7 +968,7 @@ const VaccinationDetail = () => {
                                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                     {filteredStudents.length > 0 ? (
                                         filteredStudents.map((student, index) => (
-                                            <tr key={student.studentId} className="hover:bg-primary-50 transition-all duration-200">
+                                            <tr key={`${student.classId}-${student.studentId}-${index}`} className="hover:bg-primary-50 transition-all duration-200">
                                                 <td className="py-4 px-6">{index + 1}</td>
                                                 <td className="py-4 px-6">{student.studentName}</td>
                                                 <td className="py-4 px-6">
@@ -934,6 +979,9 @@ const VaccinationDetail = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <VaccinationStatusBadge status={student.vaccinationStatus} />
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    {student.classNurseAssignments ? student.classNurseAssignments : "Chưa có"}
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <ActionMenu student={student} />
@@ -974,6 +1022,15 @@ const VaccinationDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Assign Nurse Modal */}
+            <AssignNurseModal
+                isOpen={isAssignNurseModalOpen}
+                onClose={() => setAssignNurseModalOpen(false)}
+                sessionId={id}
+                classId={selectedClassId}
+                onNurseAssigned={handleNurseAssigned}
+            />
 
             {/* Confirm Action Modal */}
             <ConfirmActionModal
