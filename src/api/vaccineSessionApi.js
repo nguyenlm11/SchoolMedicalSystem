@@ -38,6 +38,21 @@ const vaccineSessionApi = {
         }
     },
 
+    // Lấy danh sách nhân viên y tế cho buổi tiêm chủng
+    getNurseAssignments: async (sessionId) => {
+        try {
+            const response = await apiClient.get(`/vaccination-sessions/${sessionId}/nurse-assignments`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching nurse list:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể tải danh sách.',
+                data: null
+            };
+        }
+    },
+
     // Lấy chi tiết buổi tiêm chủng
     getVaccineSessionDetails: async (sessionId) => {
         try {
@@ -141,6 +156,21 @@ const vaccineSessionApi = {
         } catch (error) {
             console.error('Error fetching all class consent statuses:', error);
             return [];
+        }
+    },
+
+    // Phân công y tá cho buổi tiêm chủng
+    assignNurseToVaccinationSession: async (data) => {
+        try {
+            const response = await apiClient.post(`/vaccination-sessions/assign-nurse`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error assigning nurse:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể phân công y tá.',
+                data: null
+            };
         }
     }
 
