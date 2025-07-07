@@ -1,5 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
+import ParentLayout from "../components/layout/ParentLayout";
 import ParentDashboard from "../pages/parent/ParentDashboard";
 import HealthProfileList from "../pages/parent/HealthProfileList";
 import StudentHealthProfile from "../pages/student/StudentHealthProfile";
@@ -12,7 +13,7 @@ const PlaceholderPage = ({ title }) => (
 );
 
 const parentRoutes = (
-  <>
+  <Route element={<ParentLayout />}>
     <Route path="/parent/dashboard" element={<ParentDashboard />} />
     <Route path="/parent/health-profile/new" element={<PlaceholderPage title="Khai báo hồ sơ sức khỏe (đang phát triển)" />} />
     <Route path="/parent/health-profile" element={<HealthProfileList />} />
@@ -33,7 +34,7 @@ const parentRoutes = (
     <Route path="/parent/health-check" element={<PlaceholderPage title="Xác nhận kiểm tra (đang phát triển)" />} />
     <Route path="/parent/health-check/results" element={<PlaceholderPage title="Xem kết quả kiểm tra (đang phát triển)" />} />
     <Route path="/parent/health-check/:id/results" element={<PlaceholderPage title="Kết quả kiểm tra chi tiết (đang phát triển)" />} />
-  </>
+  </Route>
 );
 
 export default parentRoutes; 

@@ -1,5 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
+import StaffLayout from "../components/layout/StaffLayout";
 import UserProfilePage from "../pages/auth/UserProfilePage";
 import NurseDashboard from "../pages/nurse/NurseDashboard";
 import NurseMedicationPage from "../pages/nurse/NurseMedicationPage";
@@ -16,7 +17,7 @@ const PlaceholderPage = ({ title }) => (
 );
 
 const staffRoutes = (
-  <>
+  <Route element={<StaffLayout />}>
     {/* Staff Medication Routes */}
     <Route path="/schoolnurse/dashboard" element={<NurseDashboard />} />
     <Route path="/schoolnurse/medication/administer/:id" element={<PlaceholderPage title="Cho thuốc (đang phát triển)" />} />
@@ -36,7 +37,7 @@ const staffRoutes = (
 
     {/* Staff Profile Routes */}
     <Route path="/schoolnurse/profile" element={<UserProfilePage />} />
-  </>
+  </Route>
 );
 
 export default staffRoutes; 
