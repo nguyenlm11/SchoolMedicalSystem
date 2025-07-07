@@ -250,7 +250,7 @@ const Navbar = () => {
                                 className="h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 mr-3 sm:mr-4 rounded-xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-105"
                                 style={{ backgroundColor: COMMON.WHITE, border: `2px solid ${PRIMARY[200]}` }}
                             >
-                                <img src='logo.jpg' alt="logo" className="w-10 h-10" />
+                                <img src='/logo.jpg' alt="logo" className="w-10 h-10" />
                             </div>
                             <div className="flex flex-col">
                                 <span
@@ -462,21 +462,21 @@ const Navbar = () => {
                             style={{ backgroundColor: `${PRIMARY[700]}`, backdropFilter: 'blur(15px)', border: `1px solid ${PRIMARY[500]}` }}
                         >
                             <div className="space-y-2">
-                                {isAuthenticated() && (
-                                    <Link
-                                        to="/"
-                                        onClick={() => setIsMobileMenuOpen(false)}
+                            {isAuthenticated() && (
+                                <Link
+                                    to="/"
+                                    onClick={() => setIsMobileMenuOpen(false)}
                                         className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                         style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                         onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                    >
-                                        Trang chủ
-                                    </Link>
-                                )}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    Trang chủ
+                                </Link>
+                            )}
 
-                                {visibleMenuItems.map((item) => {
-                                    const filteredSubItems = getFilteredSubItems(item.subItems);
+                            {visibleMenuItems.map((item) => {
+                                const filteredSubItems = getFilteredSubItems(item.subItems);
                                     return filteredSubItems.map((category) =>
                                         category.links.map((link, linkIndex) => (
                                             <Link
@@ -486,64 +486,64 @@ const Navbar = () => {
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                             >
-                                                {link.label}
-                                            </Link>
+                                                                    {link.label}
+                                                            </Link>
                                         ))
-                                    );
-                                })}
+                                );
+                            })}
 
                                 <div className="border-t border-teal-400/30 pt-3 mt-3">
-                                    {isAuthenticated() ? (
+                                {isAuthenticated() ? (
                                         <>
-                                            <Link
-                                                to={getDashboardLink()}
-                                                onClick={() => setIsMobileMenuOpen(false)}
+                                        <Link
+                                            to={getDashboardLink()}
+                                            onClick={() => setIsMobileMenuOpen(false)}
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Tổng quan
-                                            </Link>
-                                            <Link
-                                                to="/profile"
-                                                onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Tổng quan
+                                        </Link>
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsMobileMenuOpen(false)}
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Hồ sơ cá nhân
-                                            </Link>
+                                        >
+                                            Hồ sơ cá nhân
+                                        </Link>
                                             <div className="text-center p-3 rounded-xl my-3" style={{ backgroundColor: `${PRIMARY[600]}80` }}>
                                                 <span className="text-xs font-medium" style={{ color: COMMON.WHITE }}>
                                                     Xin chào {user?.name || user?.username}
                                                 </span>
-                                            </div>
-                                            <button
-                                                onClick={handleLogout}
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
                                                 className="block w-full px-4 py-3 rounded-xl font-medium text-base transition-all duration-300 text-center"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${ERROR[700]}`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Đăng xuất
-                                            </button>
+                                        >
+                                            Đăng xuất
+                                        </button>
                                         </>
-                                    ) : (
-                                        <Link
-                                            to="/login"
-                                            onClick={() => setIsMobileMenuOpen(false)}
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                             className="block w-full text-center px-6 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                             style={{ backgroundColor: COMMON.WHITE, color: PRIMARY[700] }}
-                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
-                                            onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
-                                        >
-                                            Đăng nhập
-                                        </Link>
-                                    )}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
+                                    >
+                                        Đăng nhập
+                                    </Link>
+                                )}
                                 </div>
                             </div>
                         </div>
