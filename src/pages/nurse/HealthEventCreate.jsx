@@ -29,7 +29,7 @@ const STYLES = {
 const EVENT_TYPES = [
     { value: 'Injury', label: 'Chấn thương' },
     { value: 'Illness', label: 'Bệnh, ốm' },
-    { value: 'Allergic Reaction', label: 'Phản ứng dị ứng' },
+    { value: 'AllergicReaction', label: 'Dị ứng' },
     { value: 'Fall', label: 'Té ngã' },
     { value: 'Emergency', label: 'Cấp cứu' },
     { value: 'Other', label: 'Khác' }

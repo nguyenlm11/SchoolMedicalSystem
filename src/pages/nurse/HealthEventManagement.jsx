@@ -1,105 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiMapPin, FiHeart, FiTrendingUp, FiPhone, FiBell } from "react-icons/fi";
+import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiMapPin, FiHeart, FiTrendingUp, FiPhone, FiTrash2, FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useNavigate } from "react-router-dom";
-// import medicalApi from "../../api/medicalApi"; // Will be implemented when API is ready
+import healthEventApi from "../../api/healtheventApi";
+import ConfirmModal from "../../components/modal/ConfirmModal";
+import AlertModal from "../../components/modal/AlertModal";
 
 const HealthEventManagement = () => {
-    const [activeTab, setActiveTab] = useState("all");
     const navigate = useNavigate();
     const [healthEvents, setHealthEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [openActionId, setOpenActionId] = useState(null);
     const [filterEmergency, setFilterEmergency] = useState("all");
     const [filterEventType, setFilterEventType] = useState("all");
-
-    const mockData = {
-        success: true,
-        message: "Thành công",
-        data: [
-            {
-                id: "event-001",
-                userId: "user-001",
-                handledById: "nurse-001",
-                eventType: "Injury",
-                eventTypeDisplayName: "Chấn thương",
-                description: "Học sinh bị ngã và trầy xước đầu gối khi chơi thể thao",
-                occurredAt: "2024-07-04T09:30:00.000Z",
-                location: "Sân thể thao",
-                actionTaken: "Vệ sinh vết thương và băng bó",
-                code: "INJ-001",
-                outcome: "Ổn định, theo dõi",
-                isEmergency: false,
-                relatedMedicalConditionId: null,
-                createdDate: "2024-07-04T09:35:00.000Z",
-                canTakeOwnership: true,
-                canComplete: false,
-                studentName: "Nguyễn Văn An",
-                studentCode: "HS001",
-                handledByName: "Y tá Phạm Thị Mai",
-                relatedMedicalConditionName: null,
-                emergencyStatusText: "Không khẩn cấp",
-                currentHealthStatus: "Ổn định",
-                parentNotice: "Đã thông báo phụ huynh",
-                medicalItemDetails: [
-                    {
-                        studentName: "Nguyễn Văn An",
-                        studentClass: "10A1",
-                        nurseName: "Y tá Phạm Thị Mai",
-                        medicationName: "Nước muối sinh lý",
-                        medicationQuantity: 1,
-                        medicationDosage: "Rửa vết thương",
-                        supplyQuantity: 2
-                    }
-                ]
-            },
-            {
-                id: "event-002",
-                userId: "user-002",
-                handledById: "nurse-002",
-                eventType: "Illness",
-                eventTypeDisplayName: "Bệnh tật",
-                description: "Học sinh bị sốt cao và đau đầu",
-                occurredAt: "2024-07-04T11:15:00.000Z",
-                location: "Lớp học 9B2",
-                actionTaken: "Đo thân nhiệt, cho nghỉ ngơi và liên hệ phụ huynh",
-                code: "ILL-002",
-                outcome: "Đã liên hệ phụ huynh đưa về nhà",
-                isEmergency: true,
-                relatedMedicalConditionId: "condition-001",
-                createdDate: "2024-07-04T11:20:00.000Z",
-                canTakeOwnership: false,
-                canComplete: true,
-                studentName: "Trần Thị Bình",
-                studentCode: "HS002",
-                handledByName: "Y tá Lê Văn Đức",
-                relatedMedicalConditionName: "Dị ứng thức ăn",
-                emergencyStatusText: "Khẩn cấp",
-                currentHealthStatus: "Cần theo dõi",
-                parentNotice: "Đã gọi điện và phụ huynh đến đón",
-                medicalItemDetails: [
-                    {
-                        studentName: "Trần Thị Bình",
-                        studentClass: "9B2",
-                        nurseName: "Y tá Lê Văn Đức",
-                        medicationName: "Paracetamol",
-                        medicationQuantity: 1,
-                        medicationDosage: "500mg",
-                        supplyQuantity: 0
-                    }
-                ]
-            }
-        ],
-        errors: [],
-        totalCount: 25,
-        pageSize: 10,
-        currentPage: 1,
-        totalPages: 3
-    };
+    const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState(null);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -112,31 +33,36 @@ const HealthEventManagement = () => {
     }, []);
 
     const fetchHealthEvents = async (params = {}) => {
-        setLoading(true);
-        setError(null);
+        // setLoading(true);
         try {
-            // TODO: Replace with real API call
-            // const response = await medicalApi.getHealthEvents(params);
+            const apiParams = {
+                pageIndex: params.pageIndex || pagination.pageIndex,
+                pageSize: params.pageSize || pagination.pageSize,
+                searchTerm: params.searchTerm || searchTerm,
+                eventType: filterEventType !== "all" ? filterEventType : undefined,
+                isEmergency: filterEmergency !== "all" ? filterEmergency === "emergency" : undefined,
+                fromDate: dateRange.fromDate || undefined,
+                toDate: dateRange.toDate || undefined,
+                location: params.location
+            };
 
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const response = mockData;
-
+            const response = await healthEventApi.getHealthEvents(
+                Object.fromEntries(
+                    Object.entries(apiParams).filter(([_, value]) => value !== undefined)
+                )
+            );
             if (response.success) {
                 setHealthEvents(response.data);
-                setPagination(prev => ({
-                    ...prev,
+                setPagination({
                     pageIndex: response.currentPage || 1,
-                    totalCount: response.totalCount || response.data.length,
-                    totalPages: response.totalPages || Math.ceil((response.totalCount || response.data.length) / (response.pageSize || prev.pageSize)),
-                    pageSize: response.pageSize || prev.pageSize
-                }));
+                    totalCount: response.totalCount || 0,
+                    totalPages: response.totalPages || 1,
+                    pageSize: response.pageSize || 10
+                });
             } else {
-                setError(response.message || "Không thể tải danh sách sự kiện sức khỏe");
                 setHealthEvents([]);
             }
         } catch (err) {
-            setError("Có lỗi xảy ra khi tải dữ liệu");
             setHealthEvents([]);
         } finally {
             setLoading(false);
@@ -148,121 +74,27 @@ const HealthEventManagement = () => {
     }, []);
 
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            fetchHealthEvents({
-                searchTerm,
-                eventType: filterEventType === "all" ? "" : filterEventType,
-                isEmergency: filterEmergency === "all" ? null : filterEmergency === "emergency"
-            });
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
+        fetchHealthEvents();
     }, [searchTerm, filterEventType, filterEmergency]);
 
-    const handleTabChange = (newTab) => {
-        setActiveTab(newTab);
-        fetchHealthEvents({
-            searchTerm: searchTerm,
-            status: newTab === "all" ? "" : newTab,
-            pageIndex: 1
-        });
-        setPagination(prev => ({ ...prev, pageIndex: 1 }));
-    };
-
-    const getEventTypeColor = (eventType) => {
-        switch (eventType?.toLowerCase()) {
-            case "injury": return WARNING;
-            case "illness": return ERROR;
-            case "medication": return INFO;
-            case "checkup": return SUCCESS;
-            case "emergency": return ERROR;
-            default: return PRIMARY;
+    const handleFilter = () => {
+        if (dateRange.fromDate && dateRange.toDate) {
+            fetchHealthEvents();
         }
     };
 
-    const getStatusBadge = (event) => {
-        if (event.isEmergency) {
-            return (
-                <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                    style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                    <FiAlertTriangle className="mr-1.5 h-4 w-4" />
-                    Khẩn cấp
-                </span>
-            );
-        }
-
-        if (event.outcome?.includes("hoàn thành") || event.outcome?.includes("ổn định")) {
-            return (
-                <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                    style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700] }}>
-                    <FiCheckCircle className="mr-1.5 h-4 w-4" />
-                    Đã xử lý
-                </span>
-            );
-        }
-
-        return (
-            <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                <FiClock className="mr-1.5 h-4 w-4" />
-                Đang xử lý
-            </span>
-        );
+    const handleRefresh = () => {
+        setDateRange({ fromDate: "", toDate: "" });
+        setFilterEmergency("all");
+        setFilterEventType("all");
+        setSearchTerm("");
+        fetchHealthEvents();
     };
 
-    const getHealthStatusBadge = (status) => {
-        const statusLower = status?.toLowerCase() || "";
-
-        if (statusLower.includes("ổn định")) {
-            return (
-                <span className="px-2 py-1 text-xs font-medium rounded-lg"
-                    style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700] }}>
-                    Ổn định
-                </span>
-            );
-        }
-
-        if (statusLower.includes("cần theo dõi")) {
-            return (
-                <span className="px-2 py-1 text-xs font-medium rounded-lg"
-                    style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                    Cần theo dõi
-                </span>
-            );
-        }
-
-        if (statusLower.includes("nghiêm trọng")) {
-            return (
-                <span className="px-2 py-1 text-xs font-medium rounded-lg"
-                    style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                    Nghiêm trọng
-                </span>
-            );
-        }
-
-        return (
-            <span className="px-2 py-1 text-xs font-medium rounded-lg"
-                style={{ backgroundColor: INFO[50], color: INFO[700] }}>
-                {status}
-            </span>
-        );
+    const handlePageChange = (newPageIndex) => {
+        setPagination(prev => ({ ...prev, pageIndex: newPageIndex }));
+        fetchHealthEvents({ pageIndex: newPageIndex });
     };
-
-    const filteredEvents = healthEvents.filter(event => {
-        const matchesSearch = event.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.eventTypeDisplayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.location?.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesEmergency = filterEmergency === "all" ||
-            (filterEmergency === "emergency" && event.isEmergency) ||
-            (filterEmergency === "normal" && !event.isEmergency);
-
-        const matchesEventType = filterEventType === "all" ||
-            event.eventType?.toLowerCase() === filterEventType.toLowerCase();
-
-        return matchesSearch && matchesEmergency && matchesEventType;
-    });
 
     const toggleDropdown = (id) => {
         setOpenActionId(openActionId === id ? null : id);
@@ -273,9 +105,9 @@ const HealthEventManagement = () => {
         const injuryCount = healthEvents.filter(e => e.eventType === "Injury").length;
         const illnessCount = healthEvents.filter(e => e.eventType === "Illness").length;
         const completedCount = healthEvents.filter(e =>
-            e.outcome?.includes("hoàn thành") || e.outcome?.includes("ổn định")
+            e.outcome?.toLowerCase().includes("ổn định") ||
+            e.outcome?.toLowerCase().includes("hoàn thành")
         ).length;
-
         return {
             emergency: emergencyCount,
             injury: injuryCount,
@@ -284,8 +116,53 @@ const HealthEventManagement = () => {
             total: healthEvents.length
         };
     };
-
     const stats = getStats();
+
+    const eventTypeOptions = [
+        { value: "all", label: "Tất cả loại" },
+        { value: 'Injury', label: 'Chấn thương' },
+        { value: 'Illness', label: 'Bệnh, ốm' },
+        { value: 'AllergicReaction', label: 'Dị ứng' },
+        { value: 'Fall', label: 'Té ngã' },
+        { value: 'Emergency', label: 'Cấp cứu' },
+        { value: 'Other', label: 'Khác' }
+    ];
+
+    const handleDeleteEvent = async () => {
+        try {
+            const response = await healthEventApi.deleteHealthEvent(selectedEventId);
+            setShowDeleteModal(false);
+            setSelectedEventId(null);
+
+            if (response.success) {
+                setShowAlert(true);
+                setAlertInfo({ type: "success", message: "Xóa sự kiện y tế thành công" });
+                fetchHealthEvents();
+            } else {
+                setShowAlert(true);
+                setAlertInfo({ type: "error", message: response.message || "Không thể xóa sự kiện y tế" });
+            }
+        } catch (err) {
+            setShowDeleteModal(false);
+            setSelectedEventId(null);
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Có lỗi xảy ra khi xóa sự kiện" });
+        }
+    };
+
+    const handleDeleteClick = (eventId) => {
+        setSelectedEventId(eventId);
+        setShowDeleteModal(true);
+        setOpenActionId(null);
+    };
+
+    const handleDateChange = (e) => {
+        const { name, value } = e.target;
+        setDateRange(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
     if (loading) {
         return (
@@ -298,7 +175,6 @@ const HealthEventManagement = () => {
     return (
         <div className="min-h-screen">
             <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div>
@@ -308,13 +184,6 @@ const HealthEventManagement = () => {
                             <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
                                 Quản lý và theo dõi các sự kiện sức khỏe của học sinh
                             </p>
-                            {error && (
-                                <div className="mt-2 text-sm px-3 py-2 rounded-lg flex items-center"
-                                    style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                                    <FiAlertTriangle className="mr-2 h-4 w-4" />
-                                    {error}
-                                </div>
-                            )}
                         </div>
                         <div className="flex gap-3">
                             <button
@@ -329,7 +198,6 @@ const HealthEventManagement = () => {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
@@ -452,11 +320,7 @@ const HealthEventManagement = () => {
                     </div>
                 </div>
 
-                {/* Main Content */}
-                <div className="rounded-2xl shadow-xl border backdrop-blur-sm"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
-
-                    {/* Filters and Search */}
+                <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                             <div className="flex-1">
@@ -466,11 +330,7 @@ const HealthEventManagement = () => {
                                         type="text"
                                         placeholder="Tìm kiếm theo tên học sinh, mô tả, loại sự kiện..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                        style={{
-                                            borderColor: BORDER.DEFAULT,
-                                            backgroundColor: BACKGROUND.DEFAULT,
-                                            color: TEXT.PRIMARY
-                                        }}
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
@@ -478,42 +338,67 @@ const HealthEventManagement = () => {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                                {/* Emergency Filter */}
                                 <select
                                     value={filterEmergency}
                                     onChange={(e) => setFilterEmergency(e.target.value)}
                                     className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        color: TEXT.PRIMARY
-                                    }}
+                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 >
                                     <option value="all">Tất cả mức độ</option>
                                     <option value="emergency">Khẩn cấp</option>
                                     <option value="normal">Bình thường</option>
                                 </select>
 
-                                {/* Event Type Filter */}
                                 <select
                                     value={filterEventType}
                                     onChange={(e) => setFilterEventType(e.target.value)}
                                     className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        color: TEXT.PRIMARY
-                                    }}
+                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                 >
-                                    <option value="all">Tất cả loại</option>
-                                    <option value="injury">Chấn thương</option>
-                                    <option value="illness">Bệnh tật</option>
-                                    <option value="medication">Thuốc</option>
-                                    <option value="checkup">Kiểm tra</option>
+                                    {eventTypeOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
 
+                                <div className="flex items-center gap-2">
+                                    <div className="relative">
+                                        <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                        <input
+                                            type="date"
+                                            name="fromDate"
+                                            value={dateRange.fromDate}
+                                            onChange={handleDateChange}
+                                            className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                        />
+                                    </div>
+                                    <span style={{ color: TEXT.SECONDARY }}>-</span>
+                                    <div className="relative">
+                                        <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                                        <input
+                                            type="date"
+                                            name="toDate"
+                                            value={dateRange.toDate}
+                                            onChange={handleDateChange}
+                                            min={dateRange.fromDate}
+                                            className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleFilter}
+                                        disabled={!dateRange.fromDate || !dateRange.toDate}
+                                        className="px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                    >
+                                        Lọc
+                                    </button>
+                                </div>
+
                                 <button
-                                    onClick={() => fetchHealthEvents()}
+                                    onClick={handleRefresh}
                                     className="px-3 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                     title="Làm mới"
@@ -524,42 +409,44 @@ const HealthEventManagement = () => {
                         </div>
                     </div>
 
-                    {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
-                                    <th className="w-[200px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Học sinh
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
+                                        MÃ SỰ KIỆN
                                     </th>
-                                    <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Loại sự kiện
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
+                                        HỌC SINH
                                     </th>
-                                    <th className="w-[250px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Mô tả
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
+                                        LOẠI SỰ KIỆN
                                     </th>
-                                    <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Thời gian
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
+                                        MÔ TẢ
                                     </th>
-                                    <th className="w-[120px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Trạng thái
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
+                                        THỜI GIAN XẢY RA
                                     </th>
-                                    <th className="w-[150px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Người xử lý
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
+                                        NGƯỜI XỬ LÝ
                                     </th>
-                                    <th className="w-[100px] py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        Thao tác
+                                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '80px' }}>
+                                        THAO TÁC
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                                {filteredEvents.map((event, index) => (
+                                {healthEvents.map((event, index) => (
                                     <tr
                                         key={event.id}
                                         className="hover:bg-opacity-50 transition-all duration-200 group"
                                         style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                     >
-                                        <td className="w-[200px] py-4 px-6">
+                                        <td className="py-4 px-6 text-sm font-medium whitespace-nowrap" style={{ width: '160px', color: TEXT.PRIMARY }}>
+                                            {event.code}
+                                        </td>
+                                        <td className="py-4 px-6" style={{ width: '200px' }}>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
                                                     {event.studentName}
@@ -568,33 +455,34 @@ const HealthEventManagement = () => {
                                                     {event.studentCode}
                                                 </span>
                                                 {event.medicalItemDetails?.[0]?.studentClass && (
-                                                    <span className="text-xs mt-1 px-2 py-1 rounded-lg inline-block w-fit"
-                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                                                    <span className="text-xs mt-1 px-2 py-1 rounded-md inline-block w-fit"
+                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}
+                                                    >
                                                         {event.medicalItemDetails[0].studentClass}
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="w-[150px] py-4 px-6">
-                                            <div className="flex flex-col">
+                                        <td className="py-4 px-6" style={{ width: '160px' }}>
+                                            <div className="flex items-center gap-2">
                                                 <span
-                                                    className="px-3 py-1 text-sm font-medium rounded-lg inline-block w-fit"
-                                                    style={{
-                                                        backgroundColor: getEventTypeColor(event.eventType)[50],
-                                                        color: getEventTypeColor(event.eventType)[700]
-                                                    }}
+                                                    className="px-2.5 py-1 text-sm font-medium rounded-md"
+                                                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}
                                                 >
                                                     {event.eventTypeDisplayName}
                                                 </span>
                                                 {event.isEmergency && (
-                                                    <span className="text-xs mt-1 font-medium" style={{ color: ERROR[600] }}>
-                                                        <FiAlertTriangle className="inline mr-1 h-3 w-3" />
-                                                        Khẩn cấp
+                                                    <span
+                                                        className="p-1 text-xs font-medium rounded-md"
+                                                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}
+                                                        title={event.emergencyStatusText}
+                                                    >
+                                                        <FiAlertTriangle className="h-4 w-4" />
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="w-[250px] py-4 px-6">
+                                        <td className="py-4 px-6">
                                             <div className="flex flex-col">
                                                 <p className="text-sm line-clamp-2" style={{ color: TEXT.PRIMARY }}>
                                                     {event.description}
@@ -603,33 +491,19 @@ const HealthEventManagement = () => {
                                                     <FiMapPin className="mr-1 h-3 w-3" />
                                                     {event.location}
                                                 </div>
-                                                {event.currentHealthStatus && (
-                                                    <div className="mt-1">
-                                                        {getHealthStatusBadge(event.currentHealthStatus)}
-                                                    </div>
-                                                )}
                                             </div>
                                         </td>
-                                        <td className="w-[150px] py-4 px-6">
+                                        <td className="py-4 px-6" style={{ width: '130px' }}>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {new Date(event.occurredAt).toLocaleDateString("vi-VN")}
                                                 </span>
                                                 <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
-                                                    {new Date(event.occurredAt).toLocaleTimeString("vi-VN", {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </span>
-                                                <span className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                    Mã: {event.code}
+                                                    {new Date(event.occurredAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="w-[120px] py-4 px-6">
-                                            {getStatusBadge(event)}
-                                        </td>
-                                        <td className="w-[150px] py-4 px-6">
+                                        <td className="py-4 px-6" style={{ width: '150px' }}>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {event.handledByName || "Chưa phân công"}
@@ -642,7 +516,7 @@ const HealthEventManagement = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="w-[100px] py-4 px-6">
+                                        <td className="py-4 px-6 text-center" style={{ width: '80px' }}>
                                             <div style={{ position: 'relative' }} className="dropdown-container">
                                                 <button
                                                     onClick={() => toggleDropdown(event.id)}
@@ -655,15 +529,7 @@ const HealthEventManagement = () => {
                                                 {openActionId === event.id && (
                                                     <div
                                                         className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                                                        style={{
-                                                            borderColor: BORDER.DEFAULT,
-                                                            backgroundColor: 'white',
-                                                            position: 'absolute',
-                                                            right: 'calc(100% + 10px)',
-                                                            top: '50%',
-                                                            transform: 'translateY(-50%)',
-                                                            zIndex: 50
-                                                        }}
+                                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: 'calc(100% + 10px)', top: '50%', transform: 'translateY(-50%)', zIndex: 50 }}
                                                     >
                                                         <button
                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -675,11 +541,11 @@ const HealthEventManagement = () => {
                                                         </button>
                                                         <button
                                                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                            style={{ color: WARNING[600] }}
-                                                            onClick={() => setOpenActionId(null)}
+                                                            style={{ color: ERROR[600] }}
+                                                            onClick={() => handleDeleteClick(event.id)}
                                                         >
-                                                            <FiBell className="w-4 h-4 flex-shrink-0" />
-                                                            <span>Thông báo phụ huynh</span>
+                                                            <FiTrash2 className="w-4 h-4 flex-shrink-0" />
+                                                            <span>Xóa sự kiện</span>
                                                         </button>
                                                     </div>
                                                 )}
@@ -692,57 +558,79 @@ const HealthEventManagement = () => {
                     </div>
 
                     {pagination.totalCount > 0 && (
-                        <div className="px-6 py-4 border-t flex items-center justify-end" style={{ borderColor: BORDER.LIGHT }}>
-                            <div className="flex items-center gap-2">
-                                {pagination.totalPages > 1 && (
-                                    <>
-                                        <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                            Trang {pagination.pageIndex} / {pagination.totalPages}
-                                        </span>
-                                        <div className="flex gap-1">
-                                            <button
-                                                onClick={() => {
-                                                    if (pagination.pageIndex > 1) {
-                                                        const newPageIndex = pagination.pageIndex - 1;
-                                                        setPagination(prev => ({ ...prev, pageIndex: newPageIndex }));
-                                                        fetchHealthEvents({ pageIndex: newPageIndex });
-                                                    }
-                                                }}
-                                                disabled={pagination.pageIndex <= 1}
-                                                className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
-                                                style={{
-                                                    backgroundColor: pagination.pageIndex > 1 ? PRIMARY[500] : GRAY[200],
-                                                    color: pagination.pageIndex > 1 ? TEXT.INVERSE : TEXT.SECONDARY
-                                                }}
-                                            >
-                                                Trước
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (pagination.pageIndex < pagination.totalPages) {
-                                                        const newPageIndex = pagination.pageIndex + 1;
-                                                        setPagination(prev => ({ ...prev, pageIndex: newPageIndex }));
-                                                        fetchHealthEvents({ pageIndex: newPageIndex });
-                                                    }
-                                                }}
-                                                disabled={pagination.pageIndex >= pagination.totalPages}
-                                                className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50"
-                                                style={{
-                                                    backgroundColor: pagination.pageIndex < pagination.totalPages ? PRIMARY[500] : GRAY[200],
-                                                    color: pagination.pageIndex < pagination.totalPages ? TEXT.INVERSE : TEXT.SECONDARY
-                                                }}
-                                            >
-                                                Sau
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
+                        <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                            <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                Hiển thị{" "}
+                                <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                    {((pagination.pageIndex - 1) * pagination.pageSize) + 1}
+                                </span>{" "}
+                                -{" "}
+                                <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                    {Math.min(pagination.pageIndex * pagination.pageSize, pagination.totalCount)}
+                                </span>{" "}
+                                trong tổng số{" "}
+                                <span className="font-bold" style={{ color: PRIMARY[600] }}>{pagination.totalCount}</span>{" "}
+                                sự kiện
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => handlePageChange(pagination.pageIndex - 1)}
+                                    disabled={pagination.pageIndex === 1}
+                                    className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: pagination.pageIndex === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: pagination.pageIndex === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
+                                    }}
+                                >
+                                    <FiChevronLeft className="h-4 w-4" />
+                                </button>
+
+                                {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                                    let pageNumber;
+                                    if (pagination.totalPages <= 5) {
+                                        pageNumber = i + 1;
+                                    } else if (pagination.pageIndex <= 3) {
+                                        pageNumber = i + 1;
+                                    } else if (pagination.pageIndex >= pagination.totalPages - 2) {
+                                        pageNumber = pagination.totalPages - 4 + i;
+                                    } else {
+                                        pageNumber = pagination.pageIndex - 2 + i;
+                                    }
+                                    return (
+                                        <button
+                                            key={pageNumber}
+                                            onClick={() => handlePageChange(pageNumber)}
+                                            className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                            style={{
+                                                borderColor: pagination.pageIndex === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
+                                                backgroundColor: pagination.pageIndex === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: pagination.pageIndex === pageNumber ? TEXT.INVERSE : TEXT.PRIMARY
+                                            }}
+                                        >
+                                            {pageNumber}
+                                        </button>
+                                    );
+                                })}
+
+                                <button
+                                    onClick={() => handlePageChange(pagination.pageIndex + 1)}
+                                    disabled={pagination.pageIndex === pagination.totalPages}
+                                    className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: pagination.pageIndex === pagination.totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                                        color: pagination.pageIndex === pagination.totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                                        backgroundColor: BACKGROUND.DEFAULT
+                                    }}
+                                >
+                                    <FiChevronRight className="h-4 w-4" />
+                                </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Empty State */}
-                    {!loading && filteredEvents.length === 0 && (
+                    {!loading && healthEvents.length === 0 && (
                         <div className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
                             <FiActivity className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
                             <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
@@ -767,6 +655,24 @@ const HealthEventManagement = () => {
                     )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={showDeleteModal}
+                title="Xóa sự kiện y tế"
+                message="Bạn có chắc chắn muốn xóa sự kiện y tế này? Hành động này không thể hoàn tác."
+                confirmText="Xóa"
+                cancelText="Hủy"
+                onConfirm={handleDeleteEvent}
+                onClose={() => { setShowDeleteModal(false); setSelectedEventId(null) }}
+            />
+
+            <AlertModal
+                isOpen={showAlert}
+                type={alertInfo.type}
+                title={alertInfo.type === "success" ? "Thành công" : "Lỗi"}
+                message={alertInfo.message}
+                onClose={() => setShowAlert(false)}
+            />
         </div>
     );
 };
