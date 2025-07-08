@@ -34,7 +34,7 @@ const NurseMedicationPage = () => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
             setCurrentPage(1);
-        }, 500);
+        }, 750);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
@@ -45,7 +45,7 @@ const NurseMedicationPage = () => {
 
     useEffect(() => {
         fetchMedicines();
-    }, [filters, sortBy, sortOrder, currentPage, pageSize, searchTerm]);
+    }, [filters, sortBy, sortOrder, currentPage, pageSize, debouncedSearchTerm]);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
