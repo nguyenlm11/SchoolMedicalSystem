@@ -37,7 +37,7 @@ const NurseSupplyPage = () => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
             setCurrentPage(1);
-        }, 500);
+        }, 750);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);

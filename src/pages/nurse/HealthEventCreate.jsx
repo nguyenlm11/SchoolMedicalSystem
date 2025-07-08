@@ -211,8 +211,8 @@ const HealthEventCreate = () => {
                     quantity: 1,
                     notes: '',
                     usedAt: new Date().toISOString(),
-                    dose: 1,
-                    medicalPerOnce: 1,
+                    dose: 0,
+                    medicalPerOnce: 0,
                     itemType
                 }
             ]
@@ -303,6 +303,9 @@ const HealthEventCreate = () => {
                     if (!usage.medicalPerOnce || usage.medicalPerOnce <= 0) {
                         newErrors[`${itemType}Usage_${index}_medicalPerOnce`] = `Vui lòng nhập số lần dùng/ngày hợp lệ cho mục #${index + 1}`;
                     }
+                    if (usage.medicalPerOnce > usage.quantity) {
+                        newErrors[`${itemType}Usage_${index}_medicalPerOnce`] = `Số thuốc/liều không được lớn hơn số lượng`;
+                    }
                 }
             });
         });
@@ -327,8 +330,8 @@ const HealthEventCreate = () => {
                 return {
                     ...cleanItem,
                     usedAt: cleanItem.usedAt || new Date().toISOString(),
-                    dose: cleanItem.dose || 1,
-                    medicalPerOnce: cleanItem.medicalPerOnce || 1
+                    dose: cleanItem.dose,
+                    medicalPerOnce: cleanItem.medicalPerOnce
                 };
             });
             const submitData = {
@@ -572,7 +575,7 @@ const HealthEventCreate = () => {
                                                 </label>
                                                 <input
                                                     type="number"
-                                                    min="1"
+                                                    min="0"
                                                     value={item.dose}
                                                     onChange={(e) => updateMedicalItem(itemType, index, 'dose', parseFloat(e.target.value) || 0)}
                                                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
@@ -590,7 +593,7 @@ const HealthEventCreate = () => {
                                                 </label>
                                                 <input
                                                     type="number"
-                                                    min="1"
+                                                    min="0"
                                                     value={item.medicalPerOnce}
                                                     onChange={(e) => updateMedicalItem(itemType, index, 'medicalPerOnce', parseInt(e.target.value) || 0)}
                                                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
