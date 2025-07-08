@@ -21,6 +21,7 @@ const HealthEventManagement = () => {
     const [selectedEventId, setSelectedEventId] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,7 +34,7 @@ const HealthEventManagement = () => {
     }, []);
 
     const fetchHealthEvents = async (params = {}) => {
-        // setLoading(true);
+        setLoading(true);
         try {
             const apiParams = {
                 pageIndex: params.pageIndex || pagination.pageIndex,
@@ -75,13 +76,20 @@ const HealthEventManagement = () => {
 
     useEffect(() => {
         fetchHealthEvents();
-    }, [searchTerm, filterEventType, filterEmergency]);
+    }, [filterEventType, filterEmergency, debouncedSearchTerm]);
 
     const handleFilter = () => {
         if (dateRange.fromDate && dateRange.toDate) {
             fetchHealthEvents();
         }
     };
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 750);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     const handleRefresh = () => {
         setDateRange({ fromDate: "", toDate: "" });
@@ -102,17 +110,10 @@ const HealthEventManagement = () => {
 
     const getStats = () => {
         const emergencyCount = healthEvents.filter(e => e.isEmergency).length;
-        const injuryCount = healthEvents.filter(e => e.eventType === "Injury").length;
-        const illnessCount = healthEvents.filter(e => e.eventType === "Illness").length;
-        const completedCount = healthEvents.filter(e =>
-            e.outcome?.toLowerCase().includes("ổn định") ||
-            e.outcome?.toLowerCase().includes("hoàn thành")
-        ).length;
+        const normalCount = healthEvents.filter(e => !e.isEmergency).length;
         return {
             emergency: emergencyCount,
-            injury: injuryCount,
-            illness: illnessCount,
-            completed: completedCount,
+            normal: normalCount,
             total: healthEvents.length
         };
     };
@@ -198,7 +199,7 @@ const HealthEventManagement = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                         style={{ background: `linear-gradient(135deg, ${ERROR[500]} 0%, ${ERROR[600]} 100%)`, borderColor: ERROR[200] }}
@@ -225,64 +226,16 @@ const HealthEventManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${WARNING[500]} 0%, ${WARNING[600]} 100%)`, borderColor: WARNING[200] }}
-                    >
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Chấn thương
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.injury}
-                                    </p>
-                                </div>
-                                <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                                >
-                                    <FiActivity className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${INFO[500]} 0%, ${INFO[600]} 100%)`, borderColor: INFO[200] }}
-                    >
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Bệnh tật
-                                    </p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.illness}
-                                    </p>
-                                </div>
-                                <div
-                                    className="h-16 w-16 rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                                >
-                                    <FiHeart className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                         style={{ background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`, borderColor: SUCCESS[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Đã xử lý
+                                        Bình thường
                                     </p>
                                     <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.completed}
+                                        {stats.normal}
                                     </p>
                                 </div>
                                 <div
@@ -422,9 +375,6 @@ const HealthEventManagement = () => {
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
                                         LOẠI SỰ KIỆN
                                     </th>
-                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY }}>
-                                        MÔ TẢ
-                                    </th>
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
                                         THỜI GIAN XẢY RA
                                     </th>
@@ -482,21 +432,10 @@ const HealthEventManagement = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6">
-                                            <div className="flex flex-col">
-                                                <p className="text-sm line-clamp-2" style={{ color: TEXT.PRIMARY }}>
-                                                    {event.description}
-                                                </p>
-                                                <div className="flex items-center mt-2 text-xs" style={{ color: TEXT.SECONDARY }}>
-                                                    <FiMapPin className="mr-1 h-3 w-3" />
-                                                    {event.location}
-                                                </div>
-                                            </div>
-                                        </td>
                                         <td className="py-4 px-6" style={{ width: '130px' }}>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                    {new Date(event.occurredAt).toLocaleDateString("vi-VN")}
+                                                    {new Date(event.occurredAt).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit' })}
                                                 </span>
                                                 <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
                                                     {new Date(event.occurredAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
