@@ -1,294 +1,472 @@
-import React, { useState, useEffect } from "react";
-import { FiCalendar, FiCheck, FiPlus, FiAlertTriangle, FiUserCheck, FiInfo } from "react-icons/fi";
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, COMMON, SUCCESS, ERROR } from "../../constants/colors";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  FiSearch,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiActivity,
+  FiRefreshCw,
+  FiEye,
+  FiTrendingUp,
+  FiPhone,
+  FiCalendar,
+  FiChevronLeft,
+  FiChevronRight
+} from "react-icons/fi";
+import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
+import { useNavigate, useParams } from "react-router-dom";
+import healthEventApi from "../../api/healtheventApi";
+
+const eventTypeOptions = [
+  { value: "all", label: "Tất cả loại" },
+  { value: 'Injury', label: 'Chấn thương' },
+  { value: 'Illness', label: 'Bệnh, ốm' },
+  { value: 'AllergicReaction', label: 'Dị ứng' },
+  { value: 'Fall', label: 'Té ngã' },
+  { value: 'Emergency', label: 'Cấp cứu' },
+  { value: 'Other', label: 'Khác' }
+];
+
+const StatCard = ({ title, value, icon: Icon, gradient, borderColor }) => (
+  <div
+    className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+    style={{ background: gradient, borderColor }}
+  >
+    <div className="p-6 relative z-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
+            {title}
+          </p>
+          <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
+            {value}
+          </p>
+        </div>
+        <div
+          className="h-16 w-16 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+        >
+          <Icon className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ErrorMessage = ({ error, onClose }) => (
+  <div className="mb-8">
+    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
+      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100">
+        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div className="ml-4">
+        <h3 className="text-sm font-medium text-red-800">Đã có lỗi xảy ra</h3>
+        <p className="mt-1 text-sm text-red-700">{error}</p>
+      </div>
+      <button
+        onClick={onClose}
+        className="ml-auto bg-red-50 rounded-full p-1 hover:bg-red-100"
+      >
+        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ searchActive }) => (
+  <div className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
+    <FiActivity className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
+    <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+      Không có sự kiện y tế nào
+    </h3>
+    <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
+      {searchActive
+        ? "Không tìm thấy kết quả phù hợp với bộ lọc."
+        : "Chưa có sự kiện y tế nào được ghi nhận."}
+    </p>
+  </div>
+);
 
 const StudentHealthEvents = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
   const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [filterType, setFilterType] = useState("all");
+  const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
+  const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
+
+  const fetchData = async () => {
+    if (!id) {
+      setError("Không tìm thấy thông tin học sinh");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await healthEventApi.getStudentHealthEvents(id, {
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        fromDate: dateRange.fromDate,
+        toDate: dateRange.toDate,
+        eventType: filterType !== "all" ? filterType : undefined
+      });
+
+      if (response.success) {
+        setEvents(response.data);
+        setPagination({
+          pageIndex: response.currentPage,
+          pageSize: response.pageSize,
+          totalCount: response.totalCount,
+          totalPages: response.totalPages
+        });
+      } else {
+        setError(response.message || "Không thể tải danh sách sự kiện y tế");
+        setEvents([]);
+      }
+    } catch (error) {
+      console.error("Error fetching data", error);
+      setError("Đã xảy ra lỗi khi tải danh sách sự kiện y tế");
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Simulate data fetching
-        const medicationsData = [
-          {
-            name: "Khám sức khoẻ tổng quát",
-            type: "Khám sức khoẻ",
-            date: "10/07/2025",
-            status: "upcoming",
-          },
-          {
-            name: "Tiêm vacxin phòng cúm",
-            type: "Tiêm vacxin",
-            date: "15/07/2025",
-            status: "upcoming",
-          },
-          {
-            name: "Khám mắt định kỳ",
-            type: "Khám sức khoẻ",
-            date: "01/07/2025",
-            status: "completed",
-          },
-        ];
-
-        // Simulate loading
-        setTimeout(() => {
-          setEvents(medicationsData);
-          setLoading(false);
-        }, 2000);
-      } catch (error) {
-        console.error("Error fetching data", error);
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+  }, [id, filterType]);
 
-  const upcomingEvents = events.filter((event) => event.status === "upcoming");
-  const completedEvents = events.filter((event) => event.status === "completed");
-
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [filter, setFilter] = useState("");
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
+  const handleFilter = () => {
+    if (dateRange.fromDate && dateRange.toDate) {
+      fetchData();
+    }
   };
 
-  const handleFilterChange = (event) => {
-    setFilter(event.target.value);
+  const handleRefresh = () => {
+    setDateRange({ fromDate: "", toDate: "" });
+    setFilterType("all");
+    fetchData();
   };
+
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    setDateRange(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePageChange = (newPageIndex) => {
+    setPagination(prev => ({ ...prev, pageIndex: newPageIndex }));
+    fetchData();
+  };
+
+  const stats = useMemo(() => ({
+    total: events.length,
+    emergency: events.filter(e => e.isEmergency).length,
+    normal: events.filter(e => !e.isEmergency).length
+  }), [events]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-        <Loading type="heart" size="xl" color="primary" text="Đang tải thông tin sự kiện..." />
+        <Loading type="medical" size="large" color="primary" text="Đang tải thông tin sự kiện..." />
       </div>
     );
   }
 
+  const isSearchActive = filterType !== "all" || dateRange.fromDate || dateRange.toDate;
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.DEFAULT }}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-        {/* Header */}
+    <div className="min-h-screen">
+      <div className="h-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <div
-              className="p-3 rounded-full mr-4"
-              style={{ backgroundColor: PRIMARY[100] }}
-            >
-              <FiCheck className="h-8 w-8" style={{ color: PRIMARY[600] }} />
-            </div>
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                Xin chào, Nguyễn Văn An
+              <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                Sự kiện y tế của {events[0]?.studentName}
               </h1>
-              <p className="mt-2 text-sm sm:text-base" style={{ color: TEXT.SECONDARY }}>
-                Theo dõi các sự kiện sức khoẻ của bạn tại trường
+              <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
+                Theo dõi lịch sử các sự kiện y tế tại trường
               </p>
             </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-8">
-          {/* Upcoming Events */}
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border-l-4 hover:shadow-md transition-all duration-200"
-            style={{ borderLeftColor: PRIMARY[500], boxShadow: SHADOW.DEFAULT }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center">
-                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: SUCCESS[50] }}>
-                  <FiCalendar className="h-5 w-5" style={{ color: SUCCESS[600] }} />
+        {error && <ErrorMessage error={error} onClose={() => setError(null)} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="Khẩn cấp"
+            value={stats.emergency}
+            icon={FiAlertTriangle}
+            gradient={`linear-gradient(135deg, ${ERROR[500]} 0%, ${ERROR[600]} 100%)`}
+            borderColor={ERROR[200]}
+          />
+          <StatCard
+            title="Bình thường"
+            value={stats.normal}
+            icon={FiCheckCircle}
+            gradient={`linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`}
+            borderColor={SUCCESS[200]}
+          />
+          <StatCard
+            title="Tổng số"
+            value={stats.total}
+            icon={FiTrendingUp}
+            gradient={`linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`}
+            borderColor={PRIMARY[200]}
+          />
+        </div>
+
+        <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
+          {/* Search and Filter Section */}
+          <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
+            <div className="flex justify-end">
+              <div className="flex items-center gap-2">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                  style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                >
+                  {eventTypeOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                    <input
+                      type="date"
+                      name="fromDate"
+                      value={dateRange.fromDate}
+                      onChange={handleDateChange}
+                      className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                      style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                    />
+                  </div>
+                  <span style={{ color: TEXT.SECONDARY }}>-</span>
+                  <div className="relative">
+                    <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
+                    <input
+                      type="date"
+                      name="toDate"
+                      value={dateRange.toDate}
+                      onChange={handleDateChange}
+                      min={dateRange.fromDate}
+                      className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
+                      style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                    />
+                  </div>
+                  <button
+                    onClick={handleFilter}
+                    disabled={!dateRange.fromDate || !dateRange.toDate}
+                    className="px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                  >
+                    Lọc
+                  </button>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium" style={{ color: TEXT.PRIMARY }}>
-                    Sự kiện sắp tới
-                  </h3>
-                </div>
+
+                <button
+                  onClick={handleRefresh}
+                  className="px-3 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                  style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                  title="Làm mới"
+                >
+                  <FiRefreshCw className="h-4 w-4" />
+                </button>
               </div>
-              <span
-                className="px-3 py-1 text-sm font-medium rounded-full"
-                style={{
-                  backgroundColor: SUCCESS[50],
-                  color: SUCCESS[800],
-                }}
-              >
-                {upcomingEvents.length} sự kiện
-              </span>
             </div>
-            <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
-              Các sự kiện sắp tới của bạn.
-            </p>
           </div>
 
-          {/* Recent Activities */}
-          <div
-            className="bg-white p-6 rounded-xl shadow-sm border-l-4 hover:shadow-md transition-all duration-200"
-            style={{ borderLeftColor: PRIMARY[500], boxShadow: SHADOW.DEFAULT }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center">
-                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[50] }}>
-                  <FiUserCheck className="h-5 w-5" style={{ color: PRIMARY[600] }} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium" style={{ color: TEXT.PRIMARY }}>
-                    Hoạt động gần đây
-                  </h3>
-                </div>
+          {/* Table Section */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ backgroundColor: PRIMARY[50] }}>
+                  <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
+                    MÃ SỰ KIỆN
+                  </th>
+                  <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
+                    LOẠI SỰ KIỆN
+                  </th>
+                  <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '180px' }}>
+                    THỜI GIAN XẢY RA
+                  </th>
+                  <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
+                    NGƯỜI XỬ LÝ
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '100px' }}>
+                    THAO TÁC
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
+                {events.map((event, index) => (
+                  <tr
+                    key={event.id}
+                    className="hover:bg-opacity-50 transition-all duration-200 group"
+                    style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
+                  >
+                    <td className="py-4 px-6 text-sm font-medium whitespace-nowrap" style={{ width: '160px', color: TEXT.PRIMARY }}>
+                      {event.code}
+                    </td>
+                    <td className="py-4 px-6" style={{ width: '200px' }}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="px-2.5 py-1 text-sm font-medium rounded-md"
+                          style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}
+                        >
+                          {event.eventTypeDisplayName}
+                        </span>
+                        {event.isEmergency && (
+                          <span
+                            className="p-1 text-xs font-medium rounded-md"
+                            style={{ backgroundColor: ERROR[50], color: ERROR[700] }}
+                            title={event.emergencyStatusText}
+                          >
+                            <FiAlertTriangle className="h-4 w-4" />
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6" style={{ width: '180px' }}>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                          {new Date(event.occurredAt).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                        </span>
+                        <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
+                          {new Date(event.occurredAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6" style={{ width: '200px' }}>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                          {event.handledByName || "Chưa phân công"}
+                        </span>
+                        {event.parentNotice && (
+                          <div className="flex items-center mt-1 text-xs" style={{ color: SUCCESS[600] }}>
+                            <FiPhone className="mr-1 h-3 w-3" />
+                            {event.parentNotice}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center" style={{ width: '100px' }}>
+                      <button
+                        onClick={() => navigate(`/parent/student-health-events-detail/${event.id}`)}
+                        className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                        title="Xem chi tiết"
+                      >
+                        <FiEye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Section */}
+          {pagination.totalCount > 0 && (
+            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+              <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                Hiển thị{" "}
+                <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                  {((pagination.pageIndex - 1) * pagination.pageSize) + 1}
+                </span>{" "}
+                -{" "}
+                <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                  {Math.min(pagination.pageIndex * pagination.pageSize, pagination.totalCount)}
+                </span>{" "}
+                trong tổng số{" "}
+                <span className="font-bold" style={{ color: PRIMARY[600] }}>{pagination.totalCount}</span>{" "}
+                sự kiện
               </div>
-              <span
-                className="px-3 py-1 text-sm font-medium rounded-full"
-                style={{
-                  backgroundColor: PRIMARY[50],
-                  color: PRIMARY[800],
-                }}
-              >
-                {completedEvents.length} sự kiện
-              </span>
-            </div>
-            <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
-              Các sự kiện đã tham gia của bạn.
-            </p>
-          </div>
-        </div>
 
-        {/* Reminder Card */}
-        <div
-          className="bg-blue-50 p-6 rounded-xl shadow-sm mb-8"
-          style={{
-            backgroundColor: "#e1f5fe",
-            boxShadow: SHADOW.DEFAULT,
-          }}
-        >
-          <div className="flex items-start mb-4">
-            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: "#81d4fa" }}>
-              <FiInfo className="h-5 w-5" style={{ color: "#01579b" }} />
-            </div>
-            <div>
-              <h3 className="text-lg font-medium" style={{ color: "#01579b" }}>
-                Lưu ý quan trọng
-              </h3>
-            </div>
-          </div>
-          <ul style={{ listStyleType: "disc", paddingLeft: "20px", color: TEXT.SECONDARY }}>
-            <li>Luôn đến đúng giờ cho các sự kiện y tế</li>
-            <li>Mang theo sổ khám sức khoẻ cá nhân (nếu có)</li>
-            <li>Thông báo cho y tá trường học nếu bạn không thể tham gia</li>
-            <li>Các sự kiện được đánh dấu "Bắt buộc" cần phải tham gia</li>
-          </ul>
-        </div>
-
-        {/* Tab Navigation */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-          <button
-            onClick={() => handleTabChange("upcoming")}
-            style={{
-              backgroundColor: activeTab === "upcoming" ? PRIMARY[500] : GRAY[200],
-              color: activeTab === "upcoming" ? COMMON.WHITE : TEXT.PRIMARY,
-              padding: "10px 20px",
-              borderRadius: "5px",
-              border: "none",
-              cursor: "pointer",
-              margin: "0 10px",
-            }}
-          >
-            Sắp tới
-          </button>
-          <button
-            onClick={() => handleTabChange("completed")}
-            style={{
-              backgroundColor: activeTab === "completed" ? PRIMARY[500] : GRAY[200],
-              color: activeTab === "completed" ? COMMON.WHITE : TEXT.PRIMARY,
-              padding: "10px 20px",
-              borderRadius: "5px",
-              border: "none",
-              cursor: "pointer",
-              margin: "0 10px",
-            }}
-          >
-            Đã tham gia
-          </button>
-        </div>
-
-        {/* Display Events Based on Active Tab */}
-        {activeTab === "upcoming" && (
-          <div>
-            <h3 style={{ color: PRIMARY[500], marginBottom: "15px" }}>Sự kiện sắp tới</h3>
-            {upcomingEvents.length > 0 ? (
-              upcomingEvents.map((event, index) => (
-                <div
-                  key={index}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(pagination.pageIndex - 1)}
+                  disabled={pagination.pageIndex === 1}
+                  className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: GRAY[50],
-                    padding: "20px",
-                    marginBottom: "15px",
-                    borderRadius: "12px",
-                    boxShadow: SHADOW.LIGHT,
-                    display: "flex",
-                    flexDirection: "column",
-                    borderLeft: `6px solid ${PRIMARY[500]}`,
+                    borderColor: pagination.pageIndex === 1 ? BORDER.DEFAULT : PRIMARY[300],
+                    color: pagination.pageIndex === 1 ? TEXT.SECONDARY : PRIMARY[600],
+                    backgroundColor: BACKGROUND.DEFAULT
                   }}
                 >
-                  <h4 style={{ color: TEXT.PRIMARY, fontWeight: "bold" }}>{event.name}</h4>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <div style={{ color: TEXT.SECONDARY, fontSize: "14px" }}>
-                      <FiCalendar className="inline-block mr-2" />
-                      {event.date}
-                    </div>
-                  </div>
-                  <p style={{ color: TEXT.SECONDARY, fontSize: "14px", marginBottom: "10px" }}>
-                    <strong>Loại sự kiện:</strong> {event.type}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: TEXT.SECONDARY }}>Không có sự kiện sắp tới.</p>
-            )}
-          </div>
-        )}
+                  <FiChevronLeft className="h-4 w-4" />
+                </button>
 
-        {activeTab === "completed" && (
-          <div>
-            <h3 style={{ color: PRIMARY[500], marginBottom: "15px" }}>Sự kiện đã tham gia</h3>
-            {completedEvents.length > 0 ? (
-              completedEvents.map((event, index) => (
-                <div
-                  key={index}
+                {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                  let pageNumber;
+                  if (pagination.totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (pagination.pageIndex <= 3) {
+                    pageNumber = i + 1;
+                  } else if (pagination.pageIndex >= pagination.totalPages - 2) {
+                    pageNumber = pagination.totalPages - 4 + i;
+                  } else {
+                    pageNumber = pagination.pageIndex - 2 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() => handlePageChange(pageNumber)}
+                      className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                      style={{
+                        borderColor: pagination.pageIndex === pageNumber ? PRIMARY[500] : BORDER.DEFAULT,
+                        backgroundColor: pagination.pageIndex === pageNumber ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                        color: pagination.pageIndex === pageNumber ? TEXT.INVERSE : TEXT.PRIMARY
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => handlePageChange(pagination.pageIndex + 1)}
+                  disabled={pagination.pageIndex === pagination.totalPages}
+                  className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: GRAY[50],
-                    padding: "20px",
-                    marginBottom: "15px",
-                    borderRadius: "12px",
-                    boxShadow: SHADOW.LIGHT,
-                    display: "flex",
-                    flexDirection: "column",
-                    borderLeft: `6px solid ${PRIMARY[500]}`,
+                    borderColor: pagination.pageIndex === pagination.totalPages ? BORDER.DEFAULT : PRIMARY[300],
+                    color: pagination.pageIndex === pagination.totalPages ? TEXT.SECONDARY : PRIMARY[600],
+                    backgroundColor: BACKGROUND.DEFAULT
                   }}
                 >
-                  <h4 style={{ color: TEXT.PRIMARY, fontWeight: "bold" }}>{event.name}</h4>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <div style={{ color: TEXT.SECONDARY, fontSize: "14px" }}>
-                      <FiCheck className="inline-block mr-2" />
-                      {event.date}
-                    </div>
-                  </div>
-                  <p style={{ color: TEXT.SECONDARY, fontSize: "14px", marginBottom: "10px" }}>
-                    <strong>Loại sự kiện:</strong> {event.type}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: TEXT.SECONDARY }}>Không có sự kiện đã tham gia.</p>
-            )}
-          </div>
-        )}
+                  <FiChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!loading && events.length === 0 && (
+            <EmptyState
+              searchActive={isSearchActive}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 export default StudentHealthEvents;
+
+
