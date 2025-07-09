@@ -1,20 +1,62 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FiPlus, FiEye, FiEdit3, FiUser, FiCalendar, FiSearch } from "react-icons/fi";
 import { PRIMARY, SUCCESS, WARNING, ERROR, GRAY, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
+import vaccinationScheduleApi from "../../api/VaccinationScheduleApi";
+import { useAuth } from "../../utils/AuthContext";
 
 const HealthProfileList = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [studentProfiles, setStudentProfiles] = useState([]);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchStudentProfiles = async () => {
+      try {
+        setIsLoading(true);
+        const response = await vaccinationScheduleApi.getParentStudents(user.id, {
+          pageSize: 100, // Tạm thời lấy 100 học sinh, có thể thêm phân trang sau
+          searchTerm: ""
+        });
+
+        if (response.success) {
+          // Transform API data to match our component's data structure
+          const transformedData = response.data.map(student => ({
+            id: student.id,
+            name: student.fullName,
+            studentId: student.studentCode,
+            class: student.className,
+            healthStatus: student.healthStatus || "Tốt",
+            lastUpdated: new Date(student.lastUpdated).toLocaleDateString("vi-VN"),
+            hasAllergies: student.hasAllergies,
+            hasChronicDiseases: student.hasChronicDiseases,
+            hasVisionIssues: student.hasVisionIssues,
+            hasHearingIssues: student.hasHearingIssues,
+            avatar: student.fullName.charAt(0),
+            age: student.age,
+            weight: `${student.weight}kg`,
+            height: `${student.height}cm`
+          }));
+          console.log(transformedData);
+          setStudentProfiles(transformedData);
+        } else {
+          setError(response.message || "Không thể tải danh sách học sinh");
+        }
+      } catch (err) {
+        setError("Đã xảy ra lỗi khi tải danh sách học sinh");
+        console.error("Error fetching student profiles:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudentProfiles();
+  }, [user.id]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -25,57 +67,6 @@ const HealthProfileList = () => {
       return () => clearTimeout(timer);
     }
   }, [searchTerm]);
-
-  const studentProfiles = [
-    {
-      id: 1,
-      name: "Nguyễn Văn An",
-      studentId: "HS12345",
-      class: "2A",
-      healthStatus: "Tốt",
-      lastUpdated: "15/12/2024",
-      hasAllergies: true,
-      hasChronicDiseases: false,
-      hasVisionIssues: true,
-      hasHearingIssues: false,
-      avatar: "A",
-      age: 8,
-      weight: "25kg",
-      height: "125cm"
-    },
-    {
-      id: 2,
-      name: "Nguyễn Thị Bình",
-      studentId: "HS12346",
-      class: "5B",
-      healthStatus: "Cần theo dõi",
-      lastUpdated: "10/12/2024",
-      hasAllergies: true,
-      hasChronicDiseases: true,
-      hasVisionIssues: false,
-      hasHearingIssues: false,
-      avatar: "B",
-      age: 11,
-      weight: "35kg",
-      height: "140cm"
-    },
-    {
-      id: 3,
-      name: "Nguyễn Minh Cường",
-      studentId: "HS12347",
-      class: "3C",
-      healthStatus: "Tốt",
-      lastUpdated: "12/12/2024",
-      hasAllergies: false,
-      hasChronicDiseases: false,
-      hasVisionIssues: false,
-      hasHearingIssues: false,
-      avatar: "C",
-      age: 9,
-      weight: "28kg",
-      height: "130cm"
-    },
-  ];
 
   const filteredProfiles = studentProfiles.filter(profile => {
     const matchesSearch = profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,6 +183,30 @@ const HealthProfileList = () => {
         </div>
       </section>
 
+      {error && (
+        <div className="container mx-auto px-4 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
+            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-red-800">Đã có lỗi xảy ra</h3>
+              <p className="mt-1 text-sm text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto bg-red-50 rounded-full p-1 hover:bg-red-100"
+            >
+              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="py-8 lg:py-12 bg-white bg-opacity-50 backdrop-blur-sm" style={{ borderBottomColor: GRAY[200], borderBottomWidth: 1 }}>
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -229,14 +244,14 @@ const HealthProfileList = () => {
               </div>
 
               <div className="flex-shrink-0">
-                <Link
-                  to="/parent/health-profile/new"
+                <button
+                  onClick={() => navigate("/parent/health-profile/new")}
                   className="inline-flex items-center px-6 lg:px-8 py-4 lg:py-5 text-base lg:text-lg text-white font-bold rounded-xl lg:rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group whitespace-nowrap"
                   style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)` }}
                 >
                   <FiPlus className="w-5 h-5 lg:w-6 lg:h-6 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   Thêm hồ sơ mới
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -305,22 +320,22 @@ const HealthProfileList = () => {
 
                 <div className="px-6 lg:px-8 py-4 lg:py-5 flex justify-between items-center border-t"
                   style={{ borderColor: GRAY[100], backgroundColor: GRAY[25] || '#fafafa' }}>
-                  <Link
-                    to={`/parent/health-profile/${profile.id}`}
+                  <button
+                    onClick={() => navigate(`/parent/health-profile/${profile.id}`)}
                     className="group flex items-center font-semibold text-sm lg:text-base transition-all duration-300 hover:scale-105"
                     style={{ color: PRIMARY[600] }}
                   >
                     <FiEye className="w-4 h-4 lg:w-5 lg:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
                     Xem chi tiết
-                  </Link>
-                  <Link
-                    to={`/parent/health-profile/edit/${profile.id}`}
+                  </button>
+                  <button
+                    onClick={() => navigate(`/parent/student-health-events/${profile.id}`)}
                     className="group flex items-center font-semibold text-sm lg:text-base transition-all duration-300 hover:scale-105"
                     style={{ color: PRIMARY[600] }}
                   >
-                    <FiEdit3 className="w-4 h-4 lg:w-5 lg:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                    Cập nhật
-                  </Link>
+                    <FiCalendar className="w-4 h-4 lg:w-5 lg:h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                    Xem sự kiện y tế
+                  </button>
                 </div>
               </div>
             ))}
