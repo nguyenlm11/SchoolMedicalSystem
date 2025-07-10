@@ -9,6 +9,7 @@ import VaccinationDetail from "../pages/parent/VaccinationDetail";
 import VaccinationResult from "../pages/parent/VaccinationResult";
 import StudentHealthEvents from "../pages/student/StudentHealthEvents";
 import HealthEventDetail from "../pages/nurse/HealthEventDetail";
+import MedicationRequestCreate from "../pages/parent/MedicationRequestCreate";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -25,7 +26,7 @@ const parentRoutes = (
     <Route path="/parent/student-health-events-detail/:id" element={<HealthEventDetail />} />
 
     {/* Medication routes */}
-    <Route path="/parent/medication/request" element={<PlaceholderPage title="Gửi thuốc (đang phát triển)" />} />
+    <Route path="/parent/medication/request" element={<MedicationRequestCreate />} />
     <Route path="/parent/medication/history" element={<PlaceholderPage title="Lịch sử gửi thuốc (đang phát triển)" />} />
     <Route path="/parent/medication/detail/:id" element={<PlaceholderPage title="Chi tiết thuốc (đang phát triển)" />} />
 
