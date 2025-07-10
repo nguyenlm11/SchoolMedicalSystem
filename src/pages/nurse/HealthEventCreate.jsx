@@ -101,7 +101,7 @@ const HealthEventCreate = () => {
             healthMetrics.push(`Nhiệt độ: ${formData.temperature}°C`);
         }
         if (formData.bloodPressure) {
-            healthMetrics.push(`Huyết áp: ${formData.bloodPressure} mmHg`);
+            healthMetrics.push(`Huyết áp: ${formData.bloodPressure}mmHg`);
         }
         if (formData.respiratoryRate) {
             healthMetrics.push(`Nhịp thở: ${formData.respiratoryRate}/phút`);
@@ -186,7 +186,7 @@ const HealthEventCreate = () => {
 
     const handleStudentSelect = (student) => {
         setFormData(prev => ({ ...prev, userId: student.id }));
-        setStudentSearch(`${student.fullName} - Lớp ${student.currentClassName}`);
+        setStudentSearch(`${student.fullName}(${student.studentCode}) - Lớp ${student.currentClassName}`);
         setShowStudentDropdown(false);
         clearError('userId');
     };
@@ -733,12 +733,12 @@ const HealthEventCreate = () => {
                                                                 <div className="flex items-center justify-between">
                                                                     <div className="flex-grow min-w-0">
                                                                         <div className="font-medium text-base truncate" style={{ color: TEXT.PRIMARY }}>
-                                                                            {student.fullName}
+                                                                            {student.fullName} - {student.studentCode}
                                                                         </div>
                                                                         <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                                             Lớp {student.currentClassName}
                                                                             {student.dateOfBirth && (
-                                                                                <span className="ml-2">• SN: {new Date(student.dateOfBirth).getFullYear()}</span>
+                                                                                <span className="ml-2"></span>
                                                                             )}
                                                                         </div>
                                                                     </div>
