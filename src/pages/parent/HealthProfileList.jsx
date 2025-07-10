@@ -321,7 +321,7 @@ const HealthProfileList = () => {
                 <div className="px-6 lg:px-8 py-4 lg:py-5 flex justify-between items-center border-t"
                   style={{ borderColor: GRAY[100], backgroundColor: GRAY[25] || '#fafafa' }}>
                   <button
-                    onClick={() => navigate(`/parent/health-profile/${profile.id}`)}
+                    onClick={() => navigate(`/parent/health-profile/1`)}
                     className="group flex items-center font-semibold text-sm lg:text-base transition-all duration-300 hover:scale-105"
                     style={{ color: PRIMARY[600] }}
                   >

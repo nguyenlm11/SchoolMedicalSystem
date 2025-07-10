@@ -316,17 +316,25 @@ const userApi = {
             formData.append('file', file);
 
             const response = await apiClient.post('/users/import-parent-student-relationship', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                timeout: 300000 // 5 minutes
+                onUploadProgress: progressEvent => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    // Có thể thêm logic để hiển thị progress ở đây
+                }
             });
-            return response.data;
+            
+            if (response.data.success) {
+                return response.data;
+            } else {
+                throw new Error(response.data.message || "Không thể nhập danh sách học sinh");
+            }
         } catch (error) {
+            if (error.response?.data) {
+                return error.response.data;
+            }
             return {
                 success: false,
-                message: "Không thể nhập danh sách học sinh",
-                error: error.response?.data || error
+                message: error.message || "Không thể nhập danh sách học sinh. Vui lòng kiểm tra kết nối và thử lại.",
+                error: error
             };
         }
     },
