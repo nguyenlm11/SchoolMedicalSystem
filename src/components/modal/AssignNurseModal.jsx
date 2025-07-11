@@ -139,7 +139,7 @@ const AssignNurseModal = ({
 
   // UseEffect để load lại trang sau khi thông báo thành công được đóng
   useEffect(() => {
-    if (!alertModalOpen && alertType === "success") {
+    if (alertModalOpen && alertType === "success") {
       setTimeout(() => {
         window.location.reload();
       }, 2500);
