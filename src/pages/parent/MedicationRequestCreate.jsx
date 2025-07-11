@@ -5,6 +5,7 @@ import { FiSave, FiX, FiUser, FiTablet, FiAlertTriangle, FiCheck, FiChevronDown,
 import Loading from '../../components/Loading';
 import AlertModal from '../../components/modal/AlertModal';
 import vaccinationScheduleApi from '../../api/VaccinationScheduleApi';
+import medicationRequestApi from '../../api/medicationRequestApi';
 import { useAuth } from '../../utils/AuthContext';
 
 const TIMES_OF_DAY = [
@@ -12,6 +13,13 @@ const TIMES_OF_DAY = [
     { value: 'Noon', label: 'Buổi trưa' },
     { value: 'Afternoon', label: 'Buổi chiều' },
     { value: 'Evening', label: 'Buổi tối' },
+];
+
+const PRIORITY_OPTIONS = [
+    { value: 'Low', label: 'Thấp' },
+    { value: 'Normal', label: 'Bình thường' },
+    { value: 'High', label: 'Cao' },
+    { value: 'Critical', label: 'Rất quan trọng' }
 ];
 
 const MedicationRequestCreate = () => {
@@ -33,6 +41,7 @@ const MedicationRequestCreate = () => {
     const studentInputRef = useRef(null);
     const [formData, setFormData] = useState({
         studentId: '',
+        priority: 'Low',
         medications: [{
             medicationName: '',
             dosage: '',
@@ -227,6 +236,9 @@ const MedicationRequestCreate = () => {
         if (!formData.studentId) {
             newErrors.studentId = 'Vui lòng chọn học sinh';
         }
+        if (!formData.priority) {
+            newErrors.priority = 'Vui lòng chọn mức độ ưu tiên';
+        }
         formData.medications.forEach((medication, index) => {
             if (!medication.medicationName.trim()) {
                 newErrors[`medications.${index}.medicationName`] = 'Vui lòng nhập tên thuốc';
@@ -268,8 +280,22 @@ const MedicationRequestCreate = () => {
         e.preventDefault();
         console.log(formData)
         if (!validate()) return;
-        setAlertConfig({ type: "success", title: "Thành công", message: "Yêu cầu cấp phát thuốc đã được gửi thành công" });
-        setShowAlert(true);
+        setLoading(true);
+        try {
+            const response = await medicationRequestApi.createBulkRequest(formData);
+            if (response.success) {
+                setAlertConfig({ type: "success", title: "Thành công", message: response.message });
+                setTimeout(() => { navigate('/parent/medication/history') }, 1500);
+            } else {
+                setAlertConfig({ type: "error", title: "Lỗi", message: response.message || "Có lỗi xảy ra khi gửi yêu cầu" });
+            }
+            setShowAlert(true);
+        } catch (error) {
+            setAlertConfig({ type: "error", title: "Lỗi", message: "Có lỗi xảy ra khi gửi yêu cầu" });
+            setShowAlert(true);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleStepChange = (step) => {
@@ -387,6 +413,51 @@ const MedicationRequestCreate = () => {
                             </div>
                             {errors.studentId && (
                                 <p className="mt-2 text-sm text-red-500">{errors.studentId}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border-2 shadow-sm" style={{ borderColor: GRAY[200] }}>
+                        <div className="p-6 border-b" style={{ borderColor: GRAY[200], backgroundColor: PRIMARY[50] }}>
+                            <div className="flex items-center">
+                                <FiAlertTriangle className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
+                                <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
+                                    Mức độ ưu tiên
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            <div className="flex items-center space-x-6">
+                                {PRIORITY_OPTIONS.map(option => {
+                                    const isSelected = formData.priority === option.value;
+                                    return (
+                                        <label
+                                            key={option.value}
+                                            className="flex items-center space-x-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="priority"
+                                                value={option.value}
+                                                checked={isSelected}
+                                                onChange={(e) => {
+                                                    setFormData(prev => ({ ...prev, priority: e.target.value }));
+                                                    clearError('priority');
+                                                }}
+                                                className="h-4 w-4"
+                                                style={{ accentColor: PRIMARY[500] }}
+                                            />
+                                            <span className="text-base" style={{ color: TEXT.PRIMARY }}>
+                                                {option.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                            {errors.priority && (
+                                <p className="mt-2 text-sm text-red-500">
+                                    {errors.priority}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -663,7 +734,7 @@ const MedicationRequestCreate = () => {
 
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/parent/medication-requests')}
+                                    onClick={() => navigate(-1)}
                                     className="px-6 py-3 rounded-lg border font-medium transition-all duration-200 flex items-center"
                                     style={{ borderColor: BORDER.DEFAULT, color: TEXT.PRIMARY }}
                                     disabled={loading}
