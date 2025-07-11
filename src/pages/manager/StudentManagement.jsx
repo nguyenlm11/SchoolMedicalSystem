@@ -301,11 +301,9 @@ const StudentManagement = () => {
             try {
                 const response = await userApi.importStudentList(file);
                 if (response.success) {
-                    const resultData = response.data;
+                    // const resultData = response.data;
                     showAlert("success", "Thành công", "Nhập danh sách học sinh thành công!");
-                    if (resultData.successRows > 0) {
-                        fetchStudents();
-                    }
+                    fetchStudents();
                 } else {
                     throw new Error(response.message || 'Có lỗi xảy ra khi nhập file');
                 }

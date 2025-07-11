@@ -250,7 +250,7 @@ const Navbar = () => {
                                 className="h-10 w-10 sm:h-11 sm:w-11 lg:h-12 lg:w-12 mr-3 sm:mr-4 rounded-xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-105"
                                 style={{ backgroundColor: COMMON.WHITE, border: `2px solid ${PRIMARY[200]}` }}
                             >
-                                <img src='logo.jpg' alt="logo" className="w-10 h-10" />
+                                <img src='/logo.jpg' alt="logo" className="w-10 h-10" />
                             </div>
                             <div className="flex flex-col">
                                 <span
@@ -269,7 +269,7 @@ const Navbar = () => {
                         </Link>
                     </div>
 
-                    <div className="hidden 2xl:flex items-center space-x-2 2xl:space-x-4">
+                    <div className="hidden lg:flex items-center space-x-2 lg:space-x-4">
                         {isAuthenticated() && (
                             <Link
                                 to="/"
@@ -352,12 +352,12 @@ const Navbar = () => {
                         })}
                     </div>
 
-                    <div className="hidden 2xl:flex items-center space-x-3 2xl:space-x-4">
+                    <div className="hidden lg:flex items-center space-x-3 lg:space-x-4">
                         {isAuthenticated() ? (
                             <div className="relative" data-user-dropdown>
                                 <button
                                     onClick={toggleUserDropdown}
-                                    className="px-5 2xl:px-7 py-3 2xl:py-4 rounded-xl font-medium transition-all duration-300 flex items-center text-sm 2xl:text-base transform hover:scale-105"
+                                    className="px-5 lg:px-7 py-3 lg:py-4 rounded-xl font-medium transition-all duration-300 flex items-center text-sm lg:text-base transform hover:scale-105"
                                     style={{ backgroundColor: `${PRIMARY[600]}`, backdropFilter: 'blur(10px)', border: `1px solid ${PRIMARY[400]}40`, color: COMMON.WHITE }}
                                     onMouseEnter={(e) => { e.target.style.backgroundColor = `${PRIMARY[600]}cc` }}
                                     onMouseLeave={(e) => { e.target.style.backgroundColor = `${PRIMARY[600]}80` }}
@@ -377,7 +377,7 @@ const Navbar = () => {
                                 </button>
 
                                 <div
-                                    className={`absolute top-full right-0 mt-3 w-60 2xl:w-64 transition-all duration-300 transform ${userDropdown
+                                    className={`absolute top-full right-0 mt-3 w-60 lg:w-64 transition-all duration-300 transform ${userDropdown
                                         ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                                         : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
                                         }`}
@@ -388,7 +388,7 @@ const Navbar = () => {
                                         className="rounded-2xl shadow-xl overflow-hidden border"
                                         style={{ backgroundColor: `${PRIMARY[700]}`, backdropFilter: 'blur(15px)', borderColor: `${PRIMARY[500]}` }}
                                     >
-                                        <div className="p-5 2xl:p-6 space-y-3">
+                                        <div className="p-5 lg:p-6 space-y-3">
                                             <Link
                                                 to={getDashboardLink()}
                                                 onClick={closeUserDropdown}
@@ -429,7 +429,7 @@ const Navbar = () => {
                         ) : (
                             <Link
                                 to="/login"
-                                className="px-5 2xl:px-7 py-3 2xl:py-4 rounded-xl font-medium transition-all duration-300 text-sm 2xl:text-base transform hover:scale-105"
+                                className="px-5 lg:px-7 py-3 lg:py-4 rounded-xl font-medium transition-all duration-300 text-sm lg:text-base transform hover:scale-105"
                                 style={{ backgroundColor: COMMON.WHITE, color: PRIMARY[700], border: `1px solid ${PRIMARY[200]}` }}
                                 onMouseEnter={(e) => { e.target.style.backgroundColor = PRIMARY[50] }}
                                 onMouseLeave={(e) => { e.target.style.backgroundColor = COMMON.WHITE }}
@@ -439,7 +439,7 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    <div className="2xl:hidden">
+                    <div className="lg:hidden">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="relative p-3 rounded-xl text-white transition-all duration-300 transform hover:scale-105"
@@ -455,28 +455,28 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                <div className={`2xl:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`lg:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="pb-6 pt-4">
                         <div
                             className="rounded-2xl p-5 shadow-xl max-h-96 overflow-y-auto"
                             style={{ backgroundColor: `${PRIMARY[700]}`, backdropFilter: 'blur(15px)', border: `1px solid ${PRIMARY[500]}` }}
                         >
                             <div className="space-y-2">
-                                {isAuthenticated() && (
-                                    <Link
-                                        to="/"
-                                        onClick={() => setIsMobileMenuOpen(false)}
+                            {isAuthenticated() && (
+                                <Link
+                                    to="/"
+                                    onClick={() => setIsMobileMenuOpen(false)}
                                         className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                         style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                         onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
-                                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                    >
-                                        Trang chủ
-                                    </Link>
-                                )}
+                                    onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                >
+                                    Trang chủ
+                                </Link>
+                            )}
 
-                                {visibleMenuItems.map((item) => {
-                                    const filteredSubItems = getFilteredSubItems(item.subItems);
+                            {visibleMenuItems.map((item) => {
+                                const filteredSubItems = getFilteredSubItems(item.subItems);
                                     return filteredSubItems.map((category) =>
                                         category.links.map((link, linkIndex) => (
                                             <Link
@@ -486,64 +486,64 @@ const Navbar = () => {
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
-                                                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
                                             >
-                                                {link.label}
-                                            </Link>
+                                                                    {link.label}
+                                                            </Link>
                                         ))
-                                    );
-                                })}
+                                );
+                            })}
 
                                 <div className="border-t border-teal-400/30 pt-3 mt-3">
-                                    {isAuthenticated() ? (
+                                {isAuthenticated() ? (
                                         <>
-                                            <Link
-                                                to={getDashboardLink()}
-                                                onClick={() => setIsMobileMenuOpen(false)}
+                                        <Link
+                                            to={getDashboardLink()}
+                                            onClick={() => setIsMobileMenuOpen(false)}
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Tổng quan
-                                            </Link>
-                                            <Link
-                                                to="/profile"
-                                                onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Tổng quan
+                                        </Link>
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsMobileMenuOpen(false)}
                                                 className="block px-4 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${PRIMARY[600]}60`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Hồ sơ cá nhân
-                                            </Link>
+                                        >
+                                            Hồ sơ cá nhân
+                                        </Link>
                                             <div className="text-center p-3 rounded-xl my-3" style={{ backgroundColor: `${PRIMARY[600]}80` }}>
                                                 <span className="text-xs font-medium" style={{ color: COMMON.WHITE }}>
                                                     Xin chào {user?.name || user?.username}
                                                 </span>
-                                            </div>
-                                            <button
-                                                onClick={handleLogout}
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
                                                 className="block w-full px-4 py-3 rounded-xl font-medium text-base transition-all duration-300 text-center"
                                                 style={{ color: COMMON.WHITE, backgroundColor: 'transparent' }}
                                                 onMouseEnter={(e) => e.target.style.backgroundColor = `${ERROR[700]}`}
                                                 onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                                            >
-                                                Đăng xuất
-                                            </button>
+                                        >
+                                            Đăng xuất
+                                        </button>
                                         </>
-                                    ) : (
-                                        <Link
-                                            to="/login"
-                                            onClick={() => setIsMobileMenuOpen(false)}
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        onClick={() => setIsMobileMenuOpen(false)}
                                             className="block w-full text-center px-6 py-3 rounded-xl font-medium text-base transition-all duration-300"
                                             style={{ backgroundColor: COMMON.WHITE, color: PRIMARY[700] }}
-                                            onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
-                                            onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
-                                        >
-                                            Đăng nhập
-                                        </Link>
-                                    )}
+                                        onMouseEnter={(e) => e.target.style.backgroundColor = PRIMARY[50]}
+                                        onMouseLeave={(e) => e.target.style.backgroundColor = COMMON.WHITE}
+                                    >
+                                        Đăng nhập
+                                    </Link>
+                                )}
                                 </div>
                             </div>
                         </div>
