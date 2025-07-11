@@ -269,7 +269,7 @@ const Navbar = () => {
                         </Link>
                     </div>
 
-                    <div className="hidden 2xl:flex items-center space-x-2 2xl:space-x-4">
+                    <div className="hidden lg:flex items-center space-x-2 lg:space-x-4">
                         {isAuthenticated() && (
                             <Link
                                 to="/"
@@ -352,12 +352,12 @@ const Navbar = () => {
                         })}
                     </div>
 
-                    <div className="hidden 2xl:flex items-center space-x-3 2xl:space-x-4">
+                    <div className="hidden lg:flex items-center space-x-3 lg:space-x-4">
                         {isAuthenticated() ? (
                             <div className="relative" data-user-dropdown>
                                 <button
                                     onClick={toggleUserDropdown}
-                                    className="px-5 2xl:px-7 py-3 2xl:py-4 rounded-xl font-medium transition-all duration-300 flex items-center text-sm 2xl:text-base transform hover:scale-105"
+                                    className="px-5 lg:px-7 py-3 lg:py-4 rounded-xl font-medium transition-all duration-300 flex items-center text-sm lg:text-base transform hover:scale-105"
                                     style={{ backgroundColor: `${PRIMARY[600]}`, backdropFilter: 'blur(10px)', border: `1px solid ${PRIMARY[400]}40`, color: COMMON.WHITE }}
                                     onMouseEnter={(e) => { e.target.style.backgroundColor = `${PRIMARY[600]}cc` }}
                                     onMouseLeave={(e) => { e.target.style.backgroundColor = `${PRIMARY[600]}80` }}
@@ -377,7 +377,7 @@ const Navbar = () => {
                                 </button>
 
                                 <div
-                                    className={`absolute top-full right-0 mt-3 w-60 2xl:w-64 transition-all duration-300 transform ${userDropdown
+                                    className={`absolute top-full right-0 mt-3 w-60 lg:w-64 transition-all duration-300 transform ${userDropdown
                                         ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
                                         : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
                                         }`}
@@ -388,7 +388,7 @@ const Navbar = () => {
                                         className="rounded-2xl shadow-xl overflow-hidden border"
                                         style={{ backgroundColor: `${PRIMARY[700]}`, backdropFilter: 'blur(15px)', borderColor: `${PRIMARY[500]}` }}
                                     >
-                                        <div className="p-5 2xl:p-6 space-y-3">
+                                        <div className="p-5 lg:p-6 space-y-3">
                                             <Link
                                                 to={getDashboardLink()}
                                                 onClick={closeUserDropdown}
@@ -429,7 +429,7 @@ const Navbar = () => {
                         ) : (
                             <Link
                                 to="/login"
-                                className="px-5 2xl:px-7 py-3 2xl:py-4 rounded-xl font-medium transition-all duration-300 text-sm 2xl:text-base transform hover:scale-105"
+                                className="px-5 lg:px-7 py-3 lg:py-4 rounded-xl font-medium transition-all duration-300 text-sm lg:text-base transform hover:scale-105"
                                 style={{ backgroundColor: COMMON.WHITE, color: PRIMARY[700], border: `1px solid ${PRIMARY[200]}` }}
                                 onMouseEnter={(e) => { e.target.style.backgroundColor = PRIMARY[50] }}
                                 onMouseLeave={(e) => { e.target.style.backgroundColor = COMMON.WHITE }}
@@ -439,7 +439,7 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    <div className="2xl:hidden">
+                    <div className="lg:hidden">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             className="relative p-3 rounded-xl text-white transition-all duration-300 transform hover:scale-105"
@@ -455,7 +455,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                <div className={`2xl:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`lg:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="pb-6 pt-4">
                         <div
                             className="rounded-2xl p-5 shadow-xl max-h-96 overflow-y-auto"

@@ -348,7 +348,8 @@ const HealthEventDetail = () => {
                                     <div className="text-center w-full">
                                         <div className="flex flex-col items-center space-y-4 mb-8">
                                             <h4 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {healthEvent.studentName} - {healthEvent.medicalItemDetails[0].studentClass}
+                                                {/* {healthEvent.studentName} - {healthEvent.medicalItemDetails[0]?.studentClass} */}
+                                                {healthEvent.studentName}
                                             </h4>
                                             <div className="inline-flex items-center px-6 py-2 rounded-full text-lg font-semibold"
                                                 style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}>
@@ -575,7 +576,7 @@ const HealthEventDetail = () => {
                         <div className={STYLES.card.header} style={{ borderColor: BORDER.LIGHT, backgroundColor: PRIMARY[50] }}>
                             <FiMail className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
                             <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
-                                Thông báo cho phụ huynh
+                                Lưu ý cho phụ huynh
                             </h2>
                         </div>
 

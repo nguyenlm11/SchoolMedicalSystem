@@ -7,12 +7,6 @@ import AlertModal from '../../components/modal/AlertModal';
 import vaccinationScheduleApi from '../../api/VaccinationScheduleApi';
 import { useAuth } from '../../utils/AuthContext';
 
-const PRIORITY_LEVELS = [
-    { value: 'Low', label: 'Thấp' },
-    { value: 'Medium', label: 'Trung bình' },
-    { value: 'High', label: 'Cao' }
-];
-
 const TIMES_OF_DAY = [
     { value: 'Morning', label: 'Buổi sáng' },
     { value: 'Noon', label: 'Buổi trưa' },
@@ -47,9 +41,7 @@ const MedicationRequestCreate = () => {
             expiryDate: '',
             quantitySent: '',
             specialNotes: '',
-            priority: 'Low',
-            timesOfDay: [],
-            specificTimes: []
+            timesOfDay: []
         }]
     });
 
@@ -65,15 +57,13 @@ const MedicationRequestCreate = () => {
     }, []);
 
     useEffect(() => {
-        if (studentSearch) {
-            fetchStudents();
-        }
+        fetchStudents();
     }, [studentSearch]);
 
     useEffect(() => {
         const medication = formData.medications[currentStep];
         const frequencyCount = parseInt(medication.frequency) || 0;
-        const totalSelectedTimes = medication.timesOfDay.length + medication.specificTimes.filter(time => time).length;
+        const totalSelectedTimes = medication.timesOfDay.length;
         setRemainingTimes({
             ...remainingTimes,
             [currentStep]: Math.max(0, frequencyCount - totalSelectedTimes)
@@ -84,7 +74,7 @@ const MedicationRequestCreate = () => {
         setStudentsLoading(true);
         setStudentsError(null);
         try {
-            const response = await vaccinationScheduleApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 1000, searchTerm: studentSearch, orderBy: 'name' });
+            const response = await vaccinationScheduleApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100, searchTerm: studentSearch, orderBy: 'name' });
             if (response.success) {
                 setStudents(response.data);
             } else {
@@ -139,15 +129,14 @@ const MedicationRequestCreate = () => {
 
     const validateCurrentMedication = (medication) => {
         if (!medication) return false;
-
         return (
             medication.medicationName.trim() !== '' &&
-            medication.dosage.trim() !== '' &&
-            medication.frequency !== '' &&
+            medication.dosage > 0 &&
+            medication.frequency > 0 &&
             medication.expiryDate !== '' &&
-            medication.instructions.trim() !== '' &&
+            medication.instructions !== '' &&
             medication.quantitySent > 0 &&
-            (medication.timesOfDay.length > 0 || medication.specificTimes.length > 0)
+            medication.timesOfDay.length > 0
         );
     };
 
@@ -170,9 +159,7 @@ const MedicationRequestCreate = () => {
                     expiryDate: '',
                     quantitySent: '',
                     specialNotes: '',
-                    priority: 'Low',
-                    timesOfDay: [],
-                    specificTimes: []
+                    timesOfDay: []
                 }
             ]
         }));
@@ -188,10 +175,9 @@ const MedicationRequestCreate = () => {
         // Reset thời điểm uống nếu thay đổi tần suất
         if (field === 'frequency') {
             const frequencyCount = parseInt(value) || 0;
-            const totalCurrentTimes = newMedications[index].timesOfDay.length + newMedications[index].specificTimes.length;
+            const totalCurrentTimes = newMedications[index].timesOfDay.length;
             if (frequencyCount > 0 && totalCurrentTimes > frequencyCount) {
                 newMedications[index].timesOfDay = [];
-                newMedications[index].specificTimes = [''];
             }
         }
         setFormData({
@@ -236,56 +222,6 @@ const MedicationRequestCreate = () => {
         }
     };
 
-    const handleAddSpecificTime = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            medications: prev.medications.map((med, i) => {
-                if (i === index) {
-                    return {
-                        ...med,
-                        specificTimes: [...med.specificTimes, '']
-                    };
-                }
-                return med;
-            })
-        }));
-    };
-
-    const handleSpecificTimeChange = (medicationIndex, timeIndex, value) => {
-        setFormData(prev => ({
-            ...prev,
-            medications: prev.medications.map((medication, i) => {
-                if (i === medicationIndex) {
-                    const newSpecificTimes = [...medication.specificTimes];
-                    newSpecificTimes[timeIndex] = value;
-                    return {
-                        ...medication,
-                        specificTimes: newSpecificTimes
-                    };
-                }
-                return medication;
-            })
-        }));
-    };
-
-    const handleRemoveSpecificTime = (medicationIndex, timeIndex) => {
-        const newMedications = [...formData.medications];
-        const newSpecificTimes = newMedications[medicationIndex].specificTimes.filter((_, i) => i !== timeIndex);
-        newMedications[medicationIndex] = {
-            ...newMedications[medicationIndex],
-            specificTimes: newSpecificTimes
-        };
-        setFormData({
-            ...formData,
-            medications: newMedications
-        });
-        if (errors[`medications.${medicationIndex}.times`]) {
-            const newErrors = { ...errors };
-            delete newErrors[`medications.${medicationIndex}.times`];
-            setErrors(newErrors);
-        }
-    };
-
     const validate = () => {
         const newErrors = {};
         if (!formData.studentId) {
@@ -295,11 +231,11 @@ const MedicationRequestCreate = () => {
             if (!medication.medicationName.trim()) {
                 newErrors[`medications.${index}.medicationName`] = 'Vui lòng nhập tên thuốc';
             }
-            if (!medication.dosage.trim()) {
-                newErrors[`medications.${index}.dosage`] = 'Vui lòng nhập liều lượng';
+            if (medication.dosage <= 0) {
+                newErrors[`medications.${index}.dosage`] = 'Vui lòng nhập liều lượng lớn hơn 0';
             }
-            if (!medication.frequency) {
-                newErrors[`medications.${index}.frequency`] = 'Vui lòng nhập tần suất sử dụng';
+            if (medication.frequency <= 0) {
+                newErrors[`medications.${index}.frequency`] = 'Vui lòng nhập tần suất sử dụng lớn hơn 0';
             }
             if (!medication.expiryDate) {
                 newErrors[`medications.${index}.expiryDate`] = 'Vui lòng chọn ngày hết hạn';
@@ -308,9 +244,12 @@ const MedicationRequestCreate = () => {
                 newErrors[`medications.${index}.instructions`] = 'Vui lòng nhập hướng dẫn sử dụng';
             }
             if (!medication.quantitySent || medication.quantitySent < 1) {
-                newErrors[`medications.${index}.quantitySent`] = 'Số lượng gửi phải lớn hơn 0';
+                newErrors[`medications.${index}.quantitySent`] = 'Số lượng phải lớn hơn 0';
             }
-            if (medication.timesOfDay.length === 0 && medication.specificTimes.length === 0) {
+            if (medication.dosage * medication.frequency > medication.quantitySent) {
+                newErrors[`medications.${index}.quantitySent`] = 'Số lượng phải lớn hơn tổng liều lượng';
+            }
+            if (medication.timesOfDay.length === 0) {
                 newErrors[`medications.${index}.times`] = 'Vui lòng chọn ít nhất một thời điểm uống thuốc';
             }
         });
@@ -328,7 +267,6 @@ const MedicationRequestCreate = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         console.log(formData)
-        setLoading(true)
         if (!validate()) return;
         setAlertConfig({ type: "success", title: "Thành công", message: "Yêu cầu cấp phát thuốc đã được gửi thành công" });
         setShowAlert(true);
@@ -526,32 +464,14 @@ const MedicationRequestCreate = () => {
 
                                 <div>
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Liều lượng *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.medications[currentStep].dosage}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'dosage', e.target.value)}
-                                        placeholder="Ví dụ: 1 viên/lần"
-                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.dosage`] ? 'border-red-500' : ''}`}
-                                        style={{ borderColor: errors[`medications.${currentStep}.dosage`] ? '#ef4444' : BORDER.DEFAULT }}
-                                        required
-                                    />
-                                    {errors[`medications.${currentStep}.dosage`] && (
-                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.dosage`]}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Số lượng gửi *
+                                        Số lượng *
                                     </label>
                                     <input
                                         type="number"
                                         value={formData.medications[currentStep].quantitySent}
                                         onChange={(e) => handleMedicationChange(currentStep, 'quantitySent', parseInt(e.target.value))}
                                         min="1"
-                                        placeholder="Nhập số lượng gửi"
+                                        placeholder="Nhập số lượng"
                                         className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.quantitySent`] ? 'border-red-500' : ''}`}
                                         style={{ borderColor: errors[`medications.${currentStep}.quantitySent`] ? '#ef4444' : BORDER.DEFAULT }}
                                         required
@@ -582,6 +502,25 @@ const MedicationRequestCreate = () => {
 
                                 <div>
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
+                                        Liều lượng *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={formData.medications[currentStep].dosage}
+                                        onChange={(e) => handleMedicationChange(currentStep, 'dosage', e.target.value)}
+                                        placeholder="Ví dụ: 1 viên/lần"
+                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.dosage`] ? 'border-red-500' : ''}`}
+                                        style={{ borderColor: errors[`medications.${currentStep}.dosage`] ? '#ef4444' : BORDER.DEFAULT }}
+                                        required
+                                    />
+                                    {errors[`medications.${currentStep}.dosage`] && (
+                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.dosage`]}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
                                         Ngày hết hạn *
                                     </label>
                                     <input
@@ -600,101 +539,47 @@ const MedicationRequestCreate = () => {
 
                                 <div className="md:col-span-2">
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Mức độ ưu tiên
+                                        Thời điểm uống thuốc *
                                     </label>
-                                    <select
-                                        value={formData.medications[currentStep].priority}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'priority', e.target.value)}
-                                        className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                                        style={{ borderColor: BORDER.DEFAULT }}
-                                    >
-                                        {PRIORITY_LEVELS.map(level => (
-                                            <option key={level.value} value={level.value}>
-                                                {level.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="mt-6">
-                                <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                    Thời điểm uống thuốc *
-                                </label>
-                                {parseInt(formData.medications[currentStep].frequency) > 0 && (
-                                    <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: PRIMARY[50] }}>
-                                        <p className="text-sm font-medium" style={{ color: PRIMARY[700] }}>
-                                            {remainingTimes[currentStep] > 0
-                                                ? `Bạn còn có thể chọn ${remainingTimes[currentStep]} thời điểm uống thuốc`
-                                                : 'Bạn đã chọn đủ số lần uống thuốc theo tần suất'}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-4 gap-4">
-                                    {TIMES_OF_DAY.map(time => {
-                                        const isSelected = formData.medications[currentStep].timesOfDay.includes(time.value);
-                                        const isDisabled = !isSelected && remainingTimes[currentStep] === 0;
-                                        return (
-                                            <label
-                                                key={time.value}
-                                                className={`flex items-center space-x-2 p-3 border rounded-lg transition-all duration-200 ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                                style={{ borderColor: isSelected ? PRIMARY[500] : BORDER.DEFAULT, backgroundColor: isSelected ? PRIMARY[50] : 'white' }}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => handleTimeOfDayChange(currentStep, time.value)}
-                                                    className="h-4 w-4"
-                                                    style={{ accentColor: PRIMARY[500] }}
-                                                    disabled={isDisabled}
-                                                />
-                                                <span style={{ color: TEXT.PRIMARY }}>{time.label}</span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="space-y-3 mt-4">
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                        Thời gian cụ thể
-                                    </p>
-                                    {formData.medications[currentStep].specificTimes.map((time, timeIndex) => (
-                                        <div key={timeIndex} className="flex items-center space-x-3">
-                                            <input
-                                                type="time"
-                                                value={time.split(':').slice(0, 2).join(':')}
-                                                onChange={(e) => handleSpecificTimeChange(currentStep, timeIndex, e.target.value)}
-                                                className="flex-1 p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base"
-                                                style={{ borderColor: BORDER.DEFAULT }}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveSpecificTime(currentStep, timeIndex)}
-                                                className="p-2 rounded-lg transition-all duration-200 hover:bg-red-50"
-                                                style={{ color: ERROR[500] }}
-                                            >
-                                                <FiX className="h-5 w-5" />
-                                            </button>
+                                    {parseInt(formData.medications[currentStep].frequency) > 0 && (
+                                        <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: PRIMARY[50] }}>
+                                            <p className="text-sm font-medium" style={{ color: PRIMARY[700] }}>
+                                                {remainingTimes[currentStep] > 0
+                                                    ? `Bạn còn có thể chọn ${remainingTimes[currentStep]} thời điểm uống thuốc`
+                                                    : 'Bạn đã chọn đủ số lần uống thuốc theo tần suất'}
+                                            </p>
                                         </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleAddSpecificTime(currentStep)}
-                                        className="text-sm font-medium flex items-center space-x-2"
-                                        style={{ color: PRIMARY[500] }}
-                                    >
-                                        <FiPlus className="h-4 w-4" />
-                                        <span>Thêm thời gian</span>
-                                    </button>
-                                </div>
-                                {errors[`medications.${currentStep}.times`] && (
-                                    <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.times`]}</p>
-                                )}
-                            </div>
+                                    )}
 
-                            <div className="mt-6">
-                                <div className="md:col-span-2">
+                                    <div className="grid grid-cols-4 gap-4">
+                                        {TIMES_OF_DAY.map(time => {
+                                            const isSelected = formData.medications[currentStep].timesOfDay.includes(time.value);
+                                            const isDisabled = !isSelected && remainingTimes[currentStep] === 0;
+                                            return (
+                                                <label
+                                                    key={time.value}
+                                                    className={`flex items-center space-x-2 p-3 border rounded-lg transition-all duration-200 ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                    style={{ borderColor: isSelected ? PRIMARY[500] : BORDER.DEFAULT, backgroundColor: isSelected ? PRIMARY[50] : 'white' }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleTimeOfDayChange(currentStep, time.value)}
+                                                        className="h-4 w-4"
+                                                        style={{ accentColor: PRIMARY[500] }}
+                                                        disabled={isDisabled}
+                                                    />
+                                                    <span style={{ color: TEXT.PRIMARY }}>{time.label}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {errors[`medications.${currentStep}.times`] && (
+                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.times`]}</p>
+                                    )}
+                                </div>
+
+                                <div className="md:col-span-2 mt-6">
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
                                         Hướng dẫn sử dụng *
                                     </label>
