@@ -46,7 +46,6 @@ const VaccinationDetail = () => {
     const [sortOrder, setSortOrder] = useState("asc");
     const [error, setError] = useState(null);
     const [modalType, setModalType] = useState("approve");
-    const [actionType, setActionType] = useState("");
     const [modalTitle, setModalTitle] = useState("");
     const [modalMessage, setModalMessage] = useState("");
     const [studentConsentData, setStudentConsentData] = useState([]);
@@ -194,6 +193,10 @@ const VaccinationDetail = () => {
         );
     }
 
+    const isAssigned = (classId) => {
+        return vaccination?.classNurseAssignments.some((assignment) => assignment.classId === classId);
+    };
+    
     // Modal control
     const handleOpenConfirmModal = (actionType) => {
         if (actionType === "approve") {
@@ -416,16 +419,6 @@ const VaccinationDetail = () => {
                             </button>
                         )}
 
-                        {userRole === "manager" && student.classNurseAssignments === "Chưa có" && (
-                            <button
-                                onClick={() => handleAssignNurse(student.classId)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                            >
-                                <FiUserPlus className="w-4 h-4 flex-shrink-0" />
-                                <span>Phân công NVYT</span>
-                            </button>
-                        )}
-
                         {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
                         {userRole === 'schoolnurse' && (
                             <>
@@ -525,6 +518,25 @@ const VaccinationDetail = () => {
                             )}
                             {userRole === "manager" && (
                                 <>
+                                    {/* Phân công NVYT cho các lớp chưa có nhân viên y tế */}
+                                    {vaccination?.classIds.map((classId) => (
+                                        <div key={classId}>
+                                            {!isAssigned(classId) && (
+                                                <button
+                                                    onClick={() => setAssignNurseModalOpen(true)}
+                                                    className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                                    style={{
+                                                        backgroundColor: PRIMARY[500],
+                                                        color: TEXT.INVERSE,
+                                                        border: `1px solid ${PRIMARY[600]}`,
+                                                    }}
+                                                >
+                                                    <FiUserPlus className="w-4 h-4 mr-2" />
+                                                    Phân công
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
                                     {vaccination.status === "PendingApproval" && (
                                         <>
                                             <button
