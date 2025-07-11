@@ -155,9 +155,7 @@ const HealthEventCreate = () => {
     }, []);
 
     useEffect(() => {
-        if (studentSearch) {
-            fetchStudents();
-        }
+        fetchStudents();
     }, [studentSearch]);
 
     useEffect(() => {
@@ -303,8 +301,8 @@ const HealthEventCreate = () => {
                     if (!usage.medicalPerOnce || usage.medicalPerOnce <= 0) {
                         newErrors[`${itemType}Usage_${index}_medicalPerOnce`] = `Vui lòng nhập số lần dùng/ngày hợp lệ cho mục #${index + 1}`;
                     }
-                    if (usage.medicalPerOnce > usage.quantity) {
-                        newErrors[`${itemType}Usage_${index}_medicalPerOnce`] = `Số thuốc/liều không được lớn hơn số lượng`;
+                    if (usage.medicalPerOnce * usage.dose > usage.quantity) {
+                        newErrors[`${itemType}Usage_${index}_quantity`] = `Số lượng phải lớn hơn tổng liều lượng`;
                     }
                 }
             });
@@ -571,7 +569,7 @@ const HealthEventCreate = () => {
                                         <>
                                             <div>
                                                 <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                    Số liều/ngày
+                                                    Tần suất sử dụng
                                                 </label>
                                                 <input
                                                     type="number"
@@ -589,7 +587,7 @@ const HealthEventCreate = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                    Số thuốc/liều
+                                                    Liều lượng
                                                 </label>
                                                 <input
                                                     type="number"
