@@ -102,13 +102,6 @@ const UserProfilePage = () => {
             profileImage: file,
             profileImageUrl: previewUrl
         }));
-
-        console.log('Selected image:', {
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            lastModified: file.lastModified
-        });
     };
 
     const handleSave = async () => {
@@ -147,15 +140,6 @@ const UserProfilePage = () => {
             // Xử lý file ảnh
             if (editedProfile.profileImage instanceof File) {
                 formData.append('ProfileImage', editedProfile.profileImage);
-            } else {
-                // Gửi empty value cho ProfileImage nếu không có file mới
-                formData.append('ProfileImage', '');
-            }
-
-            // Log để debug
-            console.log('=== DEBUG: FormData Content Before Send ===');
-            for (let pair of formData.entries()) {
-                console.log(pair[0], ':', pair[1]);
             }
 
             // Gọi API cập nhật
@@ -190,7 +174,6 @@ const UserProfilePage = () => {
             setIsEditing(false);
 
         } catch (error) {
-            console.error('=== DEBUG: Update Error ===', error);
             alert(error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
         }
     };

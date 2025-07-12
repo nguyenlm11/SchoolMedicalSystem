@@ -10,6 +10,7 @@ import VaccinationResult from "../pages/parent/VaccinationResult";
 import StudentHealthEvents from "../pages/student/StudentHealthEvents";
 import HealthEventDetail from "../pages/nurse/HealthEventDetail";
 import MedicationRequestCreate from "../pages/parent/MedicationRequestCreate";
+import ParentProfile from "../pages/parent/ParentProfile";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -18,6 +19,7 @@ const PlaceholderPage = ({ title }) => (
 const parentRoutes = (
   <Route element={<ParentLayout />}>
     <Route path="/parent/dashboard" element={<ParentDashboard />} />
+    <Route path="/parent/profile" element={<ParentProfile />} />
     <Route path="/parent/health-profile/new" element={<PlaceholderPage title="Khai báo hồ sơ sức khỏe (đang phát triển)" />} />
     <Route path="/parent/health-profile" element={<HealthProfileList />} />
     <Route path="/parent/health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
