@@ -1,6 +1,9 @@
-import React from 'react';
-import { PRIMARY, TEXT, GRAY } from '../../constants/colors';
-import { FiAlertTriangle, FiHeart, FiActivity, FiClock, FiUser, FiFileText, FiMapPin, FiPackage, FiAlertCircle } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { PRIMARY, TEXT, GRAY, COMMON } from '../../constants/colors';
+import { FiAlertTriangle, FiHeart, FiActivity, FiClock, FiUser, FiFileText, FiMapPin, FiPackage, FiAlertCircle, FiPlus, FiEye } from 'react-icons/fi';
+import { useAuth } from '../../utils/AuthContext';
+import AddMedicalConditionModal from '../modal/AddMedicalConditionModal';
+import ViewAllMedicalConditionsModal from '../modal/ViewAllMedicalConditionsModal';
 
 const SeverityBadge = ({ severity, severityDisplay }) => {
     let color = '';
@@ -38,9 +41,7 @@ const SeverityBadge = ({ severity, severityDisplay }) => {
 const InfoField = ({ label, value, icon }) => (
     <div className="flex items-start space-x-3">
         <div className="flex-shrink-0 mt-1">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[500] }}>
-                {icon}
-            </span>
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[500] }}>            {icon} </span>
         </div>
         <div className="flex-1">
             <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>{label}</p>
@@ -52,7 +53,6 @@ const InfoField = ({ label, value, icon }) => (
 const ConditionCard = ({ condition }) => {
     const diagnosisDate = new Date(condition.diagnosisDate).toLocaleDateString('vi-VN');
     const createdDate = new Date(condition.createdDate).toLocaleDateString('vi-VN');
-
     let TypeIcon;
     switch (condition.type) {
         case 'ChronicDisease':
@@ -75,10 +75,7 @@ const ConditionCard = ({ condition }) => {
                     <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                             <span className="flex items-center justify-center w-10 h-10 rounded-xl"
-                                style={{
-                                    background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)`,
-                                    color: 'white'
-                                }}>
+                                style={{ background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)`, color: 'white' }}>
                                 <TypeIcon className="h-6 w-6" />
                             </span>
                             <div>
@@ -120,48 +117,64 @@ const ConditionCard = ({ condition }) => {
     );
 };
 
-const MedicalConditions = ({ conditions = [] }) => {
-    if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold flex items-center" style={{ color: TEXT.PRIMARY }}>
-                        <span className="flex items-center justify-center rounded-full w-12 h-12 mr-4 text-white shadow-lg"
-                            style={{ background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)` }}>
-                            <FiActivity className="h-6 w-6" />
-                        </span>
-                        Tình trạng y tế
-                    </h2>
-                </div>
-                <div className="bg-white rounded-2xl p-6 border shadow-sm text-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
-                    <p className="text-lg" style={{ color: TEXT.SECONDARY }}>Không có tình trạng y tế nào cần lưu ý</p>
-                </div>
-            </div>
-        );
-    }
+const MedicalConditions = ({ conditions = [], medicalRecordId, onConditionAdded }) => {
+    const { user } = useAuth();
+    const canAddCondition = user && user.role === 'parent';
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
+    const [selectedType, setSelectedType] = useState('Allergy');
+    const [viewAllType, setViewAllType] = useState('Allergy');
 
-    const groupedConditions = conditions.reduce((acc, condition) => {
+    const handleAddCondition = (type) => {
+        setSelectedType(type);
+        setIsModalOpen(true);
+    };
+
+    const handleViewAll = (type) => {
+        setViewAllType(type);
+        setIsViewAllModalOpen(true);
+    };
+
+    const getSeverityScore = (severity) => {
+        switch (severity) {
+            case 'Severe': return 3;
+            case 'Moderate': return 2;
+            case 'Mild': return 1;
+            default: return 0;
+        }
+    };
+
+    const selectedConditions = conditions.reduce((acc, condition) => {
         const type = condition.type;
         if (!acc[type]) {
-            acc[type] = [];
+            acc[type] = condition;
+        } else {
+            const currentSeverityScore = getSeverityScore(acc[type].severity);
+            const newSeverityScore = getSeverityScore(condition.severity);
+            const currentDate = new Date(acc[type].diagnosisDate);
+            const newDate = new Date(condition.diagnosisDate);
+            if (newSeverityScore > currentSeverityScore ||
+                (newSeverityScore === currentSeverityScore && newDate > currentDate)) {
+                acc[type] = condition;
+            }
         }
-        acc[type].push(condition);
         return acc;
     }, {});
 
     const getTypeTitle = (type) => {
         switch (type) {
-            case 'ChronicDisease':
-                return 'Bệnh mãn tính';
-            case 'Allergy':
-                return 'Dị ứng';
-            case 'MedicalHistory':
-                return 'Tiền sử bệnh';
-            default:
-                return type;
+            case 'ChronicDisease': return 'Bệnh mãn tính';
+            case 'Allergy': return 'Dị ứng';
+            case 'MedicalHistory': return 'Tiền sử y tế';
+            default: return type;
         }
     };
 
+    const getConditionsByType = (type) => {
+        return conditions.filter(condition => condition.type === type);
+    };
+
+    const allTypes = ['ChronicDisease', 'Allergy', 'MedicalHistory'];
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -174,18 +187,63 @@ const MedicalConditions = ({ conditions = [] }) => {
                 </h2>
             </div>
 
-            {Object.entries(groupedConditions).map(([type, conditions]) => (
-                <div key={type} className="space-y-4">
-                    <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
-                        {getTypeTitle(type)}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-6">
-                        {conditions.map((condition, index) => (
-                            <ConditionCard key={condition.id || index} condition={condition} />
-                        ))}
-                    </div>
-                </div>
-            ))}
+            <div className="grid grid-cols-1 gap-6">
+                {allTypes.map((type) => {
+                    const condition = selectedConditions[type];
+                    return (
+                        <div key={type} className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                    {getTypeTitle(type)}
+                                </h3>
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => handleViewAll(type)}
+                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                    >
+                                        <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
+                                    </button>
+                                    {canAddCondition && (
+                                        <button
+                                            onClick={() => handleAddCondition(type)}
+                                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                                            style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                                        >
+                                            <FiPlus className="h-4 w-4 mr-1" /> Thêm
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {condition ? (
+                                <ConditionCard condition={condition} />
+                            ) : (
+                                <div className="bg-white rounded-xl border p-6 text-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
+                                    <p className="text-lg" style={{ color: TEXT.SECONDARY }}>
+                                        Chưa có thông tin {getTypeTitle(type).toLowerCase()}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <AddMedicalConditionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={onConditionAdded}
+                medicalRecordId={medicalRecordId}
+                type={selectedType}
+            />
+
+            <ViewAllMedicalConditionsModal
+                isOpen={isViewAllModalOpen}
+                onClose={() => setIsViewAllModalOpen(false)}
+                conditions={getConditionsByType(viewAllType)}
+                type={viewAllType}
+                typeTitle={getTypeTitle(viewAllType)}
+            />
         </div>
     );
 };
