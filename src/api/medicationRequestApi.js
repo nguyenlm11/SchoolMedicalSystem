@@ -16,7 +16,39 @@ const medicationRequestApi = {
                 errors: []
             };
         }
-    }
+    },
+    getMedicationRequests: async (params = {}) => {
+        try {
+            const response = await apiClient.get('/student-medications/requests', { params });
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy danh sách yêu cầu thuốc",
+                data: [],
+                errors: []
+            };
+        }
+    },
+    getMedicationRequestDetail: async (id) => {
+        try {
+            const response = await apiClient.get(`/student-medications/requests/${id}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy chi tiết yêu cầu thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
 };
 
 export default medicationRequestApi;
