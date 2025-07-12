@@ -172,10 +172,29 @@ const authApi = {
     }
   },
 
+  // Lấy thông tin profile của student
+  async getStudentProfile(studentId) {
+    try {
+      if (!studentId) throw new Error('Student ID is required');
+      const response = await apiClient.get(`/users/students/${studentId}`);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: error.message || 'Có lỗi xảy ra khi lấy thông tin profile học sinh',
+        data: null,
+        errors: []
+      };
+    }
+  },
+
   // Cập nhật thông tin profile
   async updateProfile(userId, formData, role = 'staff') {
     try {
-      if (!userId) throw new Error('Staff ID is required');
+      if (!userId) throw new Error('User ID is required');
       if (!formData.get('FullName')?.trim()) {
         throw new Error('Họ tên không được để trống');
       }
@@ -184,6 +203,8 @@ const authApi = {
       let verifyResponse;
       if (role === 'parent') {
         verifyResponse = await apiClient.get(`/users/parents/${userId}`);
+      } else if (role === 'student') {
+        verifyResponse = await apiClient.get(`/users/students/${userId}`);
       } else {
         verifyResponse = await apiClient.get(`/users/staff/${userId}`);
       }
