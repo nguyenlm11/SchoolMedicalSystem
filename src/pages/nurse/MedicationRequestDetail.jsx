@@ -5,6 +5,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO 
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
+import medicationRequestApi from "../../api/medicationRequestApi";
 
 const MedicationRequestDetail = () => {
     const { id } = useParams();
@@ -34,83 +35,28 @@ const MedicationRequestDetail = () => {
         }
     };
 
-    // Mock data for demonstration - single fixed data
-    const mockMedicationRequest = {
-        id: "sample-request",
-        studentId: "student-123",
-        parentId: "parent-456",
-        studentName: "Nguyễn Văn An",
-        studentCode: "HS001",
-        parentName: "Nguyễn Văn Bố",
-        approvedByName: "Y tá Mai",
-        status: "PendingApproval",
-        statusDisplayName: "Chờ duyệt",
-        priorityDisplayName: "High",
-        submittedAt: "2025-01-15T08:30:00.000Z",
-        approvedAt: null,
-        code: "MR001",
-        medications: [
-            {
-                id: "med-1",
-                requestId: "sample-request",
-                medicationName: "Paracetamol 500mg",
-                dosage: "1 viên x 3 lần/ngày",
-                purpose: "Hạ sốt, giảm đau",
-                expiryDate: "2025-12-31T00:00:00.000Z",
-                quantitySent: 10,
-                quantityUnit: "Viên",
-                rejectionReason: null,
-                priority: "High",
-                priorityDisplayName: "Cao"
-            },
-            {
-                id: "med-2",
-                requestId: "sample-request",
-                medicationName: "Vitamin C 1000mg",
-                dosage: "1 viên x 1 lần/ngày",
-                purpose: "Tăng cường sức đề kháng",
-                expiryDate: "2025-10-15T00:00:00.000Z",
-                quantitySent: 15,
-                quantityUnit: "Viên",
-                rejectionReason: null,
-                priority: "Normal",
-                priorityDisplayName: "Bình thường"
-            },
-            {
-                id: "med-3",
-                requestId: "sample-request",
-                medicationName: "Ibuprofen 400mg",
-                dosage: "1 viên x 2 lần/ngày khi cần",
-                purpose: "Giảm đau, chống viêm",
-                expiryDate: "2025-08-20T00:00:00.000Z",
-                quantitySent: 8,
-                quantityUnit: "Viên",
-                rejectionReason: null,
-                priority: "Low",
-                priorityDisplayName: "Thấp"
-            }
-        ]
-    };
-
     useEffect(() => {
-        fetchMedicationRequestDetail();
+        const fetchDetail = async () => {
+            setLoading(true);
+            try {
+                const response = await medicationRequestApi.getMedicationRequestDetail(id);
+                if (response.success) {
+                    setMedicationRequest(response.data);
+                } else {
+                    setMedicationRequest(null);
+                    setShowAlert(true);
+                    setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
+                }
+            } catch (error) {
+                setMedicationRequest(null);
+                setShowAlert(true);
+                setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) fetchDetail();
     }, [id]);
-
-    const fetchMedicationRequestDetail = async () => {
-        setLoading(true);
-        try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Always use the same fixed mock data regardless of ID
-            setMedicationRequest(mockMedicationRequest);
-        } catch (error) {
-            setShowAlert(true);
-            setAlertInfo({ type: "error", message: "Không thể tải thông tin yêu cầu thuốc" });
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleApprove = async () => {
         try {
@@ -540,12 +486,9 @@ const MedicationRequestDetail = () => {
                                                 </div>
 
                                                 {renderInfoItem("Liều lượng", medication.dosage, null, true, true)}
-                                                {renderInfoItem("Số lượng", `${medication.quantitySent} ${medication.quantityUnit}`, null, true, true)}
+                                                {renderInfoItem("Số lượng", `${medication.quantitySent}`, null, true, true)}
                                                 {renderInfoItem("Hạn sử dụng", new Date(medication.expiryDate).toLocaleDateString("vi-VN"), null, true, true)}
 
-                                                <div className="lg:col-span-3">
-                                                    {renderInfoItem("Mục đích sử dụng", medication.purpose)}
-                                                </div>
                                             </div>
                                         </div>
                                     ))}
