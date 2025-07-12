@@ -36,6 +36,7 @@ import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import AssignNurseModal from "../../components/modal/AssignNurseModal";
 import ReassignNurseModal from "../../components/modal/ReassignNurseModal";
 import MarkStudentModal from "../../components/modal/MarkStudentModal";
+import ViewResultModal from "../../components/modal/ViewResultModal";
 
 
 const VaccinationDetail = () => {
@@ -56,6 +57,7 @@ const VaccinationDetail = () => {
 
     const [isMarkStudentModalOpen, setMarkStudentModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
+    const [isViewResultModalOpen, setViewResultModalOpen] = useState(false);
  
     const user = JSON.parse(localStorage.getItem("user"));
     const userRole = user?.role;
@@ -127,12 +129,6 @@ const VaccinationDetail = () => {
             </div>
         );
     }
-
-    const isAnyClassUnassigned = () => {
-        return vaccination?.classIds?.some((classId) => 
-            !vaccination?.classNurseAssignments?.some((assignment) => assignment.classId === classId)
-        );
-    };
     
     const getStatusBadge = (status) => {
         switch (status) {
@@ -175,7 +171,7 @@ const VaccinationDetail = () => {
         let bgColor, text;
 
         switch (status) {
-            case "Confirm":
+            case "Confirmed":
                 bgColor = SUCCESS[500];
                 text = "Đã xác nhận";
                 break;
@@ -337,14 +333,14 @@ const VaccinationDetail = () => {
                         {(userRole === 'manager' || userRole === 'schoolnurse') && (
                             <button
                                 onClick={() => {
-                                    setIsOpen(false);
-                                    console.log("Xem chi tiết");
+                                    setSelectedStudentId(student.studentId);
+                                    setViewResultModalOpen(true);
                                 }}
                                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                 style={{ color: PRIMARY[600] }}
                             >
                                 <FiEye className="w-4 h-4 flex-shrink-0" />
-                                <span>Xem chi tiết</span>
+                                <span>Xem kết quả</span>
                             </button>
                         )}
 
@@ -917,6 +913,13 @@ const VaccinationDetail = () => {
                     // Handle success, e.g., reload the page or refresh the student data
                     setMarkStudentModalOpen(false);
                 }}
+            />
+            <ViewResultModal
+                isOpen={isViewResultModalOpen}
+                onClose={() => setViewResultModalOpen(false)} // Close modal
+                sessionId={id}
+                studentId={selectedStudentId}
+                studentData={filteredStudents.find(student => student.studentId === selectedStudentId)} 
             />
 
             {/* Assign Nurse Modal */}
