@@ -218,6 +218,21 @@ const vaccineSessionApi = {
             };
         }
     },
+
+    // Xem kết quả buổi tiêm
+    getVaccinationResult: async (sessionId, studentId) => {
+        try {
+            const response = await apiClient.get(`/vaccination-sessions/${sessionId}/students/${studentId}/vaccination-result`);
+            return response.data;
+        } catch (error) {
+            console.error('Error get Vaccination Result:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy kết quả buổi tiêm.',
+                data: null
+            };
+        }
+    }
 };
 
 export default vaccineSessionApi; 
