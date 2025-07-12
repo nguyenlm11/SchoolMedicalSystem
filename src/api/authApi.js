@@ -132,6 +132,86 @@ const authApi = {
         errors: []
       };
     }
+  },
+
+  // Lấy thông tin profile của user
+  async getUserProfile(staffId) {
+    try {
+      if (!staffId) throw new Error('Staff ID is required');
+      const response = await apiClient.get(`/users/staff/${staffId}`);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: error.message || 'Có lỗi xảy ra khi lấy thông tin profile',
+        data: null,
+        errors: []
+      };
+    }
+  },
+
+  // Cập nhật thông tin profile
+  async updateProfile(userId, formData) {
+    try {
+      if (!userId) throw new Error('Staff ID is required');
+
+      // Validate formData
+      if (!formData.get('FullName')?.trim()) {
+        throw new Error('Họ tên không được để trống');
+      }
+
+      // Log chi tiết FormData
+      console.log('=== DEBUG: FormData Content Before Send ===');
+      console.log('UserID:', userId);
+      console.log('FormData entries:');
+      const formDataEntries = {};
+      for (let pair of formData.entries()) {
+        if (pair[1] instanceof File) {
+          formDataEntries[pair[0]] = {
+            name: pair[1].name,
+            type: pair[1].type,
+            size: pair[1].size,
+            lastModified: pair[1].lastModified
+          };
+        } else {
+          formDataEntries[pair[0]] = pair[1];
+        }
+      }
+      console.log(formDataEntries);
+
+      // Make the request - không cần set headers vì apiClient đã tự handle
+      const updateEndpoint = `/users/${userId}/profile`;
+      console.log('=== DEBUG: Request Details ===');
+      console.log('Endpoint:', updateEndpoint);
+      console.log('Method: PUT');
+
+      const updateResponse = await apiClient.put(updateEndpoint, formData);
+
+      // Log response details
+      console.log('=== DEBUG: Response Details ===');
+      console.log('Status:', updateResponse.status);
+      console.log('Data:', updateResponse.data);
+
+      // Verify the update immediately
+      const verifyResponse = await apiClient.get(`/users/staff/${userId}`);
+      console.log('=== DEBUG: Verify Response ===');
+      console.log('Status:', verifyResponse.status);
+      console.log('Data:', verifyResponse.data);
+
+      return updateResponse.data;
+
+    } catch (error) {
+      console.error('=== DEBUG: Error Details ===', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || 'Có lỗi xảy ra khi cập nhật thông tin profile',
+        data: null,
+        errors: error.response?.data?.errors || []
+      };
+    }
   }
 };
 

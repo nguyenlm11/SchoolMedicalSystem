@@ -38,6 +38,7 @@ const staffRoutes = (
 
     {/* Staff Profile Routes */}
     <Route path="/schoolnurse/profile" element={<UserProfilePage />} />
+    <Route path="/profile" element={<UserProfilePage />} />
   </Route>
 );
 
