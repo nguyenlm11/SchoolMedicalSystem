@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PRIMARY, TEXT, GRAY, COMMON } from '../../constants/colors';
-import { FiAlertTriangle, FiHeart, FiActivity, FiClock, FiUser, FiFileText, FiMapPin, FiPackage, FiAlertCircle, FiPlus, FiEye } from 'react-icons/fi';
+import { FiAlertTriangle, FiHeart, FiActivity, FiClock, FiUser, FiFileText, FiMapPin, FiPackage, FiAlertCircle, FiPlus, FiEye, FiShield } from 'react-icons/fi';
 import { useAuth } from '../../utils/AuthContext';
 import AddMedicalConditionModal from '../modal/AddMedicalConditionModal';
 import ViewAllMedicalConditionsModal from '../modal/ViewAllMedicalConditionsModal';
@@ -218,8 +218,12 @@ const MedicalConditions = ({ conditions = [], medicalRecordId, onConditionAdded 
                             {condition ? (
                                 <ConditionCard condition={condition} />
                             ) : (
-                                <div className="bg-white rounded-xl border p-6 text-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
-                                    <p className="text-lg" style={{ color: TEXT.SECONDARY }}>
+                                <div className="bg-white rounded-xl border p-6 text-center flex flex-col items-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
+                                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                                        style={{ backgroundColor: PRIMARY[100] }}>
+                                        <FiShield className="h-8 w-8" style={{ color: PRIMARY[600] }} />
+                                    </div>
+                                    <p className="text-lg font-medium" style={{ color: TEXT.SECONDARY }}>
                                         Chưa có thông tin {getTypeTitle(type).toLowerCase()}
                                     </p>
                                 </div>

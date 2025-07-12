@@ -145,7 +145,13 @@ const HealthProfileList = () => {
     );
   };
 
-  if (isLoading) { return <Loading type="medical" size="large" color="primary" text="Đang tải hồ sơ sức khỏe..." fullScreen={true} />; }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+        <Loading type="medical" size="large" color="primary" text="Đang tải hồ sơ y tế..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
