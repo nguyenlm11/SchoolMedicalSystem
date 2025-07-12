@@ -52,7 +52,7 @@ const vaccineSessionApi = {
             };
         }
     },
-
+ 
     // Lấy chi tiết buổi tiêm chủng
     getVaccineSessionDetails: async (sessionId) => {
         try {
@@ -172,8 +172,52 @@ const vaccineSessionApi = {
                 data: null
             };
         }
-    }
+    },
 
+    // Phân công lại y tá cho buổi tiêm chủng
+    reassignNurse: async (sessionId, data) => {
+        try {
+            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/reassign-nurse`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error reassigning nurse:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể phân công lại y tá.',
+                data: null
+            };
+        }
+    },
+    
+    // Đánh dấu tiêm 
+    markStudentVaccinated: async (sessionId, data) => {
+        try {
+            const response = await apiClient.post(`/vaccination-sessions/${sessionId}/mark-student-vaccinated`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error mark student vaccinated:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể đánh dấu tiêm.',
+                data: null
+            };
+        }
+    },
+
+    // Đánh dấu chưa tiêm 
+    markStudentNotVaccinated: async (sessionId, data) => {
+        try {
+            const response = await apiClient.post(`/vaccination-sessions/${sessionId}/mark-student-not-vaccinated`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error mark student not vaccinated:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể đánh dấu chưa tiêm.',
+                data: null
+            };
+        }
+    },
 };
 
 export default vaccineSessionApi; 

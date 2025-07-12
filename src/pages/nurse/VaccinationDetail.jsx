@@ -27,12 +27,16 @@ import {
     FiEye,
     FiRefreshCw,
     FiUserPlus,
+    FiUserCheck,
 } from "react-icons/fi";
 import { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from "../../constants/colors";
 import vaccineSessionApi from '../../api/vaccineSessionApi';
 import Loading from "../../components/Loading";
 import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import AssignNurseModal from "../../components/modal/AssignNurseModal";
+import ReassignNurseModal from "../../components/modal/ReassignNurseModal";
+import MarkStudentModal from "../../components/modal/MarkStudentModal";
+
 
 const VaccinationDetail = () => {
     const { id } = useParams();
@@ -41,52 +45,23 @@ const VaccinationDetail = () => {
     const [vaccination, setVaccination] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedClass, setSelectedClass] = useState("all");
-    const [confirmationModal, setConfirmationModal] = useState(false);
     const [sortBy, setSortBy] = useState("index");
     const [sortOrder, setSortOrder] = useState("asc");
     const [error, setError] = useState(null);
-    const [modalType, setModalType] = useState("approve");
-    const [modalTitle, setModalTitle] = useState("");
-    const [modalMessage, setModalMessage] = useState("");
+    const [isReassignNurseModalOpen, setReassignNurseModalOpen] = useState(false)
     const [studentConsentData, setStudentConsentData] = useState([]);
+
     const [isAssignNurseModalOpen, setAssignNurseModalOpen] = useState(false);
     const [selectedClassId, setSelectedClassId] = useState(null);
+
+    const [isMarkStudentModalOpen, setMarkStudentModalOpen] = useState(false);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
  
     const user = JSON.parse(localStorage.getItem("user"));
     const userRole = user?.role;
 
+
     // Fetch details by id 
-    useEffect(() => {
-        const fetchVaccinationDetails = async () => {
-            try {
-                setLoading(true);
-                const response = await vaccineSessionApi.getVaccineSessionDetails(id);
-                setVaccination(response.data);
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching vaccination details:", err);
-                setError("Không thể tải thông tin tiêm chủng.");
-                setLoading(false);
-            }
-        };
-
-        fetchVaccinationDetails();
-    }, [id]);
-
-    const handleApprove = async () => {
-        try {
-            const response = await vaccineSessionApi.approveVaccineSession(id);
-            if (response.success) {
-                setVaccination({ ...vaccination, status: "WaitingForParentConsent" });
-                setConfirmationModal(false);
-            } else {
-                setError(response.message);
-            }
-        } catch (err) {
-            setError("Không thể duyệt buổi tiêm.");
-        }
-    };
-
     useEffect(() => {
         const fetchVaccinationDetails = async () => {
             try {
@@ -127,46 +102,6 @@ const VaccinationDetail = () => {
         fetchVaccinationDetails();
     }, [id]);
 
-    const handleDecline = async (reason) => {
-        try {
-            const response = await vaccineSessionApi.declineVaccineSession(id, reason);
-            if (response.success) {
-                setVaccination({ ...vaccination, status: "Declined" });
-                setConfirmationModal(false);
-            } else {
-                setError(response.message); 
-            }
-        } catch (err) {
-            setError("Không thể từ chối buổi tiêm.");
-        }
-    };
-
-    const handleFinalize = async () => {
-        try {
-            const response = await vaccineSessionApi.finalizeVaccineSession(id);
-            if (response.success) {
-                setVaccination({ ...vaccination, status: "Scheduled" });
-            } else {
-                setError(response.message);
-            }
-        } catch (err) {
-            setError("Không thể chốt danh sách buổi tiêm.");
-        }
-    };
-
-    const handleComplete = async () => {
-        try {
-            const response = await vaccineSessionApi.completeVaccineSession(id);
-            if (response.success) {
-                setVaccination({ ...vaccination, status: "Completed" });
-            } else {
-                setError(response.message);
-            }
-        } catch (err) {
-            setError("Không thể xác nhận hoàn thành.");
-        }
-    };
-
     if (loading) {
         return (
         <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -193,36 +128,10 @@ const VaccinationDetail = () => {
         );
     }
 
-    const isAssigned = (classId) => {
-        return vaccination?.classNurseAssignments?.some((assignment) => assignment.classId === classId);
-    };
-
     const isAnyClassUnassigned = () => {
         return vaccination?.classIds?.some((classId) => 
             !vaccination?.classNurseAssignments?.some((assignment) => assignment.classId === classId)
         );
-    };
-        
-    // Modal control
-    const handleOpenConfirmModal = (actionType) => {
-        if (actionType === "approve") {
-            setModalType("approve");
-            setModalTitle("Duyệt buổi tiêm");
-            setModalMessage("Bạn có chắc chắn muốn duyệt buổi tiêm này?");
-        } else if (actionType === "decline") {
-            setModalType("decline");
-            setModalTitle("Từ chối buổi tiêm");
-            setModalMessage("Bạn có chắc chắn muốn từ chối buổi tiêm này?");
-        } else if (actionType === "finalize") {
-            setModalType("finalize");
-            setModalTitle("Chốt danh sách");
-            setModalMessage("Bạn có chắc chắn muốn chốt danh sách buổi tiêm này?");
-        } else if (actionType === "complete") {
-            setModalType("complete");
-            setModalTitle("Xác nhận hoàn thành");
-            setModalMessage("Bạn có chắc chắn muốn đánh dấu buổi tiêm này là đã hoàn thành?");
-        }
-        setConfirmationModal(true);
     };
     
     const getStatusBadge = (status) => {
@@ -322,18 +231,6 @@ const VaccinationDetail = () => {
         );
     };
 
-    const handleDeleteVaccination = () => {
-        // In a real app, this would be an API call
-        // and you'd show a confirmation dialog
-        navigate("/nurse/vaccination");
-    };
-
-    const handleMarkAsCompleted = () => {
-        // In a real app, this would be an API call
-        setVaccination({ ...vaccination, status: "completed" });
-        // Display a success message or notification
-    };
-
     const filteredStudents = studentConsentData
         .filter(item => selectedClass === "all" || item.classId === selectedClass)
         .flatMap(item =>
@@ -352,9 +249,15 @@ const VaccinationDetail = () => {
         name: item.className
     }));
 
+
     const handleAssignNurse = (classId) => {
         setSelectedClassId(classId);
         setAssignNurseModalOpen(true);
+    };
+
+    const handleReassignNurse = (classId) => {
+        setSelectedClassId(classId);
+        setReassignNurseModalOpen(true);
     };
 
     const handleNurseAssigned = (assignedNurseData) => {
@@ -384,6 +287,26 @@ const VaccinationDetail = () => {
             document.addEventListener('mousedown', handleClickOutside);
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
+
+        const handleMarkStudent = (action) => {
+            setIsOpen(false);
+            setSelectedStudentId(student.studentId);
+            setMarkStudentModalOpen(true);
+        };
+
+        // Kiểm tra xem nurse đã được phân công cho lớp của học sinh này chưa
+        const isNurseAssigned = () => {
+            if (userRole !== 'schoolnurse') {
+                return true;
+            }
+
+            // Kiểm tra nếu nurseId của user có trong danh sách classNurseAssignments
+            const assignedClass = vaccination.classNurseAssignments.find(
+                assignment => assignment.nurseId === user?.id && assignment.classId === student.classId
+            );
+
+            return assignedClass ? true : false;
+        };
 
         return (
             <div className="relative" ref={menuRef}>
@@ -426,30 +349,16 @@ const VaccinationDetail = () => {
                         )}
 
                         {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
-                        {userRole === 'schoolnurse' && (
+                        {userRole === 'schoolnurse' && isNurseAssigned() && (
                             <>
+                                {/* Options for the Nurse */}
                                 <button
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        console.log("Tiến hành tiêm");
-                                    }}
+                                    onClick={() => handleMarkStudent('vaccinated')}
                                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                     style={{ color: SUCCESS[600] }}
                                 >
                                     <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
                                     <span>Tiến hành tiêm</span>
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        console.log("Chưa tiêm");
-                                    }}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                    style={{ color: ERROR[600] }}
-                                >
-                                    <FiXCircle className="w-4 h-4 flex-shrink-0" />
-                                    <span>Chưa tiêm</span>
                                 </button>
                             </>
                         )}
@@ -522,77 +431,35 @@ const VaccinationDetail = () => {
                                     Chỉnh sửa
                                 </Link>
                             )}
-                            {userRole === "manager" && isAnyClassUnassigned() && (
-                                <button
-                                    onClick={() => {
-                                        // Open the nurse assignment modal
-                                        setAssignNurseModalOpen(true);
-                                    }}
-                                    className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                    style={{
-                                        backgroundColor: PRIMARY[500],
-                                        color: TEXT.INVERSE,
-                                        border: `1px solid ${PRIMARY[600]}`,
-                                    }}
-                                >
-                                    <FiUserPlus className="w-4 h-4 mr-2" />
-                                    Phân công
-                                </button>
-                            )}
                             {userRole === "manager" && (
                                 <>
-                                    {vaccination.status === "PendingApproval" && (
-                                        <>
-                                            <button
-                                                onClick={() => handleOpenConfirmModal("approve")}
-                                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                                style={{
-                                                    backgroundColor: SUCCESS[500],
-                                                    color: TEXT.INVERSE,
-                                                    border: `1px solid ${SUCCESS[600]}`
-                                                }}
-                                            >
-                                                Duyệt
-                                            </button>
-                                            <button
-                                                onClick={() => handleOpenConfirmModal("decline")}
-                                                className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                                style={{
-                                                    backgroundColor: ERROR[500],
-                                                    color: TEXT.INVERSE,
-                                                    border: `1px solid ${ERROR[600]}`
-                                                }}
-                                            >
-                                                Từ chối
-                                            </button>
-                                        </>
-                                    )}
-                                    {vaccination.status === "WaitingForParentConsent" && (
+                                    
                                         <button
-                                            onClick={() => handleOpenConfirmModal("finalize")}
+                                            onClick={() => setAssignNurseModalOpen(true)}
                                             className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
                                             style={{
-                                                backgroundColor: SUCCESS[500],
+                                                backgroundColor: PRIMARY[500],
                                                 color: TEXT.INVERSE,
-                                                border: `1px solid ${SUCCESS[600]}`
+                                                border: `1px solid ${PRIMARY[600]}`,
                                             }}
                                         >
-                                            Chốt danh sách
+                                            <FiUserPlus className="w-4 h-4 mr-2" />
+                                            Phân công
                                         </button>
-                                    )}
-                                    {vaccination.status === "Scheduled" && (
+
+                                   
                                         <button
-                                            onClick={() => handleOpenConfirmModal("complete")}
+                                            onClick={() => setReassignNurseModalOpen(true)}
                                             className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
                                             style={{
-                                                backgroundColor: SUCCESS[500],
+                                                backgroundColor: PRIMARY[500],
                                                 color: TEXT.INVERSE,
-                                                border: `1px solid ${SUCCESS[600]}`
+                                                border: `1px solid ${PRIMARY[600]}`,
                                             }}
                                         >
-                                            Xác nhận hoàn thành
+                                            <FiUserCheck className="w-4 h-4 mr-2" />
+                                            Tái phân công
                                         </button>
-                                    )}
                                 </>
                             )}
                         </div>
@@ -1039,24 +906,35 @@ const VaccinationDetail = () => {
                 </div>
             </div>
 
+            {/* MarkStudentModal */}
+            <MarkStudentModal
+                isOpen={isMarkStudentModalOpen}
+                onClose={() => setMarkStudentModalOpen(false)}
+                sessionId={id}
+                studentId={selectedStudentId}
+                studentData={filteredStudents.find(student => student.studentId === selectedStudentId)} 
+                onSuccess={() => {
+                    // Handle success, e.g., reload the page or refresh the student data
+                    setMarkStudentModalOpen(false);
+                }}
+            />
+
             {/* Assign Nurse Modal */}
             <AssignNurseModal
                 isOpen={isAssignNurseModalOpen}
                 onClose={() => setAssignNurseModalOpen(false)}
                 sessionId={id}
                 classId={selectedClassId}
-                onNurseAssigned={handleNurseAssigned}
+                onNurseAssigned={handleAssignNurse}
             />
 
-            {/* Confirm Action Modal */}
-            <ConfirmActionModal
-                isOpen={confirmationModal}
-                onClose={() => setConfirmationModal(false)}
-                onConfirm={modalType === "approve" ? handleApprove : modalType === "decline" ? handleDecline : modalType === "finalize" ? handleFinalize : handleComplete}
-                title={modalTitle}
-                message={modalMessage}
-                type={modalType}
-                confirmText={modalType === "approve" ? "Duyệt" : modalType === "decline" ? "Từ chối" : modalType === "finalize" ? "Chốt" : "Hoàn thành"}
+            {/* Reassign Nurse Modal */}
+            <ReassignNurseModal
+                isOpen={isReassignNurseModalOpen}
+                onClose={() => setReassignNurseModalOpen(false)}
+                sessionId={id}
+                onNurseReassigned={handleReassignNurse}
+                selectedClassId={selectedClassId}
             />
         </div>
     );
