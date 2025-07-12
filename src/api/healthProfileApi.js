@@ -25,6 +25,19 @@ const healthProfileApi = {
                 message: error.response?.data?.message || 'Không thể thêm tình trạng y tế'
             };
         }
+    },
+
+    addVaccinationRecord: async (medicalRecordId,vaccinationData) => {
+        try {
+            const response = await apiClient.post(`/VaccineRecord/${medicalRecordId}`, vaccinationData);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding vaccination record:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể thêm lịch sử tiêm chủng'
+            };
+        }
     }
 };
 

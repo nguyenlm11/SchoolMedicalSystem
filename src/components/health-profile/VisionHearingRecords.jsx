@@ -2,40 +2,64 @@ import React from 'react';
 import { PRIMARY, TEXT, GRAY } from '../../constants/colors';
 import { FiEye, FiRadio } from 'react-icons/fi';
 
-const RecordCard = ({ title, icon, leftValue, rightValue, date, comments }) => (
-    <div className="bg-white rounded-xl p-4 border transition-all duration-300 hover:shadow-md" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
-        <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-                <span className="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[50] }}>
-                    {icon}
-                </span>
-                <div>
-                    <h4 className="font-semibold" style={{ color: TEXT.PRIMARY }}>{title}</h4>
-                    <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                        {new Date(date).toLocaleDateString('vi-VN')}
-                    </p>
+const RecordCard = ({ title, icon, leftValue, rightValue, date, comments }) => {
+    const getSeverityColor = (value) => {
+        if (!value || value === 'Not recorded' || value <= 0) return 'text-gray-400';
+        if (value >= 8) return 'text-green-600';
+        if (value >= 6) return 'text-yellow-600';
+        return 'text-red-600';
+    };
+
+    // const getSeverityBg = (value) => {
+    //     if (!value || value === 'Not recorded' || value <= 0) return 'bg-gray-50';
+    //     if (value >= 8) return 'bg-green-50';
+    //     if (value >= 6) return 'bg-yellow-50';
+    //     return 'bg-red-50';
+    // };
+
+    return (
+        <div className="bg-white rounded-xl p-4 border transition-all duration-300 hover:shadow-md" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[50] }}>
+                        {icon}
+                    </span>
+                    <div>
+                        <h4 className="font-semibold" style={{ color: TEXT.PRIMARY }}>{title}</h4>
+                        {date && date !== '0001-01-01T00:00:00' && (
+                            <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                {new Date(date).toLocaleDateString('vi-VN')}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
-                <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên trái</p>
-                <p className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>{leftValue}/10</p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
+                    <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên trái</p>
+                    {(leftValue > 0 && leftValue !== 'Not recorded')
+                        ? <p className={`text-2xl font-bold border border-solid rounded-lg p-2`} style={{ borderColor: GRAY[200] }}>{leftValue}/10</p>
+                        : <p className="text-2xl font-bold" style={{ color: TEXT.SECONDARY }}>Không có dữ liệu</p>
+                    }
+                </div>
+                <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
+                    <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên phải</p>
+                    {(rightValue > 0 && rightValue !== 'Not recorded')
+                        ? <p className={`text-2xl font-bold border border-solid rounded-lg p-2`} style={{ borderColor: GRAY[200] }}>{rightValue}/10</p>
+                        : <p className="text-2xl font-bold" style={{ color: TEXT.SECONDARY }}>Không có dữ liệu</p>
+                    }
+                </div>
             </div>
-            <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
-                <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên phải</p>
-                <p className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>{rightValue}/10</p>
-            </div>
+            {comments && comments !== 'Not recorded' && (
+                <div className="mt-2">
+                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ghi chú</p>
+                    <p className="text-sm" style={{ color: TEXT.PRIMARY }}>{comments}</p>
+                </div>
+            )}
         </div>
-        {comments && (
-            <div className="mt-2">
-                <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ghi chú</p>
-                <p className="text-sm" style={{ color: TEXT.PRIMARY }}>{comments}</p>
-            </div>
-        )}
-    </div>
-);
+    );
+};
 
 const EmptyRecordMessage = ({ title }) => (
     <div className="bg-white rounded-xl p-6 border shadow-sm text-center" style={{ borderColor: GRAY[200] }}>
