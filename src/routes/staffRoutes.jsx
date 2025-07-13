@@ -14,6 +14,7 @@ import HealthEventCreate from "../pages/nurse/HealthEventCreate";
 import HealthEventDetail from "../pages/nurse/HealthEventDetail";
 import MedicationRequestManagement from "../pages/nurse/MedicationRequestManagement";
 import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
+import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -23,6 +24,7 @@ const staffRoutes = (
   <Route element={<StaffLayout />}>
     {/* Staff Medication Routes */}
     <Route path="/schoolnurse/dashboard" element={<NurseDashboard />} />
+    <Route path="/schoolnurse/student-health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
     <Route path="/schoolnurse/medication/administer/:id" element={<PlaceholderPage title="Cho thuốc (đang phát triển)" />} />
     <Route path="/schoolnurse/medication" element={<NurseMedicationPage />} />
     <Route path="/schoolnurse/medication-requests" element={<MedicationRequestManagement />} />

@@ -81,7 +81,6 @@ const MarkStudentModal = ({ isOpen, onClose, sessionId, studentId, onSuccess, st
         setAlertType("success");
         setAlertMsg(response.message || "Thao tác thành công!");
         setAlertOpen(true);
-        onSuccess();
       } else {
         setAlertType("error");
         setAlertMsg(response.message || "Có lỗi xảy ra.");
@@ -96,9 +95,11 @@ const MarkStudentModal = ({ isOpen, onClose, sessionId, studentId, onSuccess, st
     }
   };
 
-  const handleAlertClose = () => {
+  const handleAlertOk = () => {
     setAlertOpen(false);
-    onClose();
+    if (alertType === "success") {
+      window.location.reload();
+    }
   };
 
   if (!isOpen) return null;
@@ -277,7 +278,7 @@ const MarkStudentModal = ({ isOpen, onClose, sessionId, studentId, onSuccess, st
 
       <AlertModal
         isOpen={alertOpen}
-        onClose={handleAlertClose}
+        onClose={handleAlertOk}
         title="Thông báo"
         message={alertMsg}
         type={alertType}
