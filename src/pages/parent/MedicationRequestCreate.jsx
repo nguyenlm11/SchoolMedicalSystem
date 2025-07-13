@@ -19,7 +19,7 @@ const PRIORITY_OPTIONS = [
     { value: 'Low', label: 'Thấp' },
     { value: 'Normal', label: 'Bình thường' },
     { value: 'High', label: 'Cao' },
-    { value: 'Critical', label: 'Rất quan trọng' }
+    { value: 'Critical', label: 'Khẩn cấp' }
 ];
 
 const MedicationRequestCreate = () => {
