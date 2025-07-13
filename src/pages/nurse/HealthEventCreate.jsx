@@ -1,28 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/colors';
-import { FiPlus, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiFileText, FiUser, FiActivity, FiSave, FiX, FiChevronDown, FiCheck, FiTablet, FiBox, FiThermometer, FiHeart, FiWind } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiFileText, FiUser, FiActivity, FiSave, FiX, FiChevronDown, FiCheck, FiTablet, FiBox, FiThermometer, FiHeart, FiWind, FiChevronUp } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import AlertModal from '../../components/modal/AlertModal';
 import userApi from '../../api/userApi';
 import medicalApi from '../../api/medicalApi';
 import healthEventApi from '../../api/healtheventApi';
+import healthProfileApi from '../../api/healthProfileApi';
 
 const STYLES = {
     input: {
         base: "w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base",
-        error: "border-red-500",
-        success: `border-${PRIMARY[500]}`,
-        focus: `focus:ring-${PRIMARY[500]}40`
+        error: "border-red-500"
     },
     card: {
         base: "bg-white rounded-xl shadow-sm border overflow-hidden",
         header: "p-6 border-b flex items-center",
         content: "p-8"
-    },
-    button: {
-        primary: `px-6 py-3 rounded-lg font-medium transition-all duration-200 bg-${PRIMARY[500]} text-white`,
-        secondary: "px-6 py-3 rounded-lg border font-medium transition-all duration-200 text-gray-700"
     }
 };
 
@@ -31,19 +26,13 @@ const EVENT_TYPES = [
     { value: 'Illness', label: 'Bệnh, ốm' },
     { value: 'AllergicReaction', label: 'Dị ứng' },
     { value: 'Fall', label: 'Té ngã' },
-    { value: 'Emergency', label: 'Cấp cứu' },
+    { value: 'ChronicIllnessEpisode', label: 'Bệnh mãn tính' },
     { value: 'Other', label: 'Khác' }
 ];
 
-const MEDICAL_CONDITIONS = [
-    { value: '', label: '-- Không có --' },
-    { value: 'condition-1', label: 'Hen suyễn' },
-    { value: 'condition-2', label: 'Dị ứng thức ăn' },
-    { value: 'condition-3', label: 'Tiểu đường' },
-    { value: 'condition-4', label: 'Cao huyết áp' }
-];
-
 const HealthEventCreate = () => {
+    const [medicalConditions, setMedicalConditions] = useState([]);
+    const [medicalConditionsLoading, setMedicalConditionsLoading] = useState(false);
     const navigate = useNavigate();
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -63,8 +52,27 @@ const HealthEventCreate = () => {
 
     const [itemSearches, setItemSearches] = useState({});
     const [showDropdowns, setShowDropdowns] = useState({});
-    const studentDropdownRef = useRef(null);
-    const studentInputRef = useRef(null);
+
+
+    const fetchMedicalConditions = async (studentId) => {
+        if (!studentId) {
+            setMedicalConditions([]);
+            return;
+        }
+        setMedicalConditionsLoading(true);
+        try {
+            const response = await healthProfileApi.getMedicalConditions(studentId);
+            if (response.success) {
+                setMedicalConditions(response.data || []);
+            } else {
+                setMedicalConditions([]);
+            }
+        } catch (error) {
+            setMedicalConditions([]);
+        } finally {
+            setMedicalConditionsLoading(false);
+        }
+    };
 
     const [formData, setFormData] = useState({
         userId: '',
@@ -76,6 +84,8 @@ const HealthEventCreate = () => {
         outcome: '',
         isEmergency: false,
         relatedMedicalConditionId: '',
+        relatedMedicalConditionSearch: '',
+        showMedicalConditionDropdown: false,
         currentHealthStatus: '',
         parentNotice: '',
         temperature: '',
@@ -112,16 +122,6 @@ const HealthEventCreate = () => {
         return healthMetrics.length > 0 ? healthMetrics.join(', ') : '';
     };
 
-    const fetchData = async (apiCall, setData, setLoading) => {
-        setLoading(true);
-        try {
-            const response = await apiCall();
-            if (response.success) { setData(response.data) }
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        } finally { setLoading(false) }
-    };
-
     const fetchStudents = async () => {
         setStudentsLoading(true);
         setStudentsError(null);
@@ -139,36 +139,49 @@ const HealthEventCreate = () => {
         }
     };
 
+
+
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (studentDropdownRef.current && !studentDropdownRef.current.contains(event.target) &&
-                studentInputRef.current && !studentInputRef.current.contains(event.target)) {
-                setShowStudentDropdown(false);
-            }
-            const isClickInsideDropdown = event.target.closest('.item-dropdown-container');
-            if (!isClickInsideDropdown) {
-                setShowDropdowns({});
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        if (formData.userId) {
+            fetchMedicalConditions(formData.userId);
+        }
+    }, [formData.userId]);
 
     useEffect(() => {
         fetchStudents();
     }, [studentSearch]);
 
     useEffect(() => {
-        fetchData(
-            () => medicalApi.getMedicalItems({ pageIndex: 1, pageSize: 1000, type: 'Medication', approvalStatus: 'Approved' }),
-            setMedicines,
-            setMedicinesLoading
-        );
-        fetchData(
-            () => medicalApi.getMedicalItems({ pageIndex: 1, pageSize: 1000, type: 'Supply', approvalStatus: 'Approved' }),
-            setSupplies,
-            setSuppliesLoading
-        );
+        const fetchMedicines = async () => {
+            setMedicinesLoading(true);
+            try {
+                const response = await medicalApi.getMedicalItems({ pageIndex: 1, pageSize: 1000, type: 'Medication', approvalStatus: 'Approved' });
+                if (response.success) {
+                    setMedicines(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching medicines:', error);
+            } finally {
+                setMedicinesLoading(false);
+            }
+        };
+
+        const fetchSupplies = async () => {
+            setSuppliesLoading(true);
+            try {
+                const response = await medicalApi.getMedicalItems({ pageIndex: 1, pageSize: 1000, type: 'Supply', approvalStatus: 'Approved' });
+                if (response.success) {
+                    setSupplies(response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching supplies:', error);
+            } finally {
+                setSuppliesLoading(false);
+            }
+        };
+
+        fetchMedicines();
+        fetchSupplies();
     }, []);
 
     const handleInputChange = (e) => {
@@ -187,6 +200,7 @@ const HealthEventCreate = () => {
         setStudentSearch(`${student.fullName}(${student.studentCode}) - Lớp ${student.currentClassName}`);
         setShowStudentDropdown(false);
         clearError('userId');
+        fetchMedicalConditions(student.id);
     };
 
     const handleStudentSearchChange = (e) => {
@@ -339,7 +353,7 @@ const HealthEventCreate = () => {
                 currentHealthStatus: buildCurrentHealthStatus(),
                 medicalItemUsages
             };
-            console.log('Submit Data:', JSON.stringify(submitData, null, 2));
+
             const response = await healthEventApi.createHealthEventWithMedicalItems(submitData);
             if (response.success) {
                 setAlertConfig({ type: "success", title: "Tạo sự kiện y tế thành công!", message: "Sự kiện y tế đã được lưu vào hệ thống. Nhấn OK để về trang quản lý sự kiện y tế." });
@@ -354,6 +368,8 @@ const HealthEventCreate = () => {
                     outcome: '',
                     isEmergency: false,
                     relatedMedicalConditionId: '',
+                    relatedMedicalConditionSearch: '',
+                    showMedicalConditionDropdown: false,
                     currentHealthStatus: '',
                     parentNotice: '',
                     temperature: '',
@@ -366,6 +382,7 @@ const HealthEventCreate = () => {
                 setItemSearches({});
                 setShowDropdowns({});
                 setErrors({});
+                setMedicalConditions([]);
             } else {
                 let errorMessage = response.message || "Có lỗi xảy ra khi tạo sự kiện y tế";
                 if (response.errors && response.errors.length > 0) {
@@ -508,7 +525,7 @@ const HealthEventCreate = () => {
                                             {showDropdowns[item.id] && (
                                                 <div
                                                     className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl overflow-hidden"
-                                                    style={{ borderColor: BORDER.DEFAULT, maxHeight: '200px', minHeight: '120px' }}
+                                                    style={{ borderColor: BORDER.DEFAULT, maxHeight: '200px' }}
                                                 >
                                                     <div
                                                         className="overflow-y-auto overflow-x-hidden"
@@ -528,7 +545,7 @@ const HealthEventCreate = () => {
                                                                         key={medItem.id}
                                                                         className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors duration-150"
                                                                         onClick={() => handleItemSelect(item, medItem)}
-                                                                        style={{ minHeight: '60px' }}
+
                                                                     >
                                                                         <div className="font-medium text-sm" style={{ color: TEXT.PRIMARY }}>
                                                                             {medItem.name}
@@ -666,11 +683,11 @@ const HealthEventCreate = () => {
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
                                         Học sinh *
                                     </label>
-                                    <div className="relative" ref={studentDropdownRef}>
+                                    <div className="relative">
                                         <div className="relative">
                                             <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                             <input
-                                                ref={studentInputRef}
+    
                                                 type="text"
                                                 value={studentSearch}
                                                 onChange={handleStudentSearchChange}
@@ -694,10 +711,16 @@ const HealthEventCreate = () => {
                                                 {studentsLoading ? (
                                                     <Loading type="spinner" size="small" color="primary" />
                                                 ) : (
-                                                    <FiChevronDown
-                                                        className={`h-5 w-5 transition-transform duration-200 flex-shrink-0 ${showStudentDropdown ? 'rotate-180' : ''}`}
-                                                        style={{ color: formData.userId ? PRIMARY[500] : GRAY[400] }}
-                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowStudentDropdown(!showStudentDropdown)}
+                                                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                                    >
+                                                        <FiChevronDown
+                                                            className={`h-5 w-5 transition-transform duration-200 flex-shrink-0 ${showStudentDropdown ? 'rotate-180' : ''}`}
+                                                            style={{ color: formData.userId ? PRIMARY[500] : GRAY[400] }}
+                                                        />
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -705,7 +728,7 @@ const HealthEventCreate = () => {
                                         {showStudentDropdown && (
                                             <div
                                                 className="absolute z-50 w-full mt-2 bg-white border rounded-lg shadow-xl overflow-hidden"
-                                                style={{ borderColor: BORDER.DEFAULT, maxHeight: '288px', minHeight: '120px' }}
+                                                style={{ borderColor: BORDER.DEFAULT, maxHeight: '288px' }}
                                             >
                                                 <div
                                                     className="overflow-y-auto overflow-x-hidden"
@@ -735,9 +758,7 @@ const HealthEventCreate = () => {
                                                                         </div>
                                                                         <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                                                             Lớp {student.currentClassName}
-                                                                            {student.dateOfBirth && (
-                                                                                <span className="ml-2"></span>
-                                                                            )}
+
                                                                         </div>
                                                                     </div>
                                                                     {formData.userId === student.id && (
@@ -950,17 +971,89 @@ const HealthEventCreate = () => {
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
                                         Tình trạng y tế liên quan
                                     </label>
-                                    <select
-                                        name="relatedMedicalConditionId"
-                                        value={formData.relatedMedicalConditionId}
-                                        onChange={handleInputChange}
-                                        className={STYLES.input.base}
-                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
-                                    >
-                                        {MEDICAL_CONDITIONS.map(condition => (
-                                            <option key={condition.value} value={condition.value}>{condition.label}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Tìm kiếm tình trạng y tế..."
+                                            value={formData.relatedMedicalConditionSearch || ''}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    relatedMedicalConditionSearch: value,
+                                                    relatedMedicalConditionId: ''
+                                                }));
+                                            }}
+                                            onFocus={() => setFormData(prev => ({ ...prev, showMedicalConditionDropdown: true }))}
+                                            className={STYLES.input.base}
+                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                            disabled={medicalConditionsLoading}
+                                        />
+                                        {medicalConditionsLoading ? (
+                                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                                <div className="animate-spin rounded-full h-5 w-5 border-b-2" style={{ borderColor: PRIMARY[500] }}></div>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, showMedicalConditionDropdown: !prev.showMedicalConditionDropdown }))}
+                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded transition-colors"
+                                            >
+                                                {formData.showMedicalConditionDropdown ? (
+                                                    <FiChevronUp className="h-4 w-4" style={{ color: GRAY[500] }} />
+                                                ) : (
+                                                    <FiChevronDown className="h-4 w-4" style={{ color: GRAY[500] }} />
+                                                )}
+                                            </button>
+                                        )}
+
+                                        {formData.showMedicalConditionDropdown && (
+                                            <div
+                                                className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-xl overflow-hidden"
+                                                style={{ borderColor: BORDER.DEFAULT, maxHeight: '200px' }}
+                                                data-medical-condition-dropdown
+                                            >
+                                                <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
+                                                    {medicalConditionsLoading ? (
+                                                        <div className="p-4 text-center" style={{ color: TEXT.SECONDARY }}>
+                                                            <Loading type="spinner" size="small" color="primary" />
+                                                        </div>
+                                                    ) : medicalConditions.length === 0 ? (
+                                                        <div className="p-4 text-center" style={{ color: TEXT.SECONDARY }}>
+                                                            Không có tình trạng y tế
+                                                        </div>
+                                                    ) : (
+                                                        medicalConditions
+                                                            .filter(condition =>
+                                                                condition.name.toLowerCase().includes((formData.relatedMedicalConditionSearch || '').toLowerCase()) ||
+                                                                condition.typeDisplay.toLowerCase().includes((formData.relatedMedicalConditionSearch || '').toLowerCase())
+                                                            )
+                                                            .map((condition) => (
+                                                                <div
+                                                                    key={condition.id}
+                                                                    className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors duration-150"
+                                                                    onClick={() => {
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            relatedMedicalConditionId: condition.id,
+                                                                            relatedMedicalConditionSearch: `${condition.name} (${condition.typeDisplay}) - ${condition.severityDisplay}`,
+                                                                            showMedicalConditionDropdown: false
+                                                                        }));
+                                                                    }}
+                                                                >
+                                                                    <div className="font-medium text-sm" style={{ color: TEXT.PRIMARY }}>
+                                                                        {condition.name}
+                                                                    </div>
+                                                                    <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                                        {condition.typeDisplay} • {condition.severityDisplay}
+                                                                    </div>
+                                                                </div>
+                                                            ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {renderTextarea('parentNotice', 'Thông báo cho phụ huynh', 'Thông báo sẽ gửi cho phụ huynh...', 4)}

@@ -14,6 +14,22 @@ const healthProfileApi = {
         }
     },
 
+    getMedicalConditions: async (studentId, params = {}) => {
+        try {
+            const response = await apiClient.get(`/medical-conditions/student/${studentId}`, { params });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching medical conditions:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể tải danh sách tình trạng y tế',
+                data: [],
+                totalCount: 0,
+                totalPages: 0
+            };
+        }
+    },
+
     addMedicalCondition: async (medicalConditionData) => {
         try {
             const response = await apiClient.post('/medical-conditions', medicalConditionData);
