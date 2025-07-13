@@ -20,7 +20,6 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
         vaccinationTypeName: '',
         doseNumber: 1,
         administeredDate: new Date().toISOString().split('T')[0],
-        administeredBy: '',
         symptoms: '',
         vaccinationStatus: 'Completed',
         noteAfterSession: ''
@@ -109,7 +108,6 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
             vaccinationTypeName: '',
             doseNumber: 1,
             administeredDate: new Date().toISOString().split('T')[0],
-            administeredBy: '',
             symptoms: '',
             vaccinationStatus: 'Completed',
             noteAfterSession: ''
@@ -158,9 +156,6 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
         if (!formData.administeredDate) {
             errors.administeredDate = "Ngày tiêm không được để trống";
         }
-        if (!formData.administeredBy?.trim()) {
-            errors.administeredBy = "Người tiêm không được để trống";
-        }
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -177,7 +172,6 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
                 vaccinationTypeId: formData.vaccinationTypeId,
                 doseNumber: formData.doseNumber,
                 administeredDate: formData.administeredDate,
-                administeredBy: formData.administeredBy,
                 symptoms: formData.symptoms,
                 vaccinationStatus: formData.vaccinationStatus,
                 noteAfterSession: formData.noteAfterSession
@@ -224,7 +218,7 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-6">
                             <div>
                                 <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
                                     Loại vắc-xin *
@@ -262,68 +256,49 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
                                 )}
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                    Số mũi đã tiêm *
-                                </label>
-                                <input
-                                    type="number"
-                                    name="doseNumber"
-                                    value={formData.doseNumber}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    min="1"
-                                    max="10"
-                                    className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                    style={{ borderColor: formErrors.doseNumber ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                    placeholder="1"
-                                />
-                                {formErrors.doseNumber && (
-                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                        {formErrors.doseNumber}
-                                    </p>
-                                )}
-                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                        Số mũi đã tiêm *
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="doseNumber"
+                                        value={formData.doseNumber}
+                                        onChange={handleInputChange}
+                                        disabled={loading}
+                                        min="1"
+                                        max="10"
+                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                        style={{ borderColor: formErrors.doseNumber ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
+                                        placeholder="1"
+                                    />
+                                    {formErrors.doseNumber && (
+                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                            {formErrors.doseNumber}
+                                        </p>
+                                    )}
+                                </div>
 
-                            <div>
-                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                    Ngày tiêm gần nhất *
-                                </label>
-                                <input
-                                    type="date"
-                                    name="administeredDate"
-                                    value={formData.administeredDate}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                    style={{ borderColor: formErrors.administeredDate ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                />
-                                {formErrors.administeredDate && (
-                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                        {formErrors.administeredDate}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                    Người tiêm *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="administeredBy"
-                                    value={formData.administeredBy}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                    style={{ borderColor: formErrors.administeredBy ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                    placeholder="Tên bác sĩ/y tá tiêm"
-                                />
-                                {formErrors.administeredBy && (
-                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                        {formErrors.administeredBy}
-                                    </p>
-                                )}
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                        Ngày tiêm gần nhất *
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="administeredDate"
+                                        value={formData.administeredDate}
+                                        onChange={handleInputChange}
+                                        disabled={loading}
+                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                        style={{ borderColor: formErrors.administeredDate ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
+                                    />
+                                    {formErrors.administeredDate && (
+                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                            {formErrors.administeredDate}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
