@@ -1,21 +1,15 @@
 import React, { useState } from 'react';
 import { PRIMARY, TEXT, COMMON } from '../../constants/colors';
-import { FiShield, FiCalendar, FiCheckCircle, FiPlus } from 'react-icons/fi';
+import { FiShield, FiCalendar, FiCheckCircle, FiPlus, FiList, FiEye } from 'react-icons/fi';
 import { useAuth } from '../../utils/AuthContext';
 import AddVaccinationModal from '../modal/AddVaccinationModal';
+import ViewAllVaccinationRecordsModal from '../modal/ViewAllVaccinationRecordsModal';
 
 const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId }) => {
     const { user } = useAuth();
     const canAddVaccination = user.role === 'parent';
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const handleAddVaccination = () => {
-        setIsModalOpen(true);
-    };
-
-    const handleModalClose = () => {
-        setIsModalOpen(false);
-    };
+    const [isAllRecordsModalOpen, setIsAllRecordsModalOpen] = useState(false);
 
     const handleVaccinationAdded = () => {
         onVaccinationAdded && onVaccinationAdded();
@@ -57,15 +51,24 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
                         </span>
                         Lịch sử tiêm chủng
                     </h2>
-                    {canAddVaccination && (
+                    <div className="flex items-center space-x-2">
                         <button
-                            onClick={handleAddVaccination}
-                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
-                            style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                            onClick={() => { setIsAllRecordsModalOpen(true) }}
+                            className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
                         >
-                            <FiPlus className="h-4 w-4 mr-1" /> Thêm
+                            <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
                         </button>
-                    )}
+                        {canAddVaccination && (
+                            <button
+                                onClick={() => { setIsModalOpen(true) }}
+                                className="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                                style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                            >
+                                <FiPlus className="h-4 w-4 mr-1" /> Thêm
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {(!records || records.length === 0) ? (
@@ -104,35 +107,38 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
                         </div>
 
                         <div className="p-6">
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {vaccineList.map((vaccine, index) => {
                                     const latestDate = new Date(vaccine.latestDate).toLocaleDateString('vi-VN');
+
                                     return (
                                         <div key={`${vaccine.vaccinationTypeId}-${index}`}
-                                            className="flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
+                                            className="rounded-xl border transition-all duration-200 hover:shadow-md"
                                             style={{ borderColor: PRIMARY[100], backgroundColor: PRIMARY[25] }}>
-                                            <div className="flex items-center flex-1">
-                                                <div className="w-8 h-8 rounded-full flex items-center justify-center mr-4"
-                                                    style={{ backgroundColor: PRIMARY[100] }}>
-                                                    <FiCheckCircle className="h-4 w-4" style={{ color: PRIMARY[600] }} />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-semibold text-base" style={{ color: TEXT.PRIMARY }}>
-                                                        {vaccine.vaccinationTypeName}
-                                                    </h4>
-                                                    <div className="flex items-center mt-1">
-                                                        <FiCalendar className="h-3 w-3 mr-1" style={{ color: PRIMARY[500] }} />
-                                                        <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                            Mũi cuối: {latestDate}
-                                                        </span>
+                                            <div className="flex items-center justify-between p-4">
+                                                <div className="flex items-center flex-1">
+                                                    <div className="w-8 h-8 rounded-full flex items-center justify-center mr-4"
+                                                        style={{ backgroundColor: PRIMARY[100] }}>
+                                                        <FiCheckCircle className="h-4 w-4" style={{ color: PRIMARY[600] }} />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold text-base" style={{ color: TEXT.PRIMARY }}>
+                                                            {vaccine.vaccinationTypeName}
+                                                        </h4>
+                                                        <div className="flex items-center mt-1">
+                                                            <FiCalendar className="h-3 w-3 mr-1" style={{ color: PRIMARY[500] }} />
+                                                            <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                                Mũi cuối: {latestDate}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <span className="px-3 py-1 rounded-full text-sm font-medium"
-                                                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
-                                                    {vaccine.totalDoses} mũi
-                                                </span>
+                                                <div className="flex items-center">
+                                                    <span className="px-3 py-1 rounded-full text-sm font-medium"
+                                                        style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
+                                                        {vaccine.totalDoses} mũi
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -145,9 +151,15 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
 
             <AddVaccinationModal
                 isOpen={isModalOpen}
-                onClose={handleModalClose}
+                onClose={() => { setIsModalOpen(false) }}
                 onSave={handleVaccinationAdded}
                 medicalRecordId={medicalRecordId}
+            />
+
+            <ViewAllVaccinationRecordsModal
+                isOpen={isAllRecordsModalOpen}
+                onClose={() => { setIsAllRecordsModalOpen(false) }}
+                records={records}
             />
         </>
     );

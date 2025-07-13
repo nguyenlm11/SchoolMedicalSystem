@@ -1,22 +1,10 @@
-import React from 'react';
-import { PRIMARY, TEXT, GRAY } from '../../constants/colors';
-import { FiEye, FiRadio } from 'react-icons/fi';
+import React, { useState } from 'react';
+import { PRIMARY, TEXT, GRAY, COMMON } from '../../constants/colors';
+import { FiEye, FiRadio, FiList } from 'react-icons/fi';
+import ViewAllVisionModal from '../modal/ViewAllVisionModal';
+import ViewAllHearingModal from '../modal/ViewAllHearingModal';
 
 const RecordCard = ({ title, icon, leftValue, rightValue, date, comments }) => {
-    const getSeverityColor = (value) => {
-        if (!value || value === 'Not recorded' || value <= 0) return 'text-gray-400';
-        if (value >= 8) return 'text-green-600';
-        if (value >= 6) return 'text-yellow-600';
-        return 'text-red-600';
-    };
-
-    // const getSeverityBg = (value) => {
-    //     if (!value || value === 'Not recorded' || value <= 0) return 'bg-gray-50';
-    //     if (value >= 8) return 'bg-green-50';
-    //     if (value >= 6) return 'bg-yellow-50';
-    //     return 'bg-red-50';
-    // };
-
     return (
         <div className="bg-white rounded-xl p-4 border transition-all duration-300 hover:shadow-md" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
             <div className="flex items-center justify-between mb-4">
@@ -39,15 +27,15 @@ const RecordCard = ({ title, icon, leftValue, rightValue, date, comments }) => {
                 <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
                     <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên trái</p>
                     {(leftValue > 0 && leftValue !== 'Not recorded')
-                        ? <p className={`text-2xl font-bold border border-solid rounded-lg p-2`} style={{ borderColor: GRAY[200] }}>{leftValue}/10</p>
-                        : <p className="text-2xl font-bold" style={{ color: TEXT.SECONDARY }}>Không có dữ liệu</p>
+                        ? <p className="text-2xl font-bold border border-solid rounded-lg p-2" style={{ borderColor: GRAY[200] }}>{leftValue}/10</p>
+                        : <p className="text-2xl font-bold border border-solid rounded-lg p-2" style={{ color: TEXT.SECONDARY, borderColor: GRAY[200] }}>Không có dữ liệu</p>
                     }
                 </div>
                 <div className="text-center p-3 rounded-lg" style={{ backgroundColor: PRIMARY[25] }}>
                     <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>Bên phải</p>
                     {(rightValue > 0 && rightValue !== 'Not recorded')
-                        ? <p className={`text-2xl font-bold border border-solid rounded-lg p-2`} style={{ borderColor: GRAY[200] }}>{rightValue}/10</p>
-                        : <p className="text-2xl font-bold" style={{ color: TEXT.SECONDARY }}>Không có dữ liệu</p>
+                        ? <p className="text-2xl font-bold border border-solid rounded-lg p-2" style={{ borderColor: GRAY[200] }}>{rightValue}/10</p>
+                        : <p className="text-2xl font-bold border border-solid rounded-lg p-2" style={{ color: TEXT.SECONDARY, borderColor: GRAY[200] }}>Không có dữ liệu</p>
                     }
                 </div>
             </div>
@@ -68,6 +56,9 @@ const EmptyRecordMessage = ({ title }) => (
 );
 
 const VisionHearingRecords = ({ visionRecords = [], hearingRecords = [] }) => {
+    const [isVisionModalOpen, setIsVisionModalOpen] = useState(false);
+    const [isHearingModalOpen, setIsHearingModalOpen] = useState(false);
+    
     const sortedVisionRecords = Array.isArray(visionRecords) ? [...visionRecords].sort((a, b) =>
         new Date(b.checkDate) - new Date(a.checkDate)
     ) : [];
@@ -75,6 +66,11 @@ const VisionHearingRecords = ({ visionRecords = [], hearingRecords = [] }) => {
     const sortedHearingRecords = Array.isArray(hearingRecords) ? [...hearingRecords].sort((a, b) =>
         new Date(b.checkDate) - new Date(a.checkDate)
     ) : [];
+
+    const latestVisionRecord = sortedVisionRecords[0] || null;
+    const latestHearingRecord = sortedHearingRecords[0] || null;
+
+    const hasAnyRecords = sortedVisionRecords.length > 0 || sortedHearingRecords.length > 0;
 
     return (
         <div className="space-y-6">
@@ -88,47 +84,79 @@ const VisionHearingRecords = ({ visionRecords = [], hearingRecords = [] }) => {
                 </h2>
             </div>
 
-            {(!visionRecords && !hearingRecords) || (sortedVisionRecords.length === 0 && sortedHearingRecords.length === 0) ? (
+            {!hasAnyRecords ? (
                 <div className="bg-white rounded-2xl p-6 border shadow-sm text-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
                     <p className="text-lg" style={{ color: TEXT.SECONDARY }}>Chưa có dữ liệu thị lực và thính lực</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                        <h3 className="text-lg font-semibold mb-4" style={{ color: TEXT.PRIMARY }}>Thị lực</h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thị lực</h3>
+                            {sortedVisionRecords.length > 0 && (
+                                <button
+                                    onClick={() => setIsVisionModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ color:PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                >
+                                    <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
+                                </button>
+                            )}
+                        </div>
                         <div className="space-y-4">
-                            {sortedVisionRecords.length > 0 ? sortedVisionRecords.map((record, index) => (
+                            {latestVisionRecord ? (
                                 <RecordCard
-                                    key={index}
                                     title="Kiểm tra thị lực"
                                     icon={<FiEye className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
-                                    leftValue={record.leftEye}
-                                    rightValue={record.rightEye}
-                                    date={record.checkDate}
-                                    comments={record.comments}
+                                    leftValue={latestVisionRecord.leftEye}
+                                    rightValue={latestVisionRecord.rightEye}
+                                    date={latestVisionRecord.checkDate}
+                                    comments={latestVisionRecord.comments}
                                 />
-                            )) : <EmptyRecordMessage title="thị lực" />}
+                            ) : <EmptyRecordMessage title="thị lực" />}
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="text-lg font-semibold mb-4" style={{ color: TEXT.PRIMARY }}>Thính lực</h3>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thính lực</h3>
+                            {sortedHearingRecords.length > 0 && (
+                                <button
+                                    onClick={() => setIsHearingModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ color:PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                >
+                                    <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
+                                </button>
+                            )}
+                        </div>
                         <div className="space-y-4">
-                            {sortedHearingRecords.length > 0 ? sortedHearingRecords.map((record, index) => (
+                            {latestHearingRecord ? (
                                 <RecordCard
-                                    key={index}
                                     title="Kiểm tra thính lực"
                                     icon={<FiRadio className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
-                                    leftValue={record.leftEar}
-                                    rightValue={record.rightEar}
-                                    date={record.checkDate}
-                                    comments={record.comments}
+                                    leftValue={latestHearingRecord.leftEar}
+                                    rightValue={latestHearingRecord.rightEar}
+                                    date={latestHearingRecord.checkDate}
+                                    comments={latestHearingRecord.comments}
                                 />
-                            )) : <EmptyRecordMessage title="thính lực" />}
+                            ) : <EmptyRecordMessage title="thính lực" />}
                         </div>
                     </div>
                 </div>
             )}
+
+            <ViewAllVisionModal
+                isOpen={isVisionModalOpen}
+                onClose={() => setIsVisionModalOpen(false)}
+                visionRecords={visionRecords}
+            />
+            
+            <ViewAllHearingModal
+                isOpen={isHearingModalOpen}
+                onClose={() => setIsHearingModalOpen(false)}
+                hearingRecords={hearingRecords}
+            />
         </div>
     );
 };
