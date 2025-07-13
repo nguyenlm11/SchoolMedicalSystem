@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PRIMARY, TEXT, GRAY } from '../../constants/colors';
-import { FiBarChart2, FiActivity, FiFileText } from 'react-icons/fi';
+import { FiBarChart2, FiActivity, FiFileText, FiEye } from 'react-icons/fi';
+import ViewAllPhysicalRecordsModal from '../modal/ViewAllPhysicalRecordsModal';
 
 const BMIStatus = ({ bmi }) => {
     let status = '';
@@ -26,11 +27,13 @@ const BMIStatus = ({ bmi }) => {
 };
 
 const PhysicalRecords = ({ records = [] }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const sortedRecords = Array.isArray(records) ? [...records].sort((a, b) =>
         new Date(b.checkDate) - new Date(a.checkDate)
     ) : [];
 
     const latestRecord = sortedRecords[0];
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -41,6 +44,15 @@ const PhysicalRecords = ({ records = [] }) => {
                     </span>
                     Chỉ số thể chất
                 </h2>
+                {sortedRecords.length > 1 && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                    >
+                        <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
+                    </button>
+                )}
             </div>
 
             {!records || sortedRecords.length === 0 ? (
@@ -95,53 +107,14 @@ const PhysicalRecords = ({ records = [] }) => {
                             </div>
                         </div>
                     </div>
-
-                    <div className="border-t" style={{ borderColor: GRAY[200] }}>
-                        <h3 className="text-lg font-semibold my-4" style={{ color: TEXT.PRIMARY }}>Lịch sử theo dõi</h3>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y" style={{ borderColor: GRAY[200] }}>
-                                <thead>
-                                    <tr>
-                                        <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
-                                            Ngày kiểm tra
-                                        </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
-                                            Chiều cao(cm)
-                                        </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
-                                            Cân nặng(kg)
-                                        </th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider" style={{ color: TEXT.SECONDARY }}>
-                                            BMI
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y" style={{ borderColor: GRAY[200] }}>
-                                    {sortedRecords.map((record, index) => (
-                                        <tr key={index} className="hover:bg-gray-50 transition-colors duration-200">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {new Date(record.checkDate).toLocaleDateString('vi-VN')}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {record.height}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {record.weight}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                <div className="flex items-center space-x-2 justify-center">
-                                                    <span>{record.bmi.toFixed(1)}</span>
-                                                    <BMIStatus bmi={record.bmi} />
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             )}
+
+            <ViewAllPhysicalRecordsModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                records={sortedRecords}
+            />
         </div>
     );
 };
