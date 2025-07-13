@@ -331,31 +331,42 @@ const VaccinationDetail = () => {
                     >
                         {/* Xem chi tiết – CHO MANAGER & SCHOOLNURSE */}
                         {(userRole === 'manager' || userRole === 'schoolnurse') && (
-                            <button
-                                onClick={() => {
-                                    setSelectedStudentId(student.studentId);
-                                    setViewResultModalOpen(true);
-                                }}
+                            <Link
+                                to={`/${userRole}/student-health-profile/${student.studentId}`}
+                                onClick={() => setIsOpen(false)}
                                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                 style={{ color: PRIMARY[600] }}
                             >
                                 <FiEye className="w-4 h-4 flex-shrink-0" />
-                                <span>Xem kết quả</span>
-                            </button>
+                                <span>Xem chi tiết</span>
+                            </Link>
                         )}
 
                         {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
                         {userRole === 'schoolnurse' && isNurseAssigned() && (
                             <>
-                                {/* Options for the Nurse */}
-                                <button
-                                    onClick={() => handleMarkStudent('vaccinated')}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                    style={{ color: SUCCESS[600] }}
-                                >
-                                    <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
-                                    <span>Tiến hành tiêm</span>
-                                </button>
+                                {student.vaccinationStatus !== "Completed" ? (
+                                    <button
+                                        onClick={() => handleMarkStudent('vaccinated')}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                        style={{ color: SUCCESS[600] }}
+                                    >
+                                        <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                                        <span>Tiến hành tiêm</span>
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            setSelectedStudentId(student.studentId);
+                                            setViewResultModalOpen(true);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                        style={{ color: ERROR[600] }}
+                                    >
+                                        <FiEye className="w-4 h-4 flex-shrink-0" />
+                                        <span>Xem kết quả</span>
+                                    </button>
+                                )}
                             </>
                         )}
                     </div>

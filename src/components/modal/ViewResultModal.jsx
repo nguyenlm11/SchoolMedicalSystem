@@ -5,19 +5,6 @@ import { PRIMARY, GRAY, TEXT, SHADOW, ERROR, COMMON, SUCCESS, WARNING } from "..
 import Loading from "../Loading";
 import AlertModal from "./AlertModal";
 
-// Custom Badge Component for Vaccination Status
-const StatusBadge = ({ status }) => (
-  <div
-    className="px-4 py-2 rounded-lg inline-flex items-center"
-    style={{
-      color: COMMON.PRIMARY,
-    }}
-  >
-    <FiCheckCircle className="mr-2 text-black" />
-    <span className="text-sm font-medium">{status}</span>
-  </div>
-);
-
 const ViewResultModal = ({ isOpen, onClose, sessionId, studentId, studentData }) => {
   const [loading, setLoading] = useState(false);
   const [vaccinationResult, setVaccinationResult] = useState(null);
@@ -64,67 +51,85 @@ const ViewResultModal = ({ isOpen, onClose, sessionId, studentId, studentData })
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-40"
-      style={{
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        backdropFilter: "blur(6px)",
-      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-lg shadow-lg transform transition-all w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto relative"
+        style={{ boxShadow: `0 25px 50px -12px ${SHADOW.DARK}, 0 0 0 1px ${GRAY[100]}` }}
         onClick={(e) => e.stopPropagation()}
-        style={{ borderRadius: "16px" }}
       >
-        <div className="bg-white px-6 pt-6 pb-4 border-b" style={{ borderColor: TEXT.PRIMARY }}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-semibold text-gray-900">Xem Kết Quả Tiêm</h3>
-            <button
-              onClick={onClose}
-              className="rounded-full p-2 hover:bg-gray-200 transition-all"
-              style={{ color: GRAY[400] }}
-            >
-              <FiX className="h-6 w-6" />
-            </button>
-          </div>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: GRAY[200] }}>
+          <h2 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>Kết Quả Tiêm</h2>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-gray-100 active:scale-95"
+            style={{ color: GRAY[600] }}
+          >
+            <FiX className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="px-6 py-6 space-y-8">
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          {/* Student Details */}
-          {vaccinationResult && (
-            <div className="p-6 bg-gray-100 rounded-xl">
-              <h4 className="text-xl font-semibold text-gray-900 mb-4">Thông Tin Học Sinh</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-                <div className="text-sm text-gray-700 space-y-3">
-                  <p><strong>Tên:</strong> {vaccinationResult.studentName}</p>
-                  <p><strong>Lớp:</strong> {studentData?.className}</p>
-                  <p><strong>Loại Vắc Xin:</strong> {vaccinationResult.vaccinationTypeName}</p>
-                  <p><strong>Liều:</strong> {vaccinationResult.doseNumber}</p>
-                  <p><strong>Ngày Tiêm:</strong> {new Date(vaccinationResult.administeredDate).toLocaleString()}</p>
-                  <p><strong>Tiêm Bởi:</strong> {vaccinationResult.administeredBy}</p>
-                </div>
-
-                <div className="text-sm text-gray-700 space-y-3">
-                  <p><strong>Số Lô:</strong> {vaccinationResult.batchNumber}</p>
-                  <p><strong>Triệu Chứng:</strong> {vaccinationResult.symptoms || "Không Có"}</p>
-                  <p><strong>Trạng Thái Tiêm:</strong>
-                    <StatusBadge status={vaccinationResult.vaccinationStatus} />
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Loading Spinner */}
+        {/* Body */}
+        <div className="p-6 space-y-6">
           {loading && (
             <div className="flex justify-center py-4">
               <Loading type="spinner" size="large" color="primary" />
             </div>
           )}
 
-          {/* Alert Modal */}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {vaccinationResult && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Tên</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.studentName}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Lớp</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{studentData?.className}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Loại Vắc Xin</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.vaccinationTypeName}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Liều</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.doseNumber}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Ngày Tiêm</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{new Date(vaccinationResult.administeredDate).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Tiêm Bởi</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.administeredBy}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-sm">
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Số Lô</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.batchNumber}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Triệu Chứng</p>
+                  <p style={{ color: TEXT.PRIMARY }}>{vaccinationResult.symptoms || "Không có"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: TEXT.SECONDARY }}>Trạng Thái Tiêm</p>
+                  <p className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium text-white" style={{ backgroundColor: PRIMARY[600] }}>
+                    {vaccinationResult.vaccinationStatus}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <AlertModal
             isOpen={alertOpen}
             onClose={handleAlertClose}

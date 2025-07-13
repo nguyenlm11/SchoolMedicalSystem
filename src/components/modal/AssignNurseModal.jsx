@@ -11,7 +11,6 @@ const AssignNurseModal = ({
   onClose,
   sessionId,
   preselectedClassId = null,
-  onNurseAssigned,
 }) => {
   /* ---------------- STATE ---------------- */
   const [loading, setLoading] = useState(false);
@@ -137,14 +136,16 @@ const AssignNurseModal = ({
     }
   };
 
-  // UseEffect để load lại trang sau khi thông báo thành công được đóng
-  useEffect(() => {
-    if (alertModalOpen && alertType === "success") {
-      setTimeout(() => {
-        window.location.reload();
-      }, 2500);
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleAlertOk = () => {
+    setAlertOpen(false);
+    if (alertType === "success") {
+      window.location.reload();
     }
-  }, [alertModalOpen, alertType]);
+  };
   
 
   if (!isOpen) return null;
@@ -181,7 +182,7 @@ const AssignNurseModal = ({
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-gray-100 active:scale-95"
             style={{ color: GRAY[600] }}
           >
@@ -280,7 +281,7 @@ const AssignNurseModal = ({
       {/* ALERT */}
       <AlertModal
         isOpen={alertOpen}
-        onClose={() => setAlertOpen(false)}
+        onClose={handleAlertOk}
         title="Thông báo"
         message={alertMsg}
         type={alertType}
