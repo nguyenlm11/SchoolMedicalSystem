@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiRefreshCw, FiEye, FiMoreVertical, FiCalendar, FiUser, FiTrendingUp, FiPhone, FiTrash2, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
+import { FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiRefreshCw, FiEye, FiMoreVertical, FiCalendar, FiUser, FiTrendingUp, FiPhone, FiTrash2, FiChevronLeft, FiChevronRight, FiPackage, FiPlus } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useNavigate } from "react-router-dom";
 import medicationRequestApi from "../../api/medicationRequestApi";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
+import { useAuth } from "../../utils/AuthContext";
 
-const MedicationRequestManagement = () => {
+const ParentMedicationRequestList = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [medicationRequests, setMedicationRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [openActionId, setOpenActionId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
-    const [filterPriority, setFilterPriority] = useState("all");
-    const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
@@ -35,6 +35,12 @@ const MedicationRequestManagement = () => {
 
     // Fetch data from API
     const fetchMedicationRequests = async (params = {}) => {
+        if (!user?.id) {
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
+            return;
+        }
+
         setLoading(true);
         try {
             const apiParams = {
@@ -42,8 +48,9 @@ const MedicationRequestManagement = () => {
                 pageSize: params.pageSize || pagination.pageSize,
             };
             if (filterStatus !== "all") apiParams.status = filterStatus;
-            if (filterPriority !== "all") apiParams.priority = filterPriority;
-            const response = await medicationRequestApi.getMedicationRequests(apiParams);
+            if (debouncedSearchTerm) apiParams.searchTerm = debouncedSearchTerm;
+
+            const response = await medicationRequestApi.getParentMedicationRequests(user.id, apiParams);
             if (response.success) {
                 setMedicationRequests(response.data || []);
                 setPagination({
@@ -55,10 +62,14 @@ const MedicationRequestManagement = () => {
             } else {
                 setMedicationRequests([]);
                 setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
+                setShowAlert(true);
+                setAlertInfo({ type: "error", message: response.message || "Không thể tải danh sách yêu cầu thuốc" });
             }
         } catch (err) {
             setMedicationRequests([]);
             setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Có lỗi xảy ra khi tải danh sách yêu cầu thuốc" });
         } finally {
             setLoading(false);
         }
@@ -70,7 +81,7 @@ const MedicationRequestManagement = () => {
 
     useEffect(() => {
         fetchMedicationRequests();
-    }, [filterStatus, filterPriority, debouncedSearchTerm]);
+    }, [filterStatus, debouncedSearchTerm]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -80,9 +91,7 @@ const MedicationRequestManagement = () => {
     }, [searchTerm]);
 
     const handleRefresh = () => {
-        setDateRange({ fromDate: "", toDate: "" });
         setFilterStatus("all");
-        setFilterPriority("all");
         setSearchTerm("");
         fetchMedicationRequests();
     };
@@ -103,6 +112,7 @@ const MedicationRequestManagement = () => {
         const activeCount = medicationRequests.filter(r => r.status === 'Active').length;
         const completedCount = medicationRequests.filter(r => r.status === 'Completed').length;
         const discontinuedCount = medicationRequests.filter(r => r.status === 'Discontinued').length;
+
         return {
             pending: pendingCount,
             approved: approvedCount,
@@ -125,28 +135,15 @@ const MedicationRequestManagement = () => {
         { value: 'Discontinued', label: 'Đã ngừng' }
     ];
 
-    const priorityOptions = [
-        { value: "all", label: "Tất cả độ ưu tiên" },
-        { value: 'Low', label: 'Thấp' },
-        { value: 'Normal', label: 'Bình thường' },
-        { value: 'High', label: 'Cao' },
-        { value: 'Critical', label: 'Khẩn cấp' }
-    ];
-
     const handleDeleteRequest = async () => {
         try {
-            const response = await medicationRequestApi.deleteMedicationRequest(selectedRequestId);
+            // Gọi API xóa yêu cầu thuốc (nếu có)
             setShowDeleteModal(false);
             setSelectedRequestId(null);
 
-            if (response.success) {
-                setShowAlert(true);
-                setAlertInfo({ type: "success", message: "Xóa yêu cầu thuốc thành công" });
-                fetchMedicationRequests();
-            } else {
-                setShowAlert(true);
-                setAlertInfo({ type: "error", message: response.message || "Không thể xóa yêu cầu thuốc" });
-            }
+            setShowAlert(true);
+            setAlertInfo({ type: "success", message: "Xóa yêu cầu thuốc thành công" });
+            fetchMedicationRequests();
         } catch (err) {
             setShowDeleteModal(false);
             setSelectedRequestId(null);
@@ -159,14 +156,6 @@ const MedicationRequestManagement = () => {
         setSelectedRequestId(requestId);
         setShowDeleteModal(true);
         setOpenActionId(null);
-    };
-
-    const handleDateChange = (e) => {
-        const { name, value } = e.target;
-        setDateRange(prev => ({
-            ...prev,
-            [name]: value
-        }));
     };
 
     const getStatusBadge = (status) => {
@@ -274,12 +263,20 @@ const MedicationRequestManagement = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Quản lý yêu cầu thuốc
+                                Lịch sử yêu cầu thuốc
                             </h1>
                             <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Quản lý và duyệt các yêu cầu thuốc từ phụ huynh
+                                Theo dõi các yêu cầu thuốc của con bạn tại trường
                             </p>
                         </div>
+                        <button
+                            onClick={() => navigate('/parent/medication/request')}
+                            className="px-6 py-3 rounded-xl flex items-center font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                            style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: TEXT.INVERSE }}
+                        >
+                            <FiPlus className="mr-2 h-5 w-5" />
+                            Gửi yêu cầu mới
+                        </button>
                     </div>
                 </div>
 
@@ -334,23 +331,23 @@ const MedicationRequestManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${ERROR[500]} 0%, ${ERROR[600]} 100%)`, borderColor: ERROR[200] }}
+                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Từ chối
+                                        Đang hoạt động
                                     </p>
                                     <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.rejected}
+                                        {stats.active}
                                     </p>
                                 </div>
                                 <div
                                     className="h-16 w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiAlertTriangle className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiTrendingUp className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
@@ -358,7 +355,7 @@ const MedicationRequestManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}
+                        style={{ background: `linear-gradient(135deg, ${INFO[500]} 0%, ${INFO[600]} 100%)`, borderColor: INFO[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
@@ -374,7 +371,7 @@ const MedicationRequestManagement = () => {
                                     className="h-16 w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiTrendingUp className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiPackage className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
@@ -389,7 +386,7 @@ const MedicationRequestManagement = () => {
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo mã yêu cầu, tên học sinh, phụ huynh..."
+                                        placeholder="Tìm kiếm theo mã yêu cầu, tên học sinh..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                         value={searchTerm}
@@ -432,9 +429,6 @@ const MedicationRequestManagement = () => {
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
                                         HỌC SINH
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
-                                        PHỤ HUYNH
-                                    </th>
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
                                         NGÀY GỬI
                                     </th>
@@ -444,6 +438,7 @@ const MedicationRequestManagement = () => {
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         ĐỘ ƯU TIÊN
                                     </th>
+
                                     <th className="py-4 px-6 text-center text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '80px' }}>
                                         THAO TÁC
                                     </th>
@@ -457,7 +452,7 @@ const MedicationRequestManagement = () => {
                                         style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                     >
                                         <td className="py-4 px-6 text-base font-medium whitespace-nowrap" style={{ width: '160px', color: TEXT.PRIMARY }}>
-                                            {request.code}
+                                            {request.code || 'N/A'}
                                         </td>
                                         <td className="py-4 px-6 text-base" style={{ width: '200px' }}>
                                             <div className="flex flex-col">
@@ -466,13 +461,6 @@ const MedicationRequestManagement = () => {
                                                 </span>
                                                 <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
                                                     {request.studentCode}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="py-4 px-6 text-base" style={{ width: '150px' }}>
-                                            <div className="flex items-center">
-                                                <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                    {request.parentName}
                                                 </span>
                                             </div>
                                         </td>
@@ -494,6 +482,7 @@ const MedicationRequestManagement = () => {
                                                 {getPriorityBadge(request.priorityDisplayName)}
                                             </span>
                                         </td>
+
                                         <td className="py-4 px-6 text-center text-base" style={{ width: '80px' }}>
                                             <div style={{ position: 'relative' }} className="dropdown-container">
                                                 <button
@@ -512,19 +501,21 @@ const MedicationRequestManagement = () => {
                                                         <button
                                                             className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                             style={{ color: PRIMARY[600] }}
-                                                            onClick={() => navigate(`/schoolnurse/medication-requests/${request.id}`)}
+                                                            onClick={() => navigate(`/parent/medication/history/${request.id}`)}
                                                         >
                                                             <FiEye className="w-4 h-4 flex-shrink-0" />
                                                             <span>Xem chi tiết</span>
                                                         </button>
-                                                        <button
-                                                            className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                            style={{ color: ERROR[600] }}
-                                                            onClick={() => handleDeleteClick(request.id)}
-                                                        >
-                                                            <FiTrash2 className="w-4 h-4 flex-shrink-0" />
-                                                            <span>Xóa yêu cầu</span>
-                                                        </button>
+                                                        {request.status === 'PendingApproval' && (
+                                                            <button
+                                                                className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                style={{ color: ERROR[600] }}
+                                                                onClick={() => handleDeleteClick(request.id)}
+                                                            >
+                                                                <FiTrash2 className="w-4 h-4 flex-shrink-0" />
+                                                                <span>Hủy yêu cầu</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -612,21 +603,21 @@ const MedicationRequestManagement = () => {
                         <div className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
                             <FiPackage className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
                             <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                Không có yêu cầu thuốc nào
+                                Chưa có yêu cầu thuốc nào
                             </h3>
                             <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
-                                {searchTerm || filterStatus !== "all" || filterPriority !== "all"
+                                {searchTerm || filterStatus !== "all"
                                     ? "Không tìm thấy kết quả phù hợp với bộ lọc."
-                                    : "Chưa có yêu cầu thuốc nào được gửi."}
+                                    : "Bạn chưa gửi yêu cầu thuốc nào cho con."}
                             </p>
-                            {!searchTerm && filterStatus === "all" && filterPriority === "all" && (
+                            {!searchTerm && filterStatus === "all" && (
                                 <button
                                     className="inline-flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                                    onClick={() => navigate('/schoolnurse/medication-requests/create')}
+                                    onClick={() => navigate('/parent/medication/request')}
                                 >
                                     <FiPlus className="mr-2 h-4 w-4" />
-                                    Tạo yêu cầu đầu tiên
+                                    Gửi yêu cầu đầu tiên
                                 </button>
                             )}
                         </div>
@@ -636,10 +627,10 @@ const MedicationRequestManagement = () => {
 
             <ConfirmModal
                 isOpen={showDeleteModal}
-                title="Xóa yêu cầu thuốc"
-                message="Bạn có chắc chắn muốn xóa yêu cầu thuốc này? Hành động này không thể hoàn tác."
-                confirmText="Xóa"
-                cancelText="Hủy"
+                title="Hủy yêu cầu thuốc"
+                message="Bạn có chắc chắn muốn hủy yêu cầu thuốc này? Hành động này không thể hoàn tác."
+                confirmText="Hủy yêu cầu"
+                cancelText="Đóng"
                 onConfirm={handleDeleteRequest}
                 onClose={() => { setShowDeleteModal(false); setSelectedRequestId(null) }}
             />
@@ -655,4 +646,4 @@ const MedicationRequestManagement = () => {
     );
 };
 
-export default MedicationRequestManagement;
+export default ParentMedicationRequestList;
