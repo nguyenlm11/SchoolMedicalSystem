@@ -157,9 +157,9 @@ const HealthEventDetail = () => {
                 className="p-6 border rounded-lg"
                 style={{ backgroundColor: isMedication ? PRIMARY[25] : WARNING[25], borderColor: BORDER.DEFAULT }}
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-3">
-                        <div className="flex items-center space-x-3 mb-4">
+                        <div className="flex items-center space-x-3 mb-6">
                             <div className="flex items-center space-x-2">
                                 <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
                                     {item.medicationName}
@@ -174,18 +174,48 @@ const HealthEventDetail = () => {
                         </div>
                     </div>
 
-                    {renderInfoItem("Số lượng", `${item.medicationQuantity || 0}`, null, true, true)}
+                    <div className="p-6 rounded-lg transition-all duration-200 hover:shadow-md h-20 flex items-center justify-center"
+                        style={{ backgroundColor: 'white', border: `1px solid ${PRIMARY[200]}` }}>
+                        <div className="text-base font-medium text-center" style={{ color: TEXT.PRIMARY }}>
+                            <span className="font-bold" style={{ color: TEXT.SECONDARY }}>Số lượng: </span>
+                            {item.medicationQuantity || 0}
+                        </div>
+                    </div>
 
                     {isMedication && (
                         <>
-                            {renderInfoItem("Liều/ngày", `${item.dose || 0}`, null, true, true)}
-                            {renderInfoItem("Số thuốc mỗi lần", `${item.medicalPerOnce || 0}`, null, true, true)}
+                            <div className="p-6 rounded-lg transition-all duration-200 hover:shadow-md h-20 flex items-center justify-center"
+                                style={{ backgroundColor: 'white', border: `1px solid ${PRIMARY[200]}` }}>
+                                <div className="text-base font-medium text-center" style={{ color: TEXT.PRIMARY }}>
+                                    <span className="font-bold" style={{ color: TEXT.SECONDARY }}>Liều/ngày: </span>
+                                    {item.dose || 0}
+                                </div>
+                            </div>
+
+                            <div className="p-6 rounded-lg transition-all duration-200 hover:shadow-md h-20 flex items-center justify-center"
+                                style={{ backgroundColor: 'white', border: `1px solid ${PRIMARY[200]}` }}>
+                                <div className="text-base font-medium text-center" style={{ color: TEXT.PRIMARY }}>
+                                    <span className="font-bold" style={{ color: TEXT.SECONDARY }}>Số thuốc mỗi lần: </span>
+                                    {item.medicalPerOnce || 0}
+                                </div>
+                            </div>
                         </>
                     )}
 
                     {item.medicationDosage && (
                         <div className="lg:col-span-3">
-                            {renderInfoItem("Hướng dẫn sử dụng", item.medicationDosage)}
+                            <div className="flex flex-col space-y-2">
+                                <label className="text-sm font-medium flex items-center space-x-2" style={{ color: TEXT.SECONDARY }}>
+                                    <FiFileText className="h-4 w-4" style={{ color: PRIMARY[400] }} />
+                                    <span>Hướng dẫn sử dụng</span>
+                                </label>
+                                <div className="p-4 rounded-lg flex items-center space-x-3 transition-all duration-200 hover:shadow-md"
+                                    style={{ backgroundColor: 'white', border: `1px solid ${PRIMARY[200]}` }}>
+                                    <div className="text-base" style={{ color: TEXT.PRIMARY }}>
+                                        {item.medicationDosage}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -205,13 +235,13 @@ const HealthEventDetail = () => {
 
         const matches = {
             temperature: status.match(/Nhiệt độ: ([\d.]+)°C/),
-            bloodPressure: status.match(/Huyết áp: ([\d/]+) mmHg/),
+            bloodPressure: status.match(/Huyết áp: ([\d/]+)mmHg/),
             breathing: status.match(/Nhịp thở: ([\d]+)\/phút/),
             heartRate: status.match(/Nhịp tim: ([\d]+)\/phút/)
         };
 
         result.temperature = matches.temperature ? matches.temperature[1] + '°C' : 'N/A';
-        result.bloodPressure = matches.bloodPressure ? matches.bloodPressure[1] + ' mmHg' : 'N/A';
+        result.bloodPressure = matches.bloodPressure ? matches.bloodPressure[1] + 'mmHg' : 'N/A';
         result.breathing = matches.breathing ? matches.breathing[1] + '/phút' : 'N/A';
         result.heartRate = matches.heartRate ? matches.heartRate[1] + '/phút' : 'N/A';
 
@@ -358,16 +388,6 @@ const HealthEventDetail = () => {
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-                                            {healthEvent.relatedMedicalConditionName && (
-                                                <div className="text-center space-y-3">
-                                                    <label className="text-lg font-semibold block" style={{ color: TEXT.SECONDARY }}>
-                                                        Tình trạng y tế liên quan
-                                                    </label>
-                                                    <div className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                        {healthEvent.relatedMedicalConditionName}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -481,6 +501,21 @@ const HealthEventDetail = () => {
                                                     </div>
                                                 ));
                                             })()}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {healthEvent.relatedMedicalConditionName && (
+                                    <div className="mt-6">
+                                        <label className="text-sm font-medium flex items-center space-x-2 mb-2" style={{ color: TEXT.SECONDARY }}>
+                                            <FiActivity className="h-4 w-4" style={{ color: PRIMARY[400] }} />
+                                            <span>Tình trạng y tế liên quan</span>
+                                        </label>
+                                        <div className="p-4 rounded-lg flex items-center space-x-3 transition-all duration-200 hover:shadow-md"
+                                            style={{ backgroundColor: 'white', border: `1px solid ${PRIMARY[200]}` }}>
+                                            <div className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                {healthEvent.relatedMedicalConditionName}
+                                            </div>
                                         </div>
                                     </div>
                                 )}

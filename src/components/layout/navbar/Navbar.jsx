@@ -149,7 +149,6 @@ const Navbar = () => {
                     links: [
                         { to: "/parent/medication/request", label: "Gửi thuốc", desc: "Yêu cầu thuốc cho con em" },
                         { to: "/parent/medication/history", label: "Lịch sử gửi thuốc", desc: "Xem lịch sử đã gửi" },
-                        { to: "/parent/dashboard", label: "Bảng điều khiển", desc: "Tổng quan thông tin" },
                     ],
                 },
                 {
