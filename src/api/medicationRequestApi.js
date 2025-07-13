@@ -90,6 +90,56 @@ const medicationRequestApi = {
         }
     },
 
+    // Hàm cho Student - chỉ xem medication requests của chính mình
+    getStudentMedicationRequests: async (studentId, params = {}) => {
+        try {
+            if (!studentId) {
+                return {
+                    success: false,
+                    message: "Student ID là bắt buộc",
+                    data: [],
+                    errors: ['Student ID không được để trống']
+                };
+            }
+
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                searchTerm = '',
+                orderBy = '',
+                status = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+            queryParams.append('studentId', studentId); // Luôn thêm studentId để đảm bảo chỉ xem requests của student này
+
+            if (searchTerm) {
+                queryParams.append('searchTerm', searchTerm);
+            }
+            if (orderBy) {
+                queryParams.append('orderBy', orderBy);
+            }
+            if (status) {
+                queryParams.append('status', status);
+            }
+
+            const response = await apiClient.get(`/student-medications/requests?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy danh sách yêu cầu thuốc của học sinh",
+                data: [],
+                errors: []
+            };
+        }
+    },
+
     getMedicationRequestDetail: async (id) => {
         try {
             const response = await apiClient.get(`/student-medications/requests/${id}`);
