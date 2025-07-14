@@ -43,7 +43,7 @@ const healthProfileApi = {
         }
     },
 
-    addVaccinationRecord: async (medicalRecordId,vaccinationData) => {
+    addVaccinationRecord: async (medicalRecordId, vaccinationData) => {
         try {
             const response = await apiClient.post(`/VaccineRecord/${medicalRecordId}`, vaccinationData);
             return response.data;
@@ -52,6 +52,45 @@ const healthProfileApi = {
             return {
                 success: false,
                 message: error.response?.data?.message || 'Không thể thêm lịch sử tiêm chủng'
+            };
+        }
+    },
+
+    addPhysicalRecord: async (studentId, physicalRecordData) => {
+        try {
+            const response = await apiClient.post(`/medical-records/${studentId}/physical-record`, physicalRecordData);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding physical record:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể thêm chỉ số thể chất'
+            };
+        }
+    },
+
+    addHearingRecord: async (studentId, hearingRecordData) => {
+        try {
+            const response = await apiClient.post(`/medical-records/${studentId}/hearing-record`, hearingRecordData);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding hearing record:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể thêm bản ghi thính lực'
+            };
+        }
+    },
+
+    addVisionRecord: async (studentId, visionRecordData) => {
+        try {
+            const response = await apiClient.post(`/medical-records/${studentId}/vision-record`, visionRecordData);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding vision record:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể thêm bản ghi thị lực'
             };
         }
     }

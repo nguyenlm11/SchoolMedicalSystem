@@ -11,10 +11,6 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAllRecordsModalOpen, setIsAllRecordsModalOpen] = useState(false);
 
-    const handleVaccinationAdded = () => {
-        onVaccinationAdded && onVaccinationAdded();
-    };
-
     const groupedVaccines = records.reduce((acc, record) => {
         const key = `${record.vaccinationTypeId}-${record.vaccinationTypeName}`;
         if (!acc[key]) {
@@ -52,13 +48,15 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
                         Lịch sử tiêm chủng
                     </h2>
                     <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => { setIsAllRecordsModalOpen(true) }}
-                            className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
-                            style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                        >
-                            <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
-                        </button>
+                        {records && records.length > 1 && (
+                            <button
+                                onClick={() => { setIsAllRecordsModalOpen(true) }}
+                                className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                                style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                            >
+                                <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
+                            </button>
+                        )}
                         {canAddVaccination && (
                             <button
                                 onClick={() => { setIsModalOpen(true) }}
@@ -110,7 +108,6 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {vaccineList.map((vaccine, index) => {
                                     const latestDate = new Date(vaccine.latestDate).toLocaleDateString('vi-VN');
-
                                     return (
                                         <div key={`${vaccine.vaccinationTypeId}-${index}`}
                                             className="rounded-xl border transition-all duration-200 hover:shadow-md"
@@ -152,7 +149,7 @@ const VaccinationRecords = ({ records = [], onVaccinationAdded, medicalRecordId 
             <AddVaccinationModal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false) }}
-                onSave={handleVaccinationAdded}
+                onSave={() => onVaccinationAdded()}
                 medicalRecordId={medicalRecordId}
             />
 

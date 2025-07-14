@@ -1,66 +1,79 @@
 import React, { useState } from 'react';
-import { PRIMARY, TEXT, GRAY } from '../../constants/colors';
-import { FiBarChart2, FiActivity, FiFileText, FiEye } from 'react-icons/fi';
+import { PRIMARY, TEXT, GRAY, COMMON } from '../../constants/colors';
+import { FiBarChart2, FiActivity, FiFileText, FiEye, FiPlus } from 'react-icons/fi';
+import { useAuth } from '../../utils/AuthContext';
 import ViewAllPhysicalRecordsModal from '../modal/ViewAllPhysicalRecordsModal';
+import AddPhysicalRecordModal from '../modal/AddPhysicalRecordModal';
 
 const BMIStatus = ({ bmi }) => {
-    let status = '';
-    let color = '';
-    if (bmi < 18.5) {
-        status = 'Thiếu cân';
-        color = 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    } else if (bmi >= 18.5 && bmi < 25) {
-        status = 'Bình thường';
-        color = 'text-green-600 bg-green-50 border-green-200';
-    } else if (bmi >= 25 && bmi < 30) {
-        status = 'Thừa cân';
-        color = 'text-orange-600 bg-orange-50 border-orange-200';
-    } else {
-        status = 'Béo phì';
-        color = 'text-red-600 bg-red-50 border-red-200';
-    }
+    const getBMIInfo = (bmi) => {
+        if (bmi < 18.5) return { status: 'Thiếu cân', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' };
+        if (bmi < 25) return { status: 'Bình thường', color: 'text-green-600 bg-green-50 border-green-200' };
+        if (bmi < 30) return { status: 'Thừa cân', color: 'text-orange-600 bg-orange-50 border-orange-200' };
+        return { status: 'Béo phì', color: 'text-red-600 bg-red-50 border-red-200' };
+    };
+    const { status, color } = getBMIInfo(bmi);
+
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>
-            {status}
-        </span>
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>{status}</span>
     );
 };
 
-const PhysicalRecords = ({ records = [] }) => {
+const PhysicalRecords = ({ records = [], onRecordAdded, studentId }) => {
+    const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const sortedRecords = Array.isArray(records) ? [...records].sort((a, b) =>
-        new Date(b.checkDate) - new Date(a.checkDate)
-    ) : [];
-
+    const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
+    const canAddRecord = user?.role === 'parent';
+    const sortedRecords = Array.isArray(records) ? [...records].sort((a, b) => new Date(b.checkDate) - new Date(a.checkDate)) : [];
     const latestRecord = sortedRecords[0];
+    const hasMultipleRecords = sortedRecords.length > 1;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold flex items-center" style={{ color: TEXT.PRIMARY }}>
-                    <span className="flex items-center justify-center rounded-full w-12 h-12 mr-4 text-white shadow-lg"
-                        style={{ background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)` }}>
+                    <span
+                        className="flex items-center justify-center rounded-full w-12 h-12 mr-4 text-white shadow-lg"
+                        style={{ background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)` }}
+                    >
                         <FiBarChart2 className="h-6 w-6" />
                     </span>
                     Chỉ số thể chất
                 </h2>
-                {sortedRecords.length > 1 && (
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
-                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                    >
-                        <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
-                    </button>
-                )}
+                <div className="flex items-center space-x-2">
+                    {hasMultipleRecords && sortedRecords.length > 1 && (
+                        <button
+                            onClick={() => setIsViewAllModalOpen(true)}
+                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                        >
+                            <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
+                        </button>
+                    )}
+                    {canAddRecord && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                            style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                        >
+                            <FiPlus className="h-4 w-4 mr-1" /> Cập nhật
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {!records || sortedRecords.length === 0 ? (
-                <div className="bg-white rounded-2xl p-6 border shadow-sm text-center" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
+            {!latestRecord ? (
+                <div
+                    className="bg-white rounded-2xl p-6 border shadow-sm text-center"
+                    style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}
+                >
                     <p className="text-lg" style={{ color: TEXT.SECONDARY }}>Chưa có dữ liệu chỉ số thể chất</p>
                 </div>
-            ) : latestRecord && (
-                <div className="bg-white rounded-2xl p-6 border shadow-sm" style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}>
+            ) : (
+                <div
+                    className="bg-white rounded-2xl p-6 border shadow-sm"
+                    style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}
+                >
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold mb-4" style={{ color: TEXT.PRIMARY }}>
                             Chỉ số mới nhất
@@ -103,16 +116,25 @@ const PhysicalRecords = ({ records = [] }) => {
                                     <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ghi chú</p>
                                     <FiFileText className="h-5 w-5" style={{ color: PRIMARY[500] }} />
                                 </div>
-                                <p className="mt-2 text-base font-medium" style={{ color: TEXT.PRIMARY }}>{latestRecord.comments || "Không có ghi chú"}</p>
+                                <p className="mt-2 text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                    {latestRecord.comments || "Không có ghi chú"}
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <ViewAllPhysicalRecordsModal
+            <AddPhysicalRecordModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
+                onSave={() => onRecordAdded?.()}
+                studentId={studentId}
+            />
+
+            <ViewAllPhysicalRecordsModal
+                isOpen={isViewAllModalOpen}
+                onClose={() => setIsViewAllModalOpen(false)}
                 records={sortedRecords}
             />
         </div>

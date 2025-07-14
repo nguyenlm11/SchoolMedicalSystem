@@ -32,8 +32,7 @@ const SeverityBadge = ({ severity, severityDisplay }) => {
     }
     return (
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${color} ${bgColor}`}>
-            {icon}
-            {severityDisplay}
+            {icon} {severityDisplay}
         </span>
     );
 };
@@ -173,8 +172,8 @@ const MedicalConditions = ({ conditions = [], medicalRecordId, onConditionAdded 
     const getConditionsByType = (type) => {
         return conditions.filter(condition => condition.type === type);
     };
-
     const allTypes = ['ChronicDisease', 'Allergy', 'MedicalHistory'];
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -197,13 +196,15 @@ const MedicalConditions = ({ conditions = [], medicalRecordId, onConditionAdded 
                                     {getTypeTitle(type)}
                                 </h3>
                                 <div className="flex items-center space-x-2">
-                                    <button
-                                        onClick={() => handleViewAll(type)}
-                                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
-                                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                                    >
-                                        <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
-                                    </button>
+                                    {condition && (
+                                        <button
+                                            onClick={() => handleViewAll(type)}
+                                            className="flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:shadow-md"
+                                            style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                        >
+                                            <FiEye className="h-4 w-4 mr-1" /> Xem tất cả
+                                        </button>
+                                    )}
                                     {canAddCondition && (
                                         <button
                                             onClick={() => handleAddCondition(type)}
