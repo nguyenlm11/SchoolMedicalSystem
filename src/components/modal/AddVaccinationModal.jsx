@@ -20,6 +20,7 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
         vaccinationTypeName: '',
         doseNumber: 1,
         administeredDate: new Date().toISOString().split('T')[0],
+        administeredBy: '',
         symptoms: '',
         vaccinationStatus: 'Completed',
         noteAfterSession: ''
@@ -108,6 +109,7 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
             vaccinationTypeName: '',
             doseNumber: 1,
             administeredDate: new Date().toISOString().split('T')[0],
+            administeredBy: '',
             symptoms: '',
             vaccinationStatus: 'Completed',
             noteAfterSession: ''
@@ -150,6 +152,9 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
         if (!formData.vaccinationTypeId) {
             errors.vaccinationTypeId = "Loại vắc-xin không được để trống";
         }
+        if (!formData.administeredBy) {
+            errors.administeredBy = "Bác sĩ tiêm không được để trống";
+        }
         if (!formData.doseNumber || formData.doseNumber < 1) {
             errors.doseNumber = "Số mũi tiêm phải lớn hơn 0";
         }
@@ -174,7 +179,8 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
                 administeredDate: formData.administeredDate,
                 symptoms: formData.symptoms,
                 vaccinationStatus: formData.vaccinationStatus,
-                noteAfterSession: formData.noteAfterSession
+                noteAfterSession: formData.noteAfterSession,
+                administeredBy: formData.administeredBy
             };
             const response = await healthProfileApi.addVaccinationRecord(medicalRecordId, apiData);
             if (response.success) {
@@ -219,41 +225,64 @@ const AddVaccinationModal = ({ isOpen, onClose, onSave, initialData = {}, medica
 
                     <form onSubmit={handleSubmit} className="p-6">
                         <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                    Loại vắc-xin *
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        name="vaccinationTypeName"
-                                        value={formData.vaccinationTypeName}
-                                        onChange={handleVaccinationTypeInput}
-                                        onBlur={handleInputBlur}
-                                        disabled={loading || loadingTypes}
-                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                        style={{ borderColor: formErrors.vaccinationTypeId ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                        placeholder="Nhập tên loại vắc-xin"
-                                    />
-                                    {showSuggestions && filteredTypes.length > 0 && (
-                                        <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                            {filteredTypes.map(type => (
-                                                <div
-                                                    key={type.id}
-                                                    className="p-2 cursor-pointer hover:bg-gray-100"
-                                                    onClick={() => handleSelectVaccinationType(type)}
-                                                >
-                                                    {type.name}
-                                                </div>
-                                            ))}
-                                        </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                        Loại vắc-xin *
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            name="vaccinationTypeName"
+                                            value={formData.vaccinationTypeName}
+                                            onChange={handleVaccinationTypeInput}
+                                            onBlur={handleInputBlur}
+                                            disabled={loading || loadingTypes}
+                                            className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                            style={{ borderColor: formErrors.vaccinationTypeId ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
+                                            placeholder="Nhập tên loại vắc-xin"
+                                        />
+                                        {showSuggestions && filteredTypes.length > 0 && (
+                                            <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                {filteredTypes.map(type => (
+                                                    <div
+                                                        key={type.id}
+                                                        className="p-2 cursor-pointer hover:bg-gray-100"
+                                                        onClick={() => handleSelectVaccinationType(type)}
+                                                    >
+                                                        {type.name}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {formErrors.vaccinationTypeId && (
+                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                            {formErrors.vaccinationTypeId}
+                                        </p>
                                     )}
                                 </div>
-                                {formErrors.vaccinationTypeId && (
-                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                        {formErrors.vaccinationTypeId}
-                                    </p>
-                                )}
+
+                                <div>
+                                    <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
+                                        Bác sĩ tiêm
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="administeredBy"
+                                        value={formData.administeredBy}
+                                        onChange={handleInputChange}
+                                        disabled={loading}
+                                        className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
+                                        style={{ borderColor: formErrors.doctorName ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
+                                        placeholder="Nhập tên bác sĩ tiêm"
+                                    />
+                                    {formErrors.doctorName && (
+                                        <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
+                                            {formErrors.doctorName}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
