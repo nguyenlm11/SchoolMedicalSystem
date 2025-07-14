@@ -207,10 +207,13 @@ const VaccinationDetail = () => {
                 bgColor = PRIMARY[600];
                 text = "Đã tiêm";
                 break;
-            case "InProgress":
-            default:
-                bgColor = GRAY[400];
+            case "NotVaccinated":
+                bgColor = ERROR[600];
                 text = "Chưa tiêm";
+                break;
+            default:
+                bgColor = GRAY[500];
+                text = "Đang tiến hành";
                 break;
         }
 
