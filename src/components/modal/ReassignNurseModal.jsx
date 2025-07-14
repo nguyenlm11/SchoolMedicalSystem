@@ -11,7 +11,6 @@ const ReassignNurseModal = ({
   sessionId,
   onNurseReassigned,
 }) => {
-  /* ---------------- STATE ---------------- */
   const [loading, setLoading] = useState(false);
   const [nurseList, setNurseList] = useState([]);
   const [assignedClasses, setAssignedClasses] = useState([]);
@@ -127,7 +126,7 @@ const ReassignNurseModal = ({
 
   if (!isOpen) return null;
 
-  // Chọn tất cả hoặc bỏ chọn các lớp
+  // Handle Select All for classes
   const handleSelectAll = () => {
     if (selectedClasses.length === assignedClasses.length) {
       setSelectedClasses([]);
@@ -196,7 +195,7 @@ const ReassignNurseModal = ({
                 <option value="">Chọn nhân viên</option>
                 {nurseList.map((n) => (
                   <option key={n.nurseId} value={n.nurseId}>
-                    {n.nurseName} – {n.assignedClassName || "Chưa phân công"}
+                    {n.nurseName} – {n.assignedClassNames.join(", ") || "Chưa phân công"}
                   </option>
                 ))}
               </select>
@@ -230,17 +229,21 @@ const ReassignNurseModal = ({
               </div>
 
               <div className="max-h-40 overflow-y-auto border rounded-lg p-3 space-y-2">
-                {assignedClasses.map((assignment) => (
-                  <label key={assignment.classId} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      value={assignment.classId}
-                      checked={selectedClasses.includes(assignment.classId)}
-                      onChange={() => toggleClass(assignment.classId)}
-                    />
-                    <span>{assignment.className} – {assignment.nurseName}</span>
-                  </label>
-                ))}
+                {assignedClasses.length === 0 ? (
+                  <p className="text-gray-500 text-sm">Không có lớp nào.</p>
+                ) : (
+                  assignedClasses.map((assignment) => (
+                    <label key={assignment.classId} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        value={assignment.classId}
+                        checked={selectedClasses.includes(assignment.classId)}
+                        onChange={() => toggleClass(assignment.classId)}
+                      />
+                      <span>{assignment.className} – {assignment.nurseName}</span>
+                    </label>
+                  ))
+                )}
               </div>
             </div>
 

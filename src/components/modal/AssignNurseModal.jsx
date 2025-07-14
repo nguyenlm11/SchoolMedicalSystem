@@ -210,7 +210,7 @@ const AssignNurseModal = ({
                 <option value="">Chọn nhân viên</option>
                 {nurseList.map((n) => (
                   <option key={n.nurseId} value={n.nurseId}>
-                    {n.nurseName} – {n.assignedClassName || "Chưa phân công"}
+                    {n.nurseName} – {n.assignedClassNames.join(", ") || "Chưa phân công"}
                   </option>
                 ))}
               </select>
