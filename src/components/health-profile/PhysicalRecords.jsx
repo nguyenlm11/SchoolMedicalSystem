@@ -13,7 +13,6 @@ const BMIStatus = ({ bmi }) => {
         return { status: 'Béo phì', color: 'text-red-600 bg-red-50 border-red-200' };
     };
     const { status, color } = getBMIInfo(bmi);
-
     return (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${color}`}>{status}</span>
     );

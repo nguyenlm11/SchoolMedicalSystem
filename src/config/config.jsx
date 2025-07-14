@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+export const API_BASE_URL = 'https://schoolmedicalsystem.ddns.net/api';
+
 const apiClient = axios.create({
-  baseURL: 'https://schoolmedicalsystem.ddns.net/api',
+  baseURL: API_BASE_URL,
   timeout: 300000, // Tăng timeout mặc định lên 5 phút
   headers: {
     'Accept': '*/*'
