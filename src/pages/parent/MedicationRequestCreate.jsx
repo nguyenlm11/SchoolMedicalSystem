@@ -19,7 +19,7 @@ const PRIORITY_OPTIONS = [
     { value: 'Low', label: 'Thấp' },
     { value: 'Normal', label: 'Bình thường' },
     { value: 'High', label: 'Cao' },
-    { value: 'Critical', label: 'Rất quan trọng' }
+    { value: 'Critical', label: 'Khẩn cấp' }
 ];
 
 const MedicationRequestCreate = () => {
@@ -140,11 +140,11 @@ const MedicationRequestCreate = () => {
         if (!medication) return false;
         return (
             medication.medicationName.trim() !== '' &&
-            medication.dosage > 0 &&
+            medication.dosage.trim() !== '' &&
             medication.frequency > 0 &&
             medication.expiryDate !== '' &&
             medication.instructions !== '' &&
-            medication.quantitySent > 0 &&
+            medication.quantitySent.trim() !== '' &&
             medication.timesOfDay.length > 0
         );
     };
@@ -243,8 +243,8 @@ const MedicationRequestCreate = () => {
             if (!medication.medicationName.trim()) {
                 newErrors[`medications.${index}.medicationName`] = 'Vui lòng nhập tên thuốc';
             }
-            if (medication.dosage <= 0) {
-                newErrors[`medications.${index}.dosage`] = 'Vui lòng nhập liều lượng lớn hơn 0';
+            if (medication.dosage.trim() === '') {
+                newErrors[`medications.${index}.dosage`] = 'Vui lòng nhập liều lượng';
             }
             if (medication.frequency <= 0) {
                 newErrors[`medications.${index}.frequency`] = 'Vui lòng nhập tần suất sử dụng lớn hơn 0';
@@ -255,10 +255,14 @@ const MedicationRequestCreate = () => {
             if (!medication.instructions.trim()) {
                 newErrors[`medications.${index}.instructions`] = 'Vui lòng nhập hướng dẫn sử dụng';
             }
-            if (!medication.quantitySent || medication.quantitySent < 1) {
+            if (medication.quantitySent.trim() === '') {
+                newErrors[`medications.${index}.quantitySent`] = 'Vui lòng nhập số lượng';
+            }
+            if (medication.quantitySent.trim() !== '' && parseInt(medication.quantitySent.trim()) < 1) {
                 newErrors[`medications.${index}.quantitySent`] = 'Số lượng phải lớn hơn 0';
             }
-            if (medication.dosage * medication.frequency > medication.quantitySent) {
+            if (medication.dosage.trim() !== '' && medication.quantitySent.trim() !== '' && 
+                parseInt(medication.dosage.trim()) * parseInt(medication.frequency) > parseInt(medication.quantitySent.trim())) {
                 newErrors[`medications.${index}.quantitySent`] = 'Số lượng phải lớn hơn tổng liều lượng';
             }
             if (medication.timesOfDay.length === 0) {
@@ -535,26 +539,25 @@ const MedicationRequestCreate = () => {
 
                                 <div>
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Số lượng *
+                                        Liều lượng *
                                     </label>
                                     <input
-                                        type="number"
-                                        value={formData.medications[currentStep].quantitySent}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'quantitySent', parseInt(e.target.value))}
-                                        min="1"
-                                        placeholder="Nhập số lượng"
-                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.quantitySent`] ? 'border-red-500' : ''}`}
-                                        style={{ borderColor: errors[`medications.${currentStep}.quantitySent`] ? '#ef4444' : BORDER.DEFAULT }}
+                                        type="text"
+                                        value={formData.medications[currentStep].dosage}
+                                        onChange={(e) => handleMedicationChange(currentStep, 'dosage', e.target.value)}
+                                        placeholder="Ví dụ: 1 viên/lần"
+                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.dosage`] ? 'border-red-500' : ''}`}
+                                        style={{ borderColor: errors[`medications.${currentStep}.dosage`] ? '#ef4444' : BORDER.DEFAULT }}
                                         required
                                     />
-                                    {errors[`medications.${currentStep}.quantitySent`] && (
-                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.quantitySent`]}</p>
+                                    {errors[`medications.${currentStep}.dosage`] && (
+                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.dosage`]}</p>
                                     )}
                                 </div>
 
                                 <div>
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Tần suất sử dụng *
+                                        Tần suất sử dụng trong ngày *
                                     </label>
                                     <input
                                         type="number"
@@ -573,20 +576,19 @@ const MedicationRequestCreate = () => {
 
                                 <div>
                                     <label className="block text-base font-medium mb-3" style={{ color: TEXT.PRIMARY }}>
-                                        Liều lượng *
+                                        Số lượng gửi *
                                     </label>
                                     <input
-                                        type="number"
-                                        min="1"
-                                        value={formData.medications[currentStep].dosage}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'dosage', e.target.value)}
-                                        placeholder="Ví dụ: 1 viên/lần"
-                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.dosage`] ? 'border-red-500' : ''}`}
-                                        style={{ borderColor: errors[`medications.${currentStep}.dosage`] ? '#ef4444' : BORDER.DEFAULT }}
+                                        type="text"
+                                        value={formData.medications[currentStep].quantitySent}
+                                        onChange={(e) => handleMedicationChange(currentStep, 'quantitySent', e.target.value)}
+                                        placeholder="Nhập số lượng"
+                                        className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-base ${errors[`medications.${currentStep}.quantitySent`] ? 'border-red-500' : ''}`}
+                                        style={{ borderColor: errors[`medications.${currentStep}.quantitySent`] ? '#ef4444' : BORDER.DEFAULT }}
                                         required
                                     />
-                                    {errors[`medications.${currentStep}.dosage`] && (
-                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.dosage`]}</p>
+                                    {errors[`medications.${currentStep}.quantitySent`] && (
+                                        <p className="mt-2 text-sm text-red-500">{errors[`medications.${currentStep}.quantitySent`]}</p>
                                     )}
                                 </div>
 
