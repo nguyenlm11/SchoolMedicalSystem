@@ -345,7 +345,7 @@ const VaccinationDetail = () => {
                         {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
                         {userRole === 'schoolnurse' && isNurseAssigned() && (
                             <>
-                                {student.vaccinationStatus !== "Completed" ? (
+                                {student.vaccinationStatus === "InProgress" ? (
                                     <button
                                         onClick={() => handleMarkStudent('vaccinated')}
                                         className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"

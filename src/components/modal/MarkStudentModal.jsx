@@ -113,13 +113,13 @@ const MarkStudentModal = ({ isOpen, onClose, sessionId, studentId, onSuccess, st
         bgColor = PRIMARY[600];
         text = "Đã tiêm";
         break;
-      case "InProgress":
-        bgColor = WARNING[500];
-        text = "Chưa tiêm";
+      case "NotVaccinated":
+        bgColor = ERROR[500];
+        text = "Không tiêm";
         break;
       default:
-        bgColor = GRAY[400];
-        text = "Chưa tiêm";
+        bgColor = WARNING[500];
+        text = "Đang tiến hành";
         break;
     }
 
