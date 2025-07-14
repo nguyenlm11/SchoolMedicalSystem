@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FiUser, FiHeart, FiActivity, FiShield, FiArrowLeft } from "react-icons/fi";
-import { TEXT, BACKGROUND, PRIMARY, SUCCESS, INFO, COMMON } from "../../constants/colors";
+import { TEXT, BACKGROUND, PRIMARY, SUCCESS, INFO, COMMON, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import BasicInfo from "../../components/health-profile/BasicInfo";
 import PhysicalRecords from "../../components/health-profile/PhysicalRecords";
@@ -10,6 +10,20 @@ import MedicalConditions from "../../components/health-profile/MedicalConditions
 import VaccinationRecords from "../../components/health-profile/VaccinationRecords";
 import healthProfileApi from "../../api/healthProfileApi";
 import { useAuth } from "../../utils/AuthContext";
+
+const StatsCard = ({ icon: Icon, title, value, borderColor, bgColor, iconColor }) => (
+    <div className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor }}>
+        <div className="flex items-center">
+            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: bgColor }}>
+                <Icon className="h-5 w-5" style={{ color: iconColor }} />
+            </div>
+            <div>
+                <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>{title}</p>
+                <p className="text-lg font-bold" style={{ color: TEXT.PRIMARY }}>{value}</p>
+            </div>
+        </div>
+    </div>
+);
 
 const StudentHealthProfile = () => {
     const { id } = useParams();
@@ -40,12 +54,12 @@ const StudentHealthProfile = () => {
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải hồ sơ y tế..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải thông tin hồ sơ..." />
             </div>
         );
     }
@@ -105,7 +119,7 @@ const StudentHealthProfile = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="w-24"></div> {/* Spacer for centering */}
+                        <div className="w-24" />
                     </div>
                 </div>
             </section>
@@ -113,79 +127,43 @@ const StudentHealthProfile = () => {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
                 <div className="mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: PRIMARY[200] }}>
-                            <div className="flex items-center">
-                                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[50] }}>
-                                    <FiUser className="h-5 w-5" style={{ color: PRIMARY[600] }} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Học sinh</p>
-                                    <p className="text-lg font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {profileData.studentName || 'N/A'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: SUCCESS[200] }}>
-                            <div className="flex items-center">
-                                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: SUCCESS[50] }}>
-                                    <FiHeart className="h-5 w-5" style={{ color: SUCCESS[600] }} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tình trạng y tế</p>
-                                    <p className="text-lg font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {profileData.medicalConditions?.length || 0} tình trạng
-                                    </p>
-                                    <p className="text-xs" style={{ color: TEXT.SECONDARY }}>
-                                        {profileData.medicalConditions?.length > 0 ? 'Cần theo dõi' : 'Bình thường'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: INFO[200] }}>
-                            <div className="flex items-center">
-                                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: INFO[50] }}>
-                                    <FiActivity className="h-5 w-5" style={{ color: INFO[600] }} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Khám sức khỏe</p>
-                                    <p className="text-lg font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {profileData.physicalRecords?.length || 0} lần
-                                    </p>
-                                    <p className="text-xs" style={{ color: TEXT.SECONDARY }}>
-                                        Lần cuối: {profileData.physicalRecords?.length > 0 ?
-                                            new Date(profileData.physicalRecords[0].checkDate).toLocaleDateString('vi-VN') :
-                                            'Chưa có'
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition-all duration-200" style={{ borderColor: SUCCESS[200] }}>
-                            <div className="flex items-center">
-                                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: SUCCESS[50] }}>
-                                    <FiShield className="h-5 w-5" style={{ color: SUCCESS[600] }} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tiêm chủng</p>
-                                    <p className="text-lg font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {profileData.vaccinationRecords?.length || 0} mũi
-                                    </p>
-                                    <p className="text-xs" style={{ color: TEXT.SECONDARY }}>
-                                        {profileData.vaccinationRecords?.length > 0 ? 'Đã tiêm đủ' : 'Chưa tiêm'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        <StatsCard
+                            icon={FiUser}
+                            title="Học sinh"
+                            value={profileData.studentName || 'N/A'}
+                            borderColor={PRIMARY[200]}
+                            bgColor={PRIMARY[50]}
+                            iconColor={PRIMARY[600]}
+                        />
+                        <StatsCard
+                            icon={FiHeart}
+                            title="Tình trạng y tế"
+                            value={`${profileData.medicalConditions?.length || 0} tình trạng`}
+                            borderColor={SUCCESS[200]}
+                            bgColor={SUCCESS[50]}
+                            iconColor={SUCCESS[600]}
+                        />
+                        <StatsCard
+                            icon={FiActivity}
+                            title="Khám sức khỏe"
+                            value={`${profileData.physicalRecords?.length || 0} lần`}
+                            borderColor={INFO[200]}
+                            bgColor={INFO[50]}
+                            iconColor={INFO[600]}
+                        />
+                        <StatsCard
+                            icon={FiShield}
+                            title="Tiêm chủng"
+                            value={`${profileData.vaccinationRecords?.length || 0} mũi`}
+                            borderColor={SUCCESS[200]}
+                            bgColor={SUCCESS[50]}
+                            iconColor={SUCCESS[600]}
+                        />
                     </div>
                 </div>
 
-                {/* Content */}
                 <div className="space-y-6">
-                    <BasicInfo data={profileData} />
+                    <BasicInfo data={profileData} recordId={profileData.id} onUpdate={fetchProfileData} />
                     <PhysicalRecords records={profileData.physicalRecords} onRecordAdded={fetchProfileData} studentId={studentId} />
                     <VisionHearingRecords visionRecords={profileData.visionRecords} hearingRecords={profileData.hearingRecords} onRecordAdded={fetchProfileData} studentId={studentId} />
                     <MedicalConditions conditions={profileData.medicalConditions} medicalRecordId={profileData.id} onConditionAdded={fetchProfileData} />

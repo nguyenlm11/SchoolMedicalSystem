@@ -93,7 +93,19 @@ const healthProfileApi = {
                 message: error.response?.data?.message || 'Không thể thêm bản ghi thị lực'
             };
         }
+    },
+
+    updateBasicInfo: async (recordId, updateData) => {
+        try {
+            const response = await apiClient.put(`/medical-records/${recordId}`, updateData);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating basic info:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể cập nhật thông tin cơ bản'
+            };
+        }
     }
 };
-
 export default healthProfileApi;
