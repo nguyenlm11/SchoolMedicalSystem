@@ -40,7 +40,8 @@ const HealthProfileList = () => {
               avatar: student.fullName.charAt(0),
               age: calculatedAge,
               weight: student.weight ? `${student.weight}kg` : "Chưa cập nhật",
-              height: student.height ? `${student.height}cm` : "Chưa cập nhật"
+              height: student.height ? `${student.height}cm` : "Chưa cập nhật",
+              bloodType: student.bloodType == "Unknown" ? "Chưa cập nhật" : student.bloodType
             };
           });
           setStudentProfiles(transformedData);
@@ -212,11 +213,17 @@ const HealthProfileList = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
+                  <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
                       <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Tuổi</div>
                       <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.age}</div>
                     </div>
+                    <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
+                      <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Nhóm máu</div>
+                      <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.bloodType}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
                       <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Cân nặng</div>
                       <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.weight}</div>
