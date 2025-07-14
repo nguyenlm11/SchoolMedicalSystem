@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiEye, FiEdit3, FiUser, FiCalendar, FiSearch } from "react-icons/fi";
+import { FiPlus, FiEye, FiCalendar, FiSearch } from "react-icons/fi";
 import { PRIMARY, SUCCESS, WARNING, ERROR, GRAY, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import vaccinationScheduleApi from "../../api/VaccinationScheduleApi";
@@ -20,41 +20,39 @@ const HealthProfileList = () => {
       try {
         setIsLoading(true);
         const response = await vaccinationScheduleApi.getParentStudents(user.id, {
-          pageSize: 100, // Tạm thời lấy 100 học sinh, có thể thêm phân trang sau
+          pageSize: 100,
           searchTerm: ""
         });
-
         if (response.success) {
-          // Transform API data to match our component's data structure
-          const transformedData = response.data.map(student => ({
-            id: student.id,
-            name: student.fullName,
-            studentId: student.studentCode,
-            class: student.className,
-            healthStatus: student.healthStatus || "Tốt",
-            lastUpdated: new Date(student.lastUpdated).toLocaleDateString("vi-VN"),
-            hasAllergies: student.hasAllergies,
-            hasChronicDiseases: student.hasChronicDiseases,
-            hasVisionIssues: student.hasVisionIssues,
-            hasHearingIssues: student.hasHearingIssues,
-            avatar: student.fullName.charAt(0),
-            age: student.age,
-            weight: `${student.weight}kg`,
-            height: `${student.height}cm`
-          }));
-          console.log(transformedData);
+          const transformedData = response.data.map(student => {
+            const birthDate = new Date(student.dateOfBirth);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            const calculatedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+            const currentClass = student.currentClassName || (student.classes && student.classes.length > 0 ? student.classes[0].className : "Chưa phân lớp");
+            return {
+              id: student.id,
+              name: student.fullName,
+              studentId: student.studentCode,
+              class: currentClass,
+              lastUpdated: new Date(student.lastUpdatedDate).toLocaleDateString("vi-VN"),
+              avatar: student.fullName.charAt(0),
+              age: calculatedAge,
+              weight: student.weight ? `${student.weight}kg` : "Chưa cập nhật",
+              height: student.height ? `${student.height}cm` : "Chưa cập nhật"
+            };
+          });
           setStudentProfiles(transformedData);
         } else {
           setError(response.message || "Không thể tải danh sách học sinh");
         }
       } catch (err) {
         setError("Đã xảy ra lỗi khi tải danh sách học sinh");
-        console.error("Error fetching student profiles:", err);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchStudentProfiles();
   }, [user.id]);
 
@@ -72,78 +70,8 @@ const HealthProfileList = () => {
     const matchesSearch = profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       profile.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       profile.class.toLowerCase().includes(searchTerm.toLowerCase());
-
     return matchesSearch;
   });
-
-  const getStatusBadge = (status) => {
-    if (status === "Tốt") {
-      return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
-          style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700] }}>
-          <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: SUCCESS[500] }}></div>
-          {status}
-        </span>
-      );
-    } else if (status === "Cần theo dõi") {
-      return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
-          style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-          <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: WARNING[500] }}></div>
-          {status}
-        </span>
-      );
-    } else {
-      return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
-          style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-          <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: ERROR[500] }}></div>
-          {status}
-        </span>
-      );
-    }
-  };
-
-  const getHealthFlags = (profile) => {
-    const flags = [];
-    if (profile.hasAllergies) {
-      flags.push(
-        <div key="allergy" className="flex items-center mr-3 mb-1 group">
-          <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: ERROR[500] }}></div>
-          <span className="text-xs font-medium" style={{ color: GRAY[600] }}>Dị ứng</span>
-        </div>
-      );
-    }
-    if (profile.hasChronicDiseases) {
-      flags.push(
-        <div key="chronic" className="flex items-center mr-3 mb-1 group">
-          <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: WARNING[500] }}></div>
-          <span className="text-xs font-medium" style={{ color: GRAY[600] }}>Mãn tính</span>
-        </div>
-      );
-    }
-    if (profile.hasVisionIssues) {
-      flags.push(
-        <div key="vision" className="flex items-center mr-3 mb-1 group">
-          <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: PRIMARY[500] }}></div>
-          <span className="text-xs font-medium" style={{ color: GRAY[600] }}>Thị lực</span>
-        </div>
-      );
-    }
-    if (profile.hasHearingIssues) {
-      flags.push(
-        <div key="hearing" className="flex items-center mr-3 mb-1 group">
-          <div className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: PRIMARY[600] }}></div>
-          <span className="text-xs font-medium" style={{ color: GRAY[600] }}>Thính lực</span>
-        </div>
-      );
-    }
-    return flags.length > 0 ? (
-      <div className="flex flex-wrap">{flags}</div>
-    ) : (
-      <span className="text-xs font-medium" style={{ color: GRAY[400] }}>Không có vấn đề</span>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -166,29 +94,23 @@ const HealthProfileList = () => {
             <p className="text-base sm:text-lg lg:text-xl xl:text-2xl opacity-90 leading-relaxed font-medium px-4">
               Quản lý thông tin sức khỏe toàn diện cho con em và theo dõi tình trạng phát triển một cách khoa học
             </p>
-
             <div className="grid grid-cols-3 gap-4 lg:gap-8 mt-8 lg:mt-12 max-w-2xl mx-auto">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
                 <div className="text-2xl lg:text-3xl font-bold text-white">{studentProfiles.length}</div>
                 <div className="text-sm lg:text-base text-teal-100 font-medium">Tổng hồ sơ</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                <div className="text-2xl lg:text-3xl font-bold text-white">
-                  {studentProfiles.filter(p => p.healthStatus === "Tốt").length}
-                </div>
-                <div className="text-sm lg:text-base text-teal-100 font-medium">Tình trạng tốt</div>
+                <div className="text-2xl lg:text-3xl font-bold text-white">{studentProfiles.filter(p => p.age >= 6 && p.age <= 10).length}</div>
+                <div className="text-sm lg:text-base text-teal-100 font-medium">6-10 tuổi</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                <div className="text-2xl lg:text-3xl font-bold text-white">
-                  {studentProfiles.filter(p => p.healthStatus === "Cần theo dõi").length}
-                </div>
-                <div className="text-sm lg:text-base text-teal-100 font-medium">Cần theo dõi</div>
+                <div className="text-2xl lg:text-3xl font-bold text-white">{studentProfiles.filter(p => p.age > 10).length}</div>
+                <div className="text-sm lg:text-base text-teal-100 font-medium">Trên 10 tuổi</div>
               </div>
             </div>
           </div>
         </div>
       </section>
-
       {error && (
         <div className="container mx-auto px-4 py-4">
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
@@ -212,7 +134,6 @@ const HealthProfileList = () => {
           </div>
         </div>
       )}
-
       <section className="py-8 lg:py-12 bg-white bg-opacity-50 backdrop-blur-sm" style={{ borderBottomColor: GRAY[200], borderBottomWidth: 1 }}>
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -224,7 +145,6 @@ const HealthProfileList = () => {
                 Nhập tên học sinh, mã học sinh hoặc lớp để tìm kiếm
               </p>
             </div>
-
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-center">
               <div className="relative flex-1 w-full">
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
@@ -248,7 +168,6 @@ const HealthProfileList = () => {
                   </button>
                 )}
               </div>
-
               <div className="flex-shrink-0">
                 <button
                   onClick={() => navigate("/parent/health-profile/new")}
@@ -263,7 +182,6 @@ const HealthProfileList = () => {
           </div>
         </div>
       </section>
-
       <div className="container mx-auto px-4 py-8 lg:py-16">
         {isSearching ? (
           <div className="text-center py-12">
@@ -293,37 +211,26 @@ const HealthProfileList = () => {
                         </p>
                       </div>
                     </div>
-                    {getStatusBadge(profile.healthStatus)}
                   </div>
-
                   <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-4 lg:mb-6">
                     <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
+                      <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Tuổi</div>
                       <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.age}</div>
-                      <div className="text-xs lg:text-sm font-medium" style={{ color: GRAY[500] }}>Tuổi</div>
                     </div>
                     <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
+                      <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Cân nặng</div>
                       <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.weight}</div>
-                      <div className="text-xs lg:text-sm font-medium" style={{ color: GRAY[500] }}>Cân nặng</div>
                     </div>
                     <div className="text-center p-3 lg:p-4 rounded-xl" style={{ backgroundColor: GRAY[50] }}>
+                      <div className="text-xs lg:text-sm font-medium mb-1" style={{ color: GRAY[500] }}>Chiều cao</div>
                       <div className="text-lg lg:text-xl font-bold" style={{ color: PRIMARY[600] }}>{profile.height}</div>
-                      <div className="text-xs lg:text-sm font-medium" style={{ color: GRAY[500] }}>Chiều cao</div>
                     </div>
                   </div>
-
-                  <div className="mb-4 lg:mb-6">
-                    <p className="text-sm lg:text-base font-semibold mb-2" style={{ color: GRAY[600] }}>
-                      Tình trạng sức khỏe:
-                    </p>
-                    {getHealthFlags(profile)}
-                  </div>
-
                   <div className="flex items-center text-sm lg:text-base" style={{ color: GRAY[500] }}>
                     <FiCalendar className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
                     Cập nhật: {profile.lastUpdated}
                   </div>
                 </div>
-
                 <div className="px-6 lg:px-8 py-4 lg:py-5 flex justify-between items-center border-t"
                   style={{ borderColor: GRAY[100], backgroundColor: GRAY[25] || '#fafafa' }}>
                   <button

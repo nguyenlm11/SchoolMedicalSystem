@@ -78,7 +78,7 @@ const SectionHeader = ({ icon: Icon, title, subtitle, iconBgColor, iconColor }) 
     </div>
 );
 
-const StudentInfoCard = ({ studentName, currentClassName, studentId }) => (
+const StudentInfoCard = ({ studentName, className, studentId }) => (
     <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 lg:p-12 mb-8">
         <div className="flex items-center gap-8">
             <div style={{ backgroundColor: PRIMARY[500] }} className="w-32 h-32 rounded-full flex items-center justify-center border-4 border-white shadow-xl flex-shrink-0">
@@ -91,7 +91,7 @@ const StudentInfoCard = ({ studentName, currentClassName, studentId }) => (
                     {studentName || 'Học sinh'}
                 </div>
                 <div className="text-xl text-gray-500">
-                    Lớp {currentClassName || 'N/A'} • Mã số: {studentId}
+                    Lớp {className || 'N/A'} • Mã số: {studentId}
                 </div>
             </div>
         </div>
@@ -346,7 +346,7 @@ const VaccinationResult = () => {
                     {/* Student Info */}
                     <StudentInfoCard
                         studentName={vaccinationResult.studentName}
-                        currentClassName={vaccinationResult.currentClassName}
+                        className={vaccinationResult.className}
                         studentId={vaccinationResult.studentId}
                     />
 
