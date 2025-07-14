@@ -186,8 +186,8 @@ const StudentHealthProfile = () => {
                 {/* Content */}
                 <div className="space-y-6">
                     <BasicInfo data={profileData} />
-                    <PhysicalRecords records={profileData.physicalRecords} />
-                    <VisionHearingRecords visionRecords={profileData.visionRecords} hearingRecords={profileData.hearingRecords} onRecordAdded={fetchProfileData} />
+                    <PhysicalRecords records={profileData.physicalRecords} onRecordAdded={fetchProfileData} studentId={studentId} />
+                    <VisionHearingRecords visionRecords={profileData.visionRecords} hearingRecords={profileData.hearingRecords} onRecordAdded={fetchProfileData} studentId={studentId} />
                     <MedicalConditions conditions={profileData.medicalConditions} medicalRecordId={profileData.id} onConditionAdded={fetchProfileData} />
                     <VaccinationRecords records={profileData.vaccinationRecords} onVaccinationAdded={fetchProfileData} medicalRecordId={profileData.id} />
                 </div>
