@@ -375,7 +375,11 @@ const Navbar = () => {
                                 >
                                     <div className="flex items-center">
                                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mr-4">
-                                            <FiUser className="w-6 h-6 text-black" />
+                                            {user?.avatar ? (
+                                                <img src={user.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
+                                            ) : (
+                                                <FiUser className="w-6 h-6 text-black" />
+                                            )}
                                         </div>
                                         <div className="flex flex-col items-start mr-4">
                                             <span className="text-xs font-medium opacity-90">Xin chào</span>
