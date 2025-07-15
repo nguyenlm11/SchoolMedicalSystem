@@ -217,6 +217,31 @@ const authApi = {
         errors: error.response?.data?.errors || []
       };
     }
+  },
+
+  // Đổi mật khẩu
+  async changePassword(userId, oldPassword, newPassword) {
+    try {
+      if (!userId) throw new Error('User ID is required');
+      if (!oldPassword) throw new Error('Mật khẩu cũ không được để trống');
+      if (!newPassword) throw new Error('Mật khẩu mới không được để trống');
+
+      const response = await apiClient.put(`/users/${userId}/change-password`, {
+        oldPassword: oldPassword,
+        newPassword: newPassword
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return {
+        success: false,
+        message: error.message || 'Có lỗi xảy ra khi đổi mật khẩu',
+        data: null,
+        errors: []
+      };
+    }
   }
 };
 
