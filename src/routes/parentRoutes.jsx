@@ -13,6 +13,7 @@ import MedicationRequestCreate from "../pages/parent/MedicationRequestCreate";
 import ParentProfile from "../pages/parent/ParentProfile";
 import ParentMedicationRequestList from "../pages/parent/ParentMedicationRequestList";
 import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
+import ChangePassword from "../pages/auth/ChangePassword";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -22,6 +23,7 @@ const parentRoutes = (
   <Route element={<ParentLayout />}>
     <Route path="/parent/dashboard" element={<ParentDashboard />} />
     <Route path="/parent/profile" element={<ParentProfile />} />
+    <Route path="/parent/change-password" element={<ChangePassword />} />
     <Route path="/parent/health-profile/new" element={<PlaceholderPage title="Khai báo hồ sơ sức khỏe (đang phát triển)" />} />
     <Route path="/parent/health-profile" element={<HealthProfileList />} />
     <Route path="/parent/health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />

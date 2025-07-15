@@ -15,6 +15,7 @@ import HealthEventDetail from "../pages/nurse/HealthEventDetail";
 import MedicationRequestManagement from "../pages/nurse/MedicationRequestManagement";
 import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
 import StudentHealthProfile from "../pages/student/StudentHealthProfile";
+import ChangePassword from "../pages/auth/ChangePassword";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -45,6 +46,7 @@ const staffRoutes = (
     {/* Staff Profile Routes */}
     <Route path="/schoolnurse/profile" element={<UserProfilePage />} />
     <Route path="/profile" element={<UserProfilePage />} />
+    <Route path="/schoolnurse/change-password" element={<ChangePassword />} />
   </Route>
 );
 

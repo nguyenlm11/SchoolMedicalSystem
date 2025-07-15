@@ -3,8 +3,10 @@ import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiEdit3, FiCop
 import { PRIMARY, SECONDARY, SUCCESS, TEXT, BACKGROUND, SHADOW, BORDER } from '../../constants/colors';
 import { useAuth } from '../../utils/AuthContext';
 import authApi from '../../api/authApi';
+import { useNavigate } from 'react-router-dom';
 
 const UserProfilePage = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [editedProfile, setEditedProfile] = useState({
@@ -102,6 +104,13 @@ const UserProfilePage = () => {
             profileImage: file,
             profileImageUrl: previewUrl
         }));
+    };
+    const handleChangePassword = () => {
+        if (user.role === 'schoolnurse') {
+            navigate('/schoolnurse/change-password');
+        } else {
+            navigate('/manager/change-password');
+        }
     };
 
     const handleSave = async () => {
@@ -629,6 +638,7 @@ const UserProfilePage = () => {
                                             </p>
                                         </div>
                                     </div>
+
                                     {isEditing ? (
                                         <div className="flex items-center space-x-4">
                                             <button
@@ -649,31 +659,35 @@ const UserProfilePage = () => {
                                                     backgroundColor: PRIMARY[600],
                                                     boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
                                                 }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                    e.currentTarget.style.transform = 'translateY(0)';
-                                                }}
                                             >
                                                 <FiSave className="mr-2" />
                                                 Lưu thay đổi
                                             </button>
                                         </div>
                                     ) : (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                                color: 'white'
-                                            }}
-                                        >
-                                            <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                                            <span className="font-semibold text-base">Chỉnh sửa</span>
-                                        </button>
+                                        <div className="flex items-center space-x-4">
+                                            <button
+                                                onClick={() => setIsEditing(true)}
+                                                className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                                style={{
+                                                    background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
+                                                    color: 'white'
+                                                }}
+                                            >
+                                                <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                                <span className="font-semibold text-base">Chỉnh sửa</span>
+                                            </button>
+                                            <button
+                                                onClick={() => { handleChangePassword() }}
+                                                className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                                style={{
+                                                    backgroundColor: PRIMARY[500],
+                                                    color: 'white',
+                                                }}>
+                                                <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                                <span className="font-semibold text-base">Đổi mật khẩu</span>
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 
