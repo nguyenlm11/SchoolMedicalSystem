@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiAward, FiShield, FiHeart, FiBookOpen, FiEdit3, FiSave, FiX } from 'react-icons/fi';
-import { PRIMARY, SECONDARY, SUCCESS, ERROR, TEXT, BACKGROUND, SHADOW } from '../../constants/colors';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiAward, FiShield, FiHeart, FiBookOpen, FiEdit3, FiSave, FiX, FiAlertCircle } from 'react-icons/fi';
+import { PRIMARY, SECONDARY, SUCCESS, ERROR, TEXT, BACKGROUND, SHADOW, COMMON } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import authApi from '../../api/authApi';
 import { useAuth } from '../../utils/AuthContext';
@@ -25,16 +25,11 @@ const StudentProfile = () => {
         profileImageUrl: null,
     });
     const { user } = useAuth();
-    const getStudentId = () => {
-        return user.id;
-    };
 
     const fetchStudentProfile = async () => {
         try {
             setLoading(true);
-            const studentId = getStudentId();
-            const response = await authApi.getStudentProfile(studentId);
-
+            const response = await authApi.getStudentProfile(user.id);
             if (response.success && response.data) {
                 setProfile(response.data);
                 setEditedProfile({
@@ -50,7 +45,6 @@ const StudentProfile = () => {
                 showAlertMessage('error', 'Lỗi', response.message || 'Không thể tải thông tin học sinh');
             }
         } catch (error) {
-            console.error('Error fetching student profile:', error);
             showAlertMessage('error', 'Lỗi', 'Có lỗi xảy ra khi tải thông tin học sinh');
         } finally {
             setLoading(false);
@@ -69,11 +63,7 @@ const StudentProfile = () => {
     const formatDate = (dateString) => {
         if (!dateString) return 'Chưa cập nhật';
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
     const getGenderLabel = (gender) => {
@@ -90,11 +80,6 @@ const StudentProfile = () => {
         return labels[relationship] || relationship || 'Chưa cập nhật';
     };
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text);
-        showAlertMessage('success', 'Thành công', 'Đã sao chép vào clipboard');
-    };
-
     const handleInputChange = (field, value) => {
         setEditedProfile(prev => ({
             ...prev,
@@ -105,42 +90,22 @@ const StudentProfile = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
             alert('Kích thước ảnh không được vượt quá 5MB');
             e.target.value = '';
             return;
         }
-
         const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
         if (!allowedTypes.includes(file.type)) {
             alert('Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc GIF');
             e.target.value = '';
             return;
         }
-
-        const img = new Image();
-        img.onload = () => {
-            URL.revokeObjectURL(img.src);
-            if (img.width < 100 || img.height < 100) {
-                alert('Kích thước ảnh quá nhỏ. Yêu cầu tối thiểu 100x100 pixels');
-                e.target.value = '';
-                return;
-            }
-            if (img.width > 2000 || img.height > 2000) {
-                alert('Kích thước ảnh quá lớn. Yêu cầu tối đa 2000x2000 pixels');
-                e.target.value = '';
-                return;
-            }
-        };
-        img.src = URL.createObjectURL(file);
-
-        const previewUrl = URL.createObjectURL(file);
         setEditedProfile(prev => ({
             ...prev,
             profileImage: file,
-            profileImageUrl: previewUrl
+            profileImageUrl: URL.createObjectURL(file)
         }));
     };
 
@@ -148,81 +113,55 @@ const StudentProfile = () => {
         try {
             setSaveLoading(true);
             if (!profile?.id) throw new Error('Không tìm thấy thông tin học sinh');
-
             const formData = new FormData();
             formData.append('FullName', editedProfile.fullName.trim());
             formData.append('PhoneNumber', editedProfile.phoneNumber?.trim() || '');
             formData.append('Address', editedProfile.address?.trim() || '');
-
-            let apiGender = 'Female';
-            if (editedProfile.gender === 'Male') apiGender = 'Male';
-            else if (editedProfile.gender === 'Female') apiGender = 'Female';
-            formData.append('Gender', apiGender);
-
-            let dateIso = '';
-            if (editedProfile.dateOfBirth) {
-                const date = new Date(editedProfile.dateOfBirth);
-                dateIso = date.toISOString();
-                formData.append('DateOfBirth', dateIso);
-            } else {
-                dateIso = new Date().toISOString();
-                formData.append('DateOfBirth', dateIso);
-            }
-
+            formData.append('Gender', editedProfile.gender);
+            formData.append('DateOfBirth', editedProfile.dateOfBirth ? new Date(editedProfile.dateOfBirth).toISOString() : new Date().toISOString());
             if (editedProfile.profileImage instanceof File) {
                 formData.append('ProfileImage', editedProfile.profileImage);
             }
-
             const response = await authApi.updateProfile(profile.id, formData, 'student');
             if (!response.success) throw new Error(response.message || 'Cập nhật thất bại');
-
             const verifyResponse = await authApi.getStudentProfile(profile.id);
             if (!verifyResponse.success) throw new Error('Không thể xác minh dữ liệu sau khi cập nhật');
-
             setProfile(verifyResponse.data);
             setEditedProfile({
                 fullName: verifyResponse.data.fullName || '',
                 phoneNumber: verifyResponse.data.phoneNumber || '',
                 address: verifyResponse.data.address || '',
                 gender: verifyResponse.data.gender === 'Male' ? 'Male' : 'Female',
-                dateOfBirth: verifyResponse.data.dateOfBirth ? verifyResponse.data.dateOfBirth.split('T')[0] : '',
+                dateOfBirth: verifyResponse.data.dateOfBirth?.split('T')[0] || '',
                 profileImage: null,
                 profileImageUrl: verifyResponse.data.profileImageUrl || ''
             });
-
             showAlertMessage('success', 'Thành công', 'Thông tin đã được cập nhật thành công!');
             setIsEditing(false);
         } catch (error) {
-            console.error('Error updating profile:', error);
             showAlertMessage('error', 'Lỗi', error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
         } finally {
             setSaveLoading(false);
         }
     };
 
+    const resetEditedProfile = () => ({
+        fullName: profile.fullName || '',
+        phoneNumber: profile.phoneNumber || '',
+        address: profile.address || '',
+        gender: profile.gender === 'Male' ? 'Male' : 'Female',
+        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
+        profileImage: null,
+        profileImageUrl: profile.profileImageUrl || ''
+    });
+
     const handleCancel = () => {
-        setEditedProfile({
-            fullName: profile.fullName || '',
-            phoneNumber: profile.phoneNumber || '',
-            address: profile.address || '',
-            gender: profile.gender === 'Male' ? 'Male' : 'Female',
-            dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
-            profileImage: null,
-            profileImageUrl: profile.profileImageUrl || ''
-        });
+        setEditedProfile(resetEditedProfile());
         setIsEditing(false);
     };
 
     const handleStartEdit = () => {
-        setEditedProfile({
-            fullName: profile.fullName || '',
-            phoneNumber: profile.phoneNumber || '',
-            address: profile.address || '',
-            gender: profile.gender === 'Male' ? 'Male' : 'Female',
-            dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
-            profileImage: null,
-            profileImageUrl: profile.profileImageUrl || ''
-        });
+        setEditedProfile(resetEditedProfile());
         setIsEditing(true);
     };
 
@@ -272,23 +211,13 @@ const StudentProfile = () => {
         fontSize: '0.95rem',
         color: TEXT.PRIMARY,
         transition: 'all 0.2s ease-in-out',
-        boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
-        '::placeholder': {
-            color: TEXT.SECONDARY,
-        },
-        ':focus': {
-            border: `1.5px solid ${PRIMARY[400]}`,
-            boxShadow: `0 0 0 3px ${PRIMARY[100]}`,
-        },
-        ':hover': {
-            border: `1px solid ${PRIMARY[300]}`,
-        }
+        boxShadow: `0 2px 4px ${SHADOW.LIGHT}`
     };
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="heart" size="xl" color="primary" text="Đang tải thông tin học sinh..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
             </div>
         );
     }
@@ -348,23 +277,14 @@ const StudentProfile = () => {
                                     <img
                                         src={
                                             isEditing
-                                                ? (editedProfile.profileImageUrl || profile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y")
-                                                : (profile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y")
+                                                ? (editedProfile.profileImageUrl || profile.profileImageUrl)
+                                                : (profile.profileImageUrl)
                                         }
                                         alt="Profile"
                                         style={avatarStyle}
                                     />
                                     {isEditing && (
-                                        <label htmlFor="profile-image" style={changeImageButtonStyle}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                e.currentTarget.style.transform = 'scale(1.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                e.currentTarget.style.transform = 'scale(1)';
-                                            }}
-                                        >
+                                        <label htmlFor="profile-image" style={changeImageButtonStyle}>
                                             <input
                                                 type="file"
                                                 id="profile-image"
@@ -388,10 +308,7 @@ const StudentProfile = () => {
                             <div className="mb-8">
                                 <div
                                     className="inline-flex items-center px-8 py-4 rounded-2xl shadow-lg"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                        color: 'white',
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                 >
                                     <FiShield className="w-6 h-6 mr-3" />
                                     <span className="font-bold text-lg">Học sinh</span>
@@ -437,10 +354,7 @@ const StudentProfile = () => {
                                 <div className="flex items-center">
                                     <div
                                         className="w-14 h-14 rounded-2xl flex items-center justify-center mr-5 shadow-lg"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                            color: 'white',
-                                        }}
+                                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                     >
                                         <FiUser className="w-7 h-7" />
                                     </div>
@@ -458,10 +372,7 @@ const StudentProfile = () => {
                                         <button
                                             onClick={handleCancel}
                                             className="group flex items-center px-6 py-3 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105 bg-white"
-                                            style={{
-                                                color: TEXT.SECONDARY,
-                                                border: `2px solid ${TEXT.SECONDARY}`
-                                            }}
+                                            style={{ color: TEXT.SECONDARY, border: `2px solid ${TEXT.SECONDARY}` }}
                                         >
                                             <FiX className="w-5 h-5 mr-2" />
                                             <span className="font-semibold">Hủy</span>
@@ -476,18 +387,6 @@ const StudentProfile = () => {
                                                 opacity: saveLoading ? 0.7 : 1,
                                                 cursor: saveLoading ? 'not-allowed' : 'pointer',
                                             }}
-                                            onMouseEnter={(e) => {
-                                                if (!saveLoading) {
-                                                    e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                    e.currentTarget.style.transform = 'translateY(-1px)';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!saveLoading) {
-                                                    e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                    e.currentTarget.style.transform = 'translateY(0)';
-                                                }
-                                            }}
                                         >
                                             {saveLoading ? (
                                                 <>
@@ -496,8 +395,7 @@ const StudentProfile = () => {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <FiSave className="mr-2" />
-                                                    Lưu thay đổi
+                                                    <FiSave className="mr-2" /> Lưu thay đổi
                                                 </>
                                             )}
                                         </button>
@@ -507,10 +405,7 @@ const StudentProfile = () => {
                                         <button
                                             onClick={handleStartEdit}
                                             className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                                color: 'white'
-                                            }}
+                                            style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                         >
                                             <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                                             <span className="font-semibold text-base">Chỉnh sửa</span>
@@ -518,10 +413,8 @@ const StudentProfile = () => {
                                         <button
                                             onClick={() => navigate('/student/change-password')}
                                             className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                backgroundColor: PRIMARY[500],
-                                                color: 'white',
-                                            }}>
+                                            style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
+                                        >
                                             <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                                             <span className="font-semibold text-base">Đổi mật khẩu</span>
                                         </button>
@@ -697,10 +590,7 @@ const StudentProfile = () => {
                             <div className="flex items-center">
                                 <div
                                     className="w-14 h-14 rounded-2xl flex items-center justify-center mr-5 shadow-lg"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                        color: 'white',
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                 >
                                     <FiBookOpen className="w-7 h-7" />
                                 </div>
@@ -725,18 +615,7 @@ const StudentProfile = () => {
                                 <div
                                     key={cls.studentClassId}
                                     className="group relative p-8 rounded-2xl border border-transparent hover:border-opacity-30 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 w-full"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`,
-                                        borderColor: `${PRIMARY[500]}20`,
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor = `${PRIMARY[500]}40`;
-                                        e.currentTarget.style.background = `linear-gradient(135deg, ${PRIMARY[500]}15 0%, ${PRIMARY[500]}08 100%)`;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor = `${PRIMARY[500]}20`;
-                                        e.currentTarget.style.background = `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`;
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`, borderColor: `${PRIMARY[500]}` }}
                                 >
                                     <div className="flex items-center space-x-6 mb-6">
                                         <div
@@ -778,6 +657,7 @@ const StudentProfile = () => {
                     </div>
                 </div>
             </div>
+
             <AlertModal
                 isOpen={showAlert}
                 type={alertConfig.type}

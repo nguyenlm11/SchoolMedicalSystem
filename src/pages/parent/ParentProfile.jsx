@@ -1,38 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    FiUser,
-    FiMail,
-    FiPhone,
-    FiMapPin,
-    FiCalendar,
-    FiEdit3,
-    FiSave,
-    FiX,
-    FiUsers,
-    FiBookOpen,
-    FiShield,
-    FiHeart,
-    FiChevronLeft,
-    FiCamera,
-    FiStar,
-    FiCheckCircle,
-    FiAlertCircle,
-    FiCopy,
-    FiAward
-} from 'react-icons/fi';
-import {
-    PRIMARY,
-    SECONDARY,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    INFO,
-    TEXT,
-    BACKGROUND,
-    BORDER,
-    SHADOW
-} from '../../constants/colors';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiEdit3, FiSave, FiX, FiUsers, FiShield, FiHeart, FiCamera, FiStar, FiCheckCircle, FiAlertCircle, FiCopy } from 'react-icons/fi';
+import { PRIMARY, SECONDARY, SUCCESS, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from '../../constants/colors';
 import { useAuth } from '../../utils/AuthContext';
 import authApi from '../../api/authApi';
 import Loading from '../../components/Loading';
@@ -43,6 +12,7 @@ const ParentProfile = () => {
     const { user } = useAuth();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [saveLoading, setSaveLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: 'info', title: '', message: '' });
@@ -56,36 +26,35 @@ const ParentProfile = () => {
         profileImageUrl: null,
     });
 
-    // Fetch parent profile data
     useEffect(() => {
-        const fetchProfile = async () => {
-            if (!user?.id) return;
-            setLoading(true);
-            try {
-                const response = await authApi.getParentProfile(user.id);
-                if (response.success) {
-                    setProfile(response.data);
-                    setEditedProfile({
-                        fullName: response.data.fullName || '',
-                        phoneNumber: response.data.phoneNumber || '',
-                        address: response.data.address || '',
-                        gender: response.data.gender === 'Male' ? 'Male' : 'Female',
-                        dateOfBirth: response.data.dateOfBirth || '',
-                        profileImage: null,
-                        profileImageUrl: response.data.profileImageUrl || ''
-                    });
-                } else {
-                    showAlertMessage('error', 'Lỗi', response.message || 'Không thể tải thông tin profile');
-                }
-            } catch (error) {
-                console.error('Error fetching profile:', error);
-                showAlertMessage('error', 'Lỗi', 'Có lỗi xảy ra khi tải thông tin profile');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchProfile();
     }, [user?.id]);
+
+    const fetchProfile = async () => {
+        if (!user?.id) return;
+        setLoading(true);
+        try {
+            const response = await authApi.getParentProfile(user.id);
+            if (response.success) {
+                setProfile(response.data);
+                setEditedProfile({
+                    fullName: response.data.fullName || '',
+                    phoneNumber: response.data.phoneNumber || '',
+                    address: response.data.address || '',
+                    gender: response.data.gender === 'Male' ? 'Male' : 'Female',
+                    dateOfBirth: response.data.dateOfBirth || '',
+                    profileImage: null,
+                    profileImageUrl: response.data.profileImageUrl || ''
+                });
+            } else {
+                showAlertMessage('error', 'Lỗi', response.message || 'Không thể tải thông tin profile');
+            }
+        } catch (error) {
+            showAlertMessage('error', 'Lỗi', 'Có lỗi xảy ra khi tải thông tin profile');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const showAlertMessage = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -114,54 +83,26 @@ const ParentProfile = () => {
             e.target.value = '';
             return;
         }
-        const img = new Image();
-        img.onload = () => {
-            URL.revokeObjectURL(img.src);
-            if (img.width < 100 || img.height < 100) {
-                alert('Kích thước ảnh quá nhỏ. Yêu cầu tối thiểu 100x100 pixels');
-                e.target.value = '';
-                return;
-            }
-            if (img.width > 2000 || img.height > 2000) {
-                alert('Kích thước ảnh quá lớn. Yêu cầu tối đa 2000x2000 pixels');
-                e.target.value = '';
-                return;
-            }
-        };
-        img.src = URL.createObjectURL(file);
-        const previewUrl = URL.createObjectURL(file);
         setEditedProfile(prev => ({
             ...prev,
             profileImage: file,
-            profileImageUrl: previewUrl
+            profileImageUrl: URL.createObjectURL(file)
         }));
     };
 
     const handleSave = async () => {
         try {
+            setSaveLoading(true);
             if (!user?.id) throw new Error('Không tìm thấy thông tin người dùng');
             if (!editedProfile.fullName?.trim()) throw new Error('Họ tên không được để trống');
             const formData = new FormData();
             formData.append('FullName', editedProfile.fullName.trim());
             formData.append('PhoneNumber', editedProfile.phoneNumber?.trim() || '');
             formData.append('Address', editedProfile.address?.trim() || '');
-            let apiGender = 'Female';
-            if (editedProfile.gender === 'Male') apiGender = 'Male';
-            else if (editedProfile.gender === 'Female') apiGender = 'Female';
-            formData.append('Gender', apiGender);
-            let dateIso = '';
-            if (editedProfile.dateOfBirth) {
-                const date = new Date(editedProfile.dateOfBirth);
-                dateIso = date.toISOString();
-                formData.append('DateOfBirth', dateIso);
-            } else {
-                dateIso = new Date().toISOString();
-                formData.append('DateOfBirth', dateIso);
-            }
+            formData.append('Gender', editedProfile.gender);
+            formData.append('DateOfBirth', editedProfile.dateOfBirth ? new Date(editedProfile.dateOfBirth).toISOString() : new Date().toISOString());
             if (editedProfile.profileImage instanceof File) {
                 formData.append('ProfileImage', editedProfile.profileImage);
-            } else if (editedProfile.profileImageUrl) {
-                formData.append('ProfileImage', editedProfile.profileImageUrl);
             }
             const response = await authApi.updateProfile(user.id, formData, 'parent');
             if (!response.success) throw new Error(response.message || 'Cập nhật thất bại');
@@ -173,7 +114,7 @@ const ParentProfile = () => {
                 phoneNumber: verifyResponse.data.phoneNumber || '',
                 address: verifyResponse.data.address || '',
                 gender: verifyResponse.data.gender === 'Male' ? 'Male' : 'Female',
-                dateOfBirth: verifyResponse.data.dateOfBirth ? verifyResponse.data.dateOfBirth.split('T')[0] : '',
+                dateOfBirth: verifyResponse.data.dateOfBirth?.split('T')[0] || '',
                 profileImage: null,
                 profileImageUrl: verifyResponse.data.profileImageUrl || ''
             });
@@ -181,30 +122,30 @@ const ParentProfile = () => {
             setIsEditing(false);
         } catch (error) {
             showAlertMessage('error', 'Lỗi', error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+        } finally {
+            setSaveLoading(false);
         }
     };
 
+    const resetEditedProfile = () => ({
+        fullName: profile.fullName || '',
+        phoneNumber: profile.phoneNumber || '',
+        address: profile.address || '',
+        gender: profile.gender === 'Male' ? 'Male' : 'Female',
+        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
+        profileImage: null,
+        profileImageUrl: profile.profileImageUrl || ''
+    });
+
     const handleCancel = () => {
-        setEditedProfile({
-            fullName: profile.fullName || '',
-            phoneNumber: profile.phoneNumber || '',
-            address: profile.address || '',
-            gender: profile.gender === 'Male' ? 'Male' : 'Female',
-            dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
-            profileImage: null,
-            profileImageUrl: profile.profileImageUrl || ''
-        });
+        setEditedProfile(resetEditedProfile());
         setIsEditing(false);
     };
 
     const formatDate = (dateString) => {
         if (!dateString) return 'Chưa cập nhật';
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
     const getGenderLabel = (gender) => {
@@ -221,12 +162,6 @@ const ParentProfile = () => {
         return labels[relationship] || relationship || 'Chưa cập nhật';
     };
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text);
-        showAlertMessage('success', 'Thành công', 'Đã sao chép vào clipboard');
-    };
-
-    // Style cho input fields
     const inputStyle = {
         border: `1px solid ${PRIMARY[200]}`,
         borderRadius: '0.75rem',
@@ -238,20 +173,9 @@ const ParentProfile = () => {
         fontSize: '0.95rem',
         color: TEXT.PRIMARY,
         transition: 'all 0.2s ease-in-out',
-        boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
-        '::placeholder': {
-            color: TEXT.SECONDARY,
-        },
-        ':focus': {
-            border: `1.5px solid ${PRIMARY[400]}`,
-            boxShadow: `0 0 0 3px ${PRIMARY[100]}`,
-        },
-        ':hover': {
-            border: `1px solid ${PRIMARY[300]}`,
-        }
+        boxShadow: `0 2px 4px ${SHADOW.LIGHT}`
     };
 
-    // Style cho avatar container
     const avatarContainerStyle = {
         position: 'relative',
         width: '150px',
@@ -259,7 +183,6 @@ const ParentProfile = () => {
         margin: '0 auto 2rem auto',
     };
 
-    // Style cho avatar
     const avatarStyle = {
         width: '150px',
         height: '150px',
@@ -270,7 +193,6 @@ const ParentProfile = () => {
         backgroundColor: 'white',
     };
 
-    // Style cho button thay đổi ảnh
     const changeImageButtonStyle = {
         position: 'absolute',
         bottom: '0',
@@ -289,29 +211,15 @@ const ParentProfile = () => {
         transition: 'all 0.2s ease-in-out',
     };
 
-    // Thay vì chỉ setIsEditing(true), hãy set lại editedProfile từ profile trước khi vào edit
     const handleStartEdit = () => {
-        setEditedProfile({
-            fullName: profile.fullName || '',
-            phoneNumber: profile.phoneNumber || '',
-            address: profile.address || '',
-            gender: profile.gender === 'Male' ? 'Male' : 'Female',
-            dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split('T')[0] : '',
-            profileImage: null,
-            profileImageUrl: profile.profileImageUrl || ''
-        });
+        setEditedProfile(resetEditedProfile());
         setIsEditing(true);
     };
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading
-                    type="heart"
-                    size="xl"
-                    color="primary"
-                    text="Đang tải thông tin profile..."
-                />
+                <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
             </div>
         );
     }
@@ -373,8 +281,8 @@ const ParentProfile = () => {
             type: "select",
             field: "gender",
             options: [
-                { value: "Male", label: "Nam" },
-                { value: "Female", label: "Nữ" }
+                { value: "Female", label: "Nữ" },
+                { value: "Male", label: "Nam" }
             ]
         },
         {
@@ -392,10 +300,7 @@ const ParentProfile = () => {
     const renderFieldValue = (field) => {
         if (!field.editable || !isEditing) {
             return (
-                <p
-                    className="text-lg font-bold break-all mb-2"
-                    style={{ color: TEXT.PRIMARY }}
-                >
+                <p className="text-lg font-bold break-all mb-2" style={{ color: TEXT.PRIMARY }}>
                     {field.value || 'Chưa cập nhật'}
                 </p>
             );
@@ -454,7 +359,6 @@ const ParentProfile = () => {
             }}
         >
             <div className="w-full">
-                {/* Header */}
                 <div className="text-center mb-10">
                     <h1
                         className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r bg-clip-text text-transparent"
@@ -466,16 +370,12 @@ const ParentProfile = () => {
                     >
                         Thông tin phụ huynh
                     </h1>
-                    <p
-                        className="text-lg"
-                        style={{ color: TEXT.SECONDARY }}
-                    >
+                    <p className="text-lg" style={{ color: TEXT.SECONDARY }} >
                         {isEditing ? 'Chỉnh sửa thông tin tài khoản của bạn' : 'Quản lý và xem thông tin tài khoản của bạn một cách dễ dàng'}
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Profile Card */}
                     <div className="lg:col-span-3">
                         <div
                             className="bg-white rounded-3xl shadow-xl p-8 text-center relative overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 h-full"
@@ -484,29 +384,19 @@ const ParentProfile = () => {
                                 background: `linear-gradient(135deg, white 0%, ${PRIMARY[25] || '#f8fafc'} 100%)`
                             }}
                         >
-                            {/* Avatar */}
                             <div className="relative mb-8">
                                 <div style={avatarContainerStyle}>
                                     <img
                                         src={
                                             isEditing
-                                                ? (editedProfile.profileImageUrl || profile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y")
-                                                : (profile.profileImageUrl || "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y")
+                                                ? (editedProfile.profileImageUrl || profile.profileImageUrl)
+                                                : (profile.profileImageUrl)
                                         }
                                         alt="Profile"
                                         style={avatarStyle}
                                     />
                                     {isEditing && (
-                                        <label htmlFor="profile-image" style={changeImageButtonStyle}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                e.currentTarget.style.transform = 'scale(1.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                e.currentTarget.style.transform = 'scale(1)';
-                                            }}
-                                        >
+                                        <label htmlFor="profile-image" style={changeImageButtonStyle}>
                                             <input
                                                 type="file"
                                                 id="profile-image"
@@ -520,7 +410,6 @@ const ParentProfile = () => {
                                 </div>
                             </div>
 
-                            {/* Name */}
                             {isEditing ? (
                                 <input
                                     type="text"
@@ -532,43 +421,28 @@ const ParentProfile = () => {
                                     placeholder="Nhập họ và tên"
                                 />
                             ) : (
-                                <h2
-                                    className="text-3xl lg:text-4xl font-bold mb-3"
-                                    style={{ color: TEXT.PRIMARY }}
-                                >
+                                <h2 className="text-3xl lg:text-4xl font-bold mb-3" style={{ color: TEXT.PRIMARY }} >
                                     {profile.fullName}
                                 </h2>
                             )}
-                            <p
-                                className="text-xl mb-8 font-medium"
-                                style={{ color: TEXT.SECONDARY }}
-                            >
+                            <p className="text-xl mb-8 font-medium" style={{ color: TEXT.SECONDARY }} >
                                 @{profile.username}
                             </p>
 
-                            {/* Role Badge */}
                             <div className="mb-8">
                                 <div
                                     className="inline-flex items-center px-8 py-4 rounded-2xl shadow-lg"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                        color: 'white'
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: 'white' }}
                                 >
                                     <FiHeart className="w-6 h-6 mr-3" />
                                     <span className="font-bold text-lg">Phụ huynh</span>
                                 </div>
                             </div>
 
-                            {/* Relationship Badge */}
                             <div className="mb-8">
                                 <div
                                     className="inline-flex items-center px-6 py-3 rounded-full"
-                                    style={{
-                                        backgroundColor: SUCCESS[50],
-                                        color: SUCCESS[700],
-                                        border: `2px solid ${SUCCESS[200]}`
-                                    }}
+                                    style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700], border: `2px solid ${SUCCESS[200]}` }}
                                 >
                                     <FiStar className="w-4 h-4 mr-2" />
                                     <span className="font-semibold text-base">
@@ -577,7 +451,6 @@ const ParentProfile = () => {
                                 </div>
                             </div>
 
-                            {/* Quick Stats */}
                             <div className="space-y-4 mb-6">
                                 <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: PRIMARY[50] }}>
                                     <div className="flex items-center">
@@ -590,21 +463,8 @@ const ParentProfile = () => {
                                         {profile.childrenCount}
                                     </span>
                                 </div>
-
-                                <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: SUCCESS[50] }}>
-                                    <div className="flex items-center">
-                                        <FiCheckCircle className="h-5 w-5 mr-3" style={{ color: SUCCESS[500] }} />
-                                        <span className="font-medium" style={{ color: TEXT.PRIMARY }}>
-                                            Hồ sơ y tế
-                                        </span>
-                                    </div>
-                                    <span className="text-sm font-medium" style={{ color: SUCCESS[600] }}>
-                                        {profile.children.filter(child => child.hasMedicalRecord).length}/{profile.childrenCount}
-                                    </span>
-                                </div>
                             </div>
 
-                            {/* Account Info */}
                             <div className="border-t pt-4" style={{ borderColor: BORDER.DEFAULT }}>
                                 <h3 className="text-sm font-semibold mb-3" style={{ color: TEXT.PRIMARY }}>
                                     Thông tin tài khoản
@@ -623,7 +483,6 @@ const ParentProfile = () => {
                         </div>
                     </div>
 
-                    {/* Personal Information */}
                     <div className="lg:col-span-9">
                         <div
                             className="bg-white rounded-3xl shadow-xl p-10 hover:shadow-2xl transition-all duration-500 h-full"
@@ -632,23 +491,19 @@ const ParentProfile = () => {
                                 background: `linear-gradient(135deg, white 0%, ${SUCCESS[25] || '#f0fdf4'} 100%)`
                             }}
                         >
-                            {/* Header */}
                             <div className="flex items-center justify-between mb-10 pb-8 border-b border-gray-100">
                                 <div className="flex items-center">
                                     <div
                                         className="w-14 h-14 rounded-2xl flex items-center justify-center mr-5 shadow-lg"
                                         style={{
                                             background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                            color: 'white'
+                                            color: COMMON.WHITE
                                         }}
                                     >
                                         <FiUser className="w-7 h-7" />
                                     </div>
                                     <div>
-                                        <h3
-                                            className="text-3xl font-bold"
-                                            style={{ color: TEXT.PRIMARY }}
-                                        >
+                                        <h3 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}  >
                                             Thông tin cá nhân
                                         </h3>
                                         <p className="text-base" style={{ color: TEXT.SECONDARY }}>
@@ -661,32 +516,32 @@ const ParentProfile = () => {
                                         <button
                                             onClick={handleCancel}
                                             className="group flex items-center px-6 py-3 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105 bg-white"
-                                            style={{
-                                                color: TEXT.SECONDARY,
-                                                border: `2px solid ${TEXT.SECONDARY}`
-                                            }}
+                                            style={{ color: TEXT.SECONDARY, border: `2px solid ${TEXT.SECONDARY}` }}
                                         >
                                             <FiX className="w-5 h-5 mr-2" />
                                             <span className="font-semibold">Hủy</span>
                                         </button>
                                         <button
                                             onClick={handleSave}
+                                            disabled={saveLoading}
                                             className="flex items-center px-5 py-2.5 rounded-xl text-white transition-all duration-200 font-medium"
                                             style={{
-                                                backgroundColor: PRIMARY[600],
+                                                backgroundColor: saveLoading ? PRIMARY[400] : PRIMARY[600],
                                                 boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[700];
-                                                e.currentTarget.style.transform = 'translateY(-1px)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = PRIMARY[600];
-                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                opacity: saveLoading ? 0.7 : 1,
+                                                cursor: saveLoading ? 'not-allowed' : 'pointer',
                                             }}
                                         >
-                                            <FiSave className="mr-2" />
-                                            Lưu thay đổi
+                                            {saveLoading ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                    Đang lưu...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FiSave className="mr-2" /> Lưu thay đổi
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 ) : (
@@ -694,10 +549,7 @@ const ParentProfile = () => {
                                         <button
                                             onClick={handleStartEdit}
                                             className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                                color: 'white'
-                                            }}
+                                            style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                         >
                                             <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                                             <span className="font-semibold text-base">Chỉnh sửa</span>
@@ -705,10 +557,8 @@ const ParentProfile = () => {
                                         <button
                                             onClick={() => navigate('/parent/change-password')}
                                             className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                backgroundColor: PRIMARY[500],
-                                                color: 'white',
-                                            }}>
+                                            style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
+                                        >
                                             <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                                             <span className="font-semibold text-base">Đổi mật khẩu</span>
                                         </button>
@@ -716,7 +566,6 @@ const ParentProfile = () => {
                                 )}
                             </div>
 
-                            {/* Profile Fields */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 px-4">
                                 {profileFields.map((field, index) => {
                                     const IconComponent = field.icon;
@@ -724,56 +573,23 @@ const ParentProfile = () => {
                                         <div
                                             key={index}
                                             className="group relative p-8 rounded-2xl border border-transparent hover:border-opacity-30 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${field.color}08 0%, ${field.color}05 100%)`,
-                                                borderColor: `${field.color}20`
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.borderColor = `${field.color}40`;
-                                                e.currentTarget.style.background = `linear-gradient(135deg, ${field.color}15 0%, ${field.color}08 100%)`;
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.borderColor = `${field.color}20`;
-                                                e.currentTarget.style.background = `linear-gradient(135deg, ${field.color}08 0%, ${field.color}05 100%)`;
-                                            }}
+                                            style={{ background: `linear-gradient(135deg, ${field.color}08 0%, ${field.color}05 100%)`, borderColor: `${field.color}` }}
                                         >
                                             <div className="flex items-start space-x-5">
                                                 <div
                                                     className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-300 shadow-md"
-                                                    style={{
-                                                        background: `linear-gradient(135deg, ${field.color} 0%, ${field.color}CC 100%)`,
-                                                        color: 'white'
-                                                    }}
+                                                    style={{ background: `linear-gradient(135deg, ${field.color} 0%, ${field.color}CC 100%)`, color: COMMON.WHITE }}
                                                 >
                                                     <IconComponent className="w-6 h-6" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between">
-                                                        <p
-                                                            className="text-sm font-bold uppercase tracking-wider mb-2"
-                                                            style={{ color: field.color }}
-                                                        >
+                                                        <p className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: field.color }}>
                                                             {field.label}
                                                         </p>
-                                                        {!isEditing && field.copyable && (
-                                                            <button
-                                                                onClick={() => copyToClipboard(field.value)}
-                                                                className="opacity-0 group-hover:opacity-100 p-2 rounded-lg transition-all duration-300 hover:shadow-md transform hover:scale-110 ml-2"
-                                                                style={{
-                                                                    backgroundColor: 'white',
-                                                                    color: field.color,
-                                                                    boxShadow: `0 4px 12px ${field.color}20`
-                                                                }}
-                                                            >
-                                                                <FiCopy className="w-4 h-4" />
-                                                            </button>
-                                                        )}
                                                     </div>
                                                     {renderFieldValue(field)}
-                                                    <p
-                                                        className="text-sm"
-                                                        style={{ color: TEXT.SECONDARY }}
-                                                    >
+                                                    <p className="text-sm" style={{ color: TEXT.SECONDARY }} >
                                                         {field.description}
                                                     </p>
                                                 </div>
@@ -781,7 +597,7 @@ const ParentProfile = () => {
                                         </div>
                                     );
                                 })}
-                                {/* Sau khi render profileFields, luôn luôn render block readonly cho relationship (không phụ thuộc isEditing) */}
+
                                 <div className="group relative p-8 rounded-2xl border border-transparent transition-all duration-300 bg-yellow-50">
                                     <div className="flex items-start space-x-5">
                                         <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md"
@@ -806,7 +622,6 @@ const ParentProfile = () => {
                     </div>
                 </div>
 
-                {/* Children Information Section */}
                 <div className="mt-10">
                     <div
                         className="bg-white rounded-3xl shadow-xl p-10 hover:shadow-2xl transition-all duration-500"
@@ -815,23 +630,16 @@ const ParentProfile = () => {
                             background: `linear-gradient(135deg, white 0%, ${PRIMARY[25] || '#f8fafc'} 100%)`
                         }}
                     >
-                        {/* Header */}
                         <div className="flex items-center justify-between mb-10 pb-8 border-b border-gray-100">
                             <div className="flex items-center">
                                 <div
                                     className="w-14 h-14 rounded-2xl flex items-center justify-center mr-5 shadow-lg"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                        color: 'white'
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
                                 >
                                     <FiUsers className="w-7 h-7" />
                                 </div>
                                 <div>
-                                    <h3
-                                        className="text-3xl font-bold"
-                                        style={{ color: TEXT.PRIMARY }}
-                                    >
+                                    <h3 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }} >
                                         Thông tin con em
                                     </h3>
                                     <p className="text-base" style={{ color: TEXT.SECONDARY }}>
@@ -846,32 +654,17 @@ const ParentProfile = () => {
                             </div>
                         </div>
 
-                        {/* Children Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
                             {profile.children.map((child, index) => (
                                 <div
                                     key={child.id}
                                     className="group relative p-8 rounded-2xl border border-transparent hover:border-opacity-30 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 w-full"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`,
-                                        borderColor: `${PRIMARY[500]}20`
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.borderColor = `${PRIMARY[500]}40`;
-                                        e.currentTarget.style.background = `linear-gradient(135deg, ${PRIMARY[500]}15 0%, ${PRIMARY[500]}08 100%)`;
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.borderColor = `${PRIMARY[500]}20`;
-                                        e.currentTarget.style.background = `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`;
-                                    }}
+                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]}08 0%, ${PRIMARY[500]}05 100%)`, borderColor: `${PRIMARY[500]}` }}
                                 >
                                     <div className="flex items-center space-x-6 mb-6">
                                         <div
                                             className="w-16 h-16 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[500]}CC 100%)`,
-                                                color: 'white'
-                                            }}
+                                            style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[500]}CC 100%)`, color: COMMON.WHITE }}
                                         >
                                             <FiUser className="w-8 h-8" />
                                         </div>
@@ -905,15 +698,11 @@ const ParentProfile = () => {
                                         </div>
                                     </div>
 
-                                    {/* Health Profile Button */}
                                     <div className="mt-6 pt-4 border-t border-gray-200">
                                         <button
                                             onClick={() => navigate(`/parent/health-profile/${child.id}`)}
                                             className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-white transition-all duration-200 font-medium hover:shadow-lg transform hover:scale-105"
-                                            style={{
-                                                backgroundColor: PRIMARY[600],
-                                                boxShadow: `0 2px 4px ${SHADOW.LIGHT}`,
-                                            }}
+                                            style={{ backgroundColor: PRIMARY[600], boxShadow: `0 2px 4px ${SHADOW.LIGHT}` }}
                                         >
                                             <FiHeart className="mr-2" />
                                             Xem hồ sơ sức khỏe
@@ -925,7 +714,7 @@ const ParentProfile = () => {
                     </div>
                 </div>
             </div>
-            {/* Alert Modal */}
+
             <AlertModal
                 isOpen={showAlert}
                 type={alertConfig.type}
