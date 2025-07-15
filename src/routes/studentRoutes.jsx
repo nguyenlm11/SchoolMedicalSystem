@@ -6,6 +6,7 @@ import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 import StudentMedication from "../pages/student/StudentMedication";
 import StudentHealthEvents from "../pages/student/StudentHealthEvents";
 import StudentProfile from "../pages/student/StudentProfile";
+import ChangePassword from "../pages/auth/ChangePassword";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -20,6 +21,7 @@ const studentRoutes = (
     <Route path="/student/request-visit" element={<PlaceholderPage title="Yêu cầu gặp y tá (đang phát triển)" />} />
     <Route path="/student/health-events" element={<StudentHealthEvents />} />
     <Route path="/student/profile" element={<StudentProfile />} />
+    <Route path="/student/change-password" element={<ChangePassword />} />
   </Route>
 );
 

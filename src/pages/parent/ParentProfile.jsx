@@ -690,17 +690,29 @@ const ParentProfile = () => {
                                         </button>
                                     </div>
                                 ) : (
-                                    <button
-                                        onClick={handleStartEdit}
-                                        className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
-                                            color: 'white'
-                                        }}
-                                    >
-                                        <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                                        <span className="font-semibold text-base">Chỉnh sửa</span>
-                                    </button>
+                                    <div className="flex items-center space-x-4">
+                                        <button
+                                            onClick={handleStartEdit}
+                                            className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`,
+                                                color: 'white'
+                                            }}
+                                        >
+                                            <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                            <span className="font-semibold text-base">Chỉnh sửa</span>
+                                        </button>
+                                        <button
+                                            onClick={() => navigate('/parent/change-password')}
+                                            className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                            style={{
+                                                backgroundColor: PRIMARY[500],
+                                                color: 'white',
+                                            }}>
+                                            <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                            <span className="font-semibold text-base">Đổi mật khẩu</span>
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 
