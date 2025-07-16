@@ -9,6 +9,7 @@ import MedicalItemDetail from "../pages/nurse/MedicalItemDetail";
 import VaccinationManagement from "../pages/nurse/VaccinationManagement";
 import VaccinationPlanCreate from "../pages/nurse/VaccinationPlanCreate";
 import VaccinationDetail from "../pages/nurse/VaccinationDetail";
+import VaccinationProcess from "../pages/nurse/VaccinationProcess";
 import HealthEventManagement from "../pages/nurse/HealthEventManagement";
 import HealthEventCreate from "../pages/nurse/HealthEventCreate";
 import HealthEventDetail from "../pages/nurse/HealthEventDetail";
@@ -36,6 +37,8 @@ const staffRoutes = (
     {/* Vaccination Routes */}
     <Route path="/schoolnurse/vaccination" element={<VaccinationManagement />} />
     <Route path="/schoolnurse/vaccination/:id" element={<VaccinationDetail />} />
+    <Route path="/schoolnurse/vaccination/:id/process" element={<VaccinationProcess />} />
+    <Route path="/schoolnurse/vaccination/:id/process/:classId" element={<VaccinationProcess />} />
     <Route path="/schoolnurse/vaccination/create" element={<VaccinationPlanCreate />} />
 
     {/* Health Event Routes */}

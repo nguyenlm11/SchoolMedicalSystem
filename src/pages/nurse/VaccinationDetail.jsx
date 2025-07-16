@@ -1,43 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-    FiArrowLeft,
-    FiCalendar,
-    FiClock,
-    FiUser,
-    FiUsers,
-    FiClipboard,
-    FiCheckCircle, 
-    FiXCircle,
-    FiDownload,
-    FiMessageCircle,
-    FiEdit,
-    FiTrash2,
-    FiBell,
-    FiInfo,
-    FiAlertCircle,
-    FiSearch,
-    FiBookmark,
-    FiActivity,
-    FiMapPin,
-    FiXOctagon,
-    FiAlertTriangle,
-    FiFilter,
-    FiMoreVertical,
-    FiEye,
-    FiRefreshCw,
-    FiUserPlus,
-    FiUserCheck,
-} from "react-icons/fi";
-import { PRIMARY, SECONDARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from "../../constants/colors";
+import { FiArrowLeft, FiCalendar, FiUser, FiUsers, FiClipboard, FiCheckCircle, FiMessageCircle, FiEdit, FiInfo, FiAlertCircle, FiSearch, FiBookmark, FiMapPin, FiXOctagon, FiAlertTriangle, FiMoreVertical, FiEye, FiRefreshCw, FiUserPlus, FiUserCheck } from "react-icons/fi";
+import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from "../../constants/colors";
 import vaccineSessionApi from '../../api/vaccineSessionApi';
 import Loading from "../../components/Loading";
-import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import AssignNurseModal from "../../components/modal/AssignNurseModal";
 import ReassignNurseModal from "../../components/modal/ReassignNurseModal";
-import MarkStudentModal from "../../components/modal/MarkStudentModal";
 import ViewResultModal from "../../components/modal/ViewResultModal";
-
 
 const VaccinationDetail = () => {
     const { id } = useParams();
@@ -53,62 +22,51 @@ const VaccinationDetail = () => {
     const [studentConsentData, setStudentConsentData] = useState([]);
 
     const [isAssignNurseModalOpen, setAssignNurseModalOpen] = useState(false);
-    const [selectedClassId, setSelectedClassId] = useState(null);
-
-    const [isMarkStudentModalOpen, setMarkStudentModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
     const [isViewResultModalOpen, setViewResultModalOpen] = useState(false);
- 
+
     const user = JSON.parse(localStorage.getItem("user"));
     const userRole = user?.role;
 
-
-    // Fetch details by id 
     useEffect(() => {
-        const fetchVaccinationDetails = async () => {
-            try {
-                setLoading(true);
-                const response = await vaccineSessionApi.getVaccineSessionDetails(id);
-                const session = response.data;
-                setVaccination(session);
-
-                
-                const classNurseAssignments = response.data.classNurseAssignments || [];
-
-                if (session?.classIds?.length > 0) {
-                    const classConsentResponses = await vaccineSessionApi.getAllClassStudentConsents(id, session.classIds);
-                    const validData = classConsentResponses
-                        .filter(res => res.success && res.data?.length > 0)
-                        .flatMap(res => res.data);
-
-                    // Map nurse assignments to students based on classId
-                    const studentsWithNurse = validData.map((item) => {
-                        item.students.forEach((student) => {
-                            const nurseAssignment = classNurseAssignments.find(assignment => assignment.classId === item.classId);
-                            student.classNurseAssignments = nurseAssignment ? nurseAssignment.nurseName : "Chưa có";
-                        });
-                        return item;
-                    });
-                    
-                    setStudentConsentData(studentsWithNurse);
-                }
-
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching vaccination details:", err);
-                setError("Không thể tải thông tin tiêm chủng.");
-                setLoading(false);
-            }
-        };
-
         fetchVaccinationDetails();
     }, [id]);
 
+    const fetchVaccinationDetails = async () => {
+        try {
+            setLoading(true);
+            const response = await vaccineSessionApi.getVaccineSessionDetails(id);
+            const session = response.data;
+            setVaccination(session);
+
+            const classNurseAssignments = response.data.classNurseAssignments || [];
+            if (session?.classIds?.length > 0) {
+                const classConsentResponses = await vaccineSessionApi.getAllClassStudentConsents(id, session.classIds);
+                const validData = classConsentResponses
+                    .filter(res => res.success && res.data?.length > 0)
+                    .flatMap(res => res.data);
+
+                const studentsWithNurse = validData.map((item) => {
+                    item.students.forEach((student) => {
+                        const nurseAssignment = classNurseAssignments.find(assignment => assignment.classId === item.classId);
+                        student.classNurseAssignments = nurseAssignment ? nurseAssignment.nurseName : "Chưa có";
+                    });
+                    return item;
+                });
+                setStudentConsentData(studentsWithNurse);
+            }
+            setLoading(false);
+        } catch (err) {
+            setError("Không thể tải thông tin tiêm chủng.");
+            setLoading(false);
+        }
+    };
+
     if (loading) {
         return (
-        <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
-        </div>
+            <div className="h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+                <Loading type="medical" size="large" color="primary" text="Đang tải thông tin..." />
+            </div>
         );
     }
 
@@ -118,18 +76,18 @@ const VaccinationDetail = () => {
                 <div className="text-center">
                     <h3 className="text-xl font-semibold mb-2" style={{ color: ERROR[600] }}>{error}</h3>
                     <button
-                    onClick={() => navigate(-1)}
-                    className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
-                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
+                        onClick={() => navigate(-1)}
+                        className="mt-4 px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-300"
+                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                     >
-                    <FiArrowLeft className="mr-2" />
-                    Quay lại
+                        <FiArrowLeft className="mr-2" />
+                        Quay lại
                     </button>
                 </div>
             </div>
         );
     }
-    
+
     const getStatusBadge = (status) => {
         switch (status) {
             case "PendingApproval":
@@ -141,7 +99,7 @@ const VaccinationDetail = () => {
             case "WaitingForParentConsent":
                 return (
                     <span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        Chờ xác nhận
+                        Chờ xác nhận phụ huynh
                     </span>
                 );
             case "Scheduled":
@@ -169,15 +127,14 @@ const VaccinationDetail = () => {
 
     const ConsentStatusBadge = ({ status }) => {
         let bgColor, text;
-
         switch (status) {
             case "Confirmed":
                 bgColor = SUCCESS[500];
-                text = "Đã xác nhận";
+                text = "Đã đồng ý";
                 break;
             case "Declined":
                 bgColor = ERROR[500];
-                text = "Từ chối";
+                text = "Từ chối tiêm";
                 break;
             case "Pending":
             default:
@@ -185,14 +142,10 @@ const VaccinationDetail = () => {
                 text = "Chưa phản hồi";
                 break;
         }
-
         return (
             <div
                 className="px-3 py-1 rounded-full inline-flex items-center"
-                style={{
-                    backgroundColor: bgColor,
-                    color: COMMON.WHITE
-                }}
+                style={{ backgroundColor: bgColor, color: COMMON.WHITE }}
             >
                 <span className="text-sm font-medium">{text}</span>
             </div>
@@ -201,7 +154,6 @@ const VaccinationDetail = () => {
 
     const VaccinationStatusBadge = ({ status }) => {
         let bgColor, text;
-
         switch (status) {
             case "Completed":
                 bgColor = PRIMARY[600];
@@ -213,17 +165,13 @@ const VaccinationDetail = () => {
                 break;
             default:
                 bgColor = GRAY[500];
-                text = "Đang tiến hành";
+                text = "Đang chờ tiêm";
                 break;
         }
-
         return (
             <div
                 className="px-3 py-1 rounded-full inline-flex items-center"
-                style={{
-                    backgroundColor: bgColor,
-                    color: COMMON.WHITE
-                }}
+                style={{ backgroundColor: bgColor, color: COMMON.WHITE }}
             >
                 <span className="text-sm font-medium">{text}</span>
             </div>
@@ -242,44 +190,25 @@ const VaccinationDetail = () => {
         .filter(student =>
             student.studentName.toLowerCase().includes(searchTerm.toLowerCase())
         );
-
     const uniqueClasses = studentConsentData.map(item => ({
         id: item.classId,
         name: item.className
     }));
 
-
-    const handleAssignNurse = (classId) => {
-        setSelectedClassId(classId);
-        setAssignNurseModalOpen(true);
-    };
-
-    const handleReassignNurse = (classId) => {
-        setSelectedClassId(classId);
-        setReassignNurseModalOpen(true);
-    };
-
     const handleNurseAssigned = (assignedNurseDataArray) => {
-        // Update vaccination state with new nurse assignments
         const updatedClassAssignments = [...(vaccination.classNurseAssignments || [])];
-        
-        // Process all assignments from the array
         assignedNurseDataArray.forEach(assignedNurseData => {
-            // Add new assignments for each class
             assignedNurseData.classIds.forEach(classId => {
                 const existingIndex = updatedClassAssignments.findIndex(
                     assignment => assignment.classId === classId
                 );
-                
                 if (existingIndex >= 0) {
-                    // Update existing assignment
                     updatedClassAssignments[existingIndex] = {
                         ...updatedClassAssignments[existingIndex],
                         nurseId: assignedNurseData.nurseId,
                         nurseName: assignedNurseData.nurseName
                     };
                 } else {
-                    // Add new assignment
                     updatedClassAssignments.push({
                         classId: classId,
                         nurseId: assignedNurseData.nurseId,
@@ -288,20 +217,16 @@ const VaccinationDetail = () => {
                 }
             });
         });
-
         setVaccination(prevVaccination => ({
             ...prevVaccination,
             classNurseAssignments: updatedClassAssignments
         }));
 
-        // Update student consent data to reflect new nurse assignments
-        setStudentConsentData(prevData => 
+        setStudentConsentData(prevData =>
             prevData.map(item => {
-                // Find the nurse assigned to this class
                 const nurseAssignment = updatedClassAssignments.find(
                     assignment => assignment.classId === item.classId
                 );
-                
                 return {
                     ...item,
                     students: item.students.map(student => ({
@@ -313,39 +238,23 @@ const VaccinationDetail = () => {
         );
     };
 
-
     const ActionMenu = ({ student }) => {
         const [isOpen, setIsOpen] = useState(false);
         const menuRef = useRef(null);
 
         useEffect(() => {
             const handleClickOutside = (event) => {
-                if (menuRef.current && !menuRef.current.contains(event.target)) {
-                    setIsOpen(false);
-                }
+                if (menuRef.current && !menuRef.current.contains(event.target)) { setIsOpen(false) }
             };
-
             document.addEventListener('mousedown', handleClickOutside);
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }, []);
 
-        const handleMarkStudent = (action) => {
-            setIsOpen(false);
-            setSelectedStudentId(student.studentId);
-            setMarkStudentModalOpen(true);
-        };
-
-        // Kiểm tra xem nurse đã được phân công cho lớp của học sinh này chưa
         const isNurseAssigned = () => {
-            if (userRole !== 'schoolnurse') {
-                return true;
-            }
-
-            // Kiểm tra nếu nurseId của user có trong danh sách classNurseAssignments
+            if (userRole !== 'schoolnurse') { return true }
             const assignedClass = vaccination.classNurseAssignments.find(
                 assignment => assignment.nurseId === user?.id && assignment.classId === student.classId
             );
-
             return assignedClass ? true : false;
         };
 
@@ -354,10 +263,7 @@ const VaccinationDetail = () => {
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
-                    style={{
-                        backgroundColor: GRAY[100],
-                        color: TEXT.PRIMARY
-                    }}
+                    style={{ backgroundColor: GRAY[100], color: TEXT.PRIMARY }}
                 >
                     <FiMoreVertical className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
@@ -365,16 +271,8 @@ const VaccinationDetail = () => {
                 {isOpen && (
                     <div
                         className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                        style={{
-                            borderColor: BORDER.DEFAULT,
-                            right: '100%',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            marginRight: '8px',
-                            zIndex: 50
-                        }}
+                        style={{ borderColor: BORDER.DEFAULT, right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '8px', zIndex: 50 }}
                     >
-                        {/* Xem chi tiết – CHO MANAGER & SCHOOLNURSE */}
                         {(userRole === 'manager' || userRole === 'schoolnurse') && (
                             <Link
                                 to={`/${userRole}/student-health-profile/${student.studentId}`}
@@ -383,33 +281,20 @@ const VaccinationDetail = () => {
                                 style={{ color: PRIMARY[600] }}
                             >
                                 <FiEye className="w-4 h-4 flex-shrink-0" />
-                                <span>Xem chi tiết</span>
+                                <span>Xem hồ sơ</span>
                             </Link>
                         )}
 
-                        {/* Các nút dưới chỉ dành cho SCHOOLNURSE */}
                         {userRole === 'schoolnurse' && isNurseAssigned() && (
                             <>
-                                {student.vaccinationStatus === "InProgress" ? (
+                                {student.vaccinationStatus !== "InProgress" && (
                                     <button
-                                        onClick={() => handleMarkStudent('vaccinated')}
-                                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                        style={{ color: SUCCESS[600] }}
-                                    >
-                                        <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
-                                        <span>Tiến hành tiêm</span>
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => {
-                                            setSelectedStudentId(student.studentId);
-                                            setViewResultModalOpen(true);
-                                        }}
+                                        onClick={() => { setSelectedStudentId(student.studentId); setViewResultModalOpen(true) }}
                                         className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                         style={{ color: ERROR[600] }}
                                     >
                                         <FiEye className="w-4 h-4 flex-shrink-0" />
-                                        <span>Xem kết quả</span>
+                                        <span>Xem kết quả tiêm</span>
                                     </button>
                                 )}
                             </>
@@ -446,7 +331,6 @@ const VaccinationDetail = () => {
 
     return (
         <div className="min-h-screen pb-8" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            {/* Header Bar */}
             <div className="w-full bg-white border-b shadow-sm sticky top-0 z-10" style={{ borderColor: BORDER.DEFAULT }}>
                 <div className="max-w-[1920px] mx-auto px-6 py-4">
                     <div className="flex items-center justify-between">
@@ -467,32 +351,40 @@ const VaccinationDetail = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex space-x-4"> 
-                            {/* Phân quyền cho nút "Chỉnh sửa" và "Phân công" */}
+                        <div className="flex space-x-4">
                             {userRole === "schoolnurse" && (
-                                <Link
-                                    to={`/schoolnurse/vaccination/${id}/edit`}
-                                    className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                    style={{
-                                        backgroundColor: PRIMARY[500],
-                                        color: TEXT.INVERSE,
-                                        border: `1px solid ${PRIMARY[600]}`
-                                    }}
-                                >
-                                    <FiEdit className="h-4 w-4 mr-2" />
-                                    Chỉnh sửa
-                                </Link>
+                                <>
+                                    <Link
+                                        to={`/schoolnurse/vaccination/${id}/edit`}
+                                        className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                        style={{
+                                            backgroundColor: PRIMARY[500],
+                                            color: TEXT.INVERSE,
+                                            border: `1px solid ${PRIMARY[600]}`
+                                        }}
+                                    >
+                                        <FiEdit className="h-4 w-4 mr-2" />
+                                        Chỉnh sửa
+                                    </Link>
+
+                                    {vaccination?.classNurseAssignments?.some(assignment => assignment.nurseId === user?.id) && (
+                                        <Link
+                                            to={`/schoolnurse/vaccination/${id}/process`}
+                                            className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                            style={{ backgroundColor: SUCCESS[500], color: TEXT.INVERSE, border: `1px solid ${SUCCESS[600]}` }}
+                                        >
+                                            <FiCheckCircle className="h-4 w-4 mr-2" />
+                                            Tiến hành tiêm
+                                        </Link>
+                                    )}
+                                </>
                             )}
                             {userRole === "manager" && (
                                 <>
                                     <button
                                         onClick={() => setAssignNurseModalOpen(true)}
                                         className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                        style={{
-                                            backgroundColor: PRIMARY[500],
-                                            color: TEXT.INVERSE,
-                                            border: `1px solid ${PRIMARY[600]}`,
-                                        }}
+                                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE, border: `1px solid ${PRIMARY[600]}` }}
                                     >
                                         <FiUserPlus className="w-4 h-4 mr-2" />
                                         Phân công
@@ -501,11 +393,7 @@ const VaccinationDetail = () => {
                                     <button
                                         onClick={() => setReassignNurseModalOpen(true)}
                                         className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                        style={{
-                                            backgroundColor: PRIMARY[500],
-                                            color: TEXT.INVERSE,
-                                            border: `1px solid ${PRIMARY[600]}`,
-                                        }}
+                                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE, border: `1px solid ${PRIMARY[600]}` }}
                                     >
                                         <FiUserCheck className="w-4 h-4 mr-2" />
                                         Tái phân công
@@ -518,32 +406,19 @@ const VaccinationDetail = () => {
             </div>
 
             <div className="max-w-[1920px] mx-auto px-6 py-8">
-                {/* Vaccination Header Card */}
                 <div
                     className="bg-white rounded-2xl shadow-xl border backdrop-blur-sm mb-8"
-                    style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: BORDER.LIGHT,
-                        boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}`
-                    }}
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}
                 >
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-4">
-                                <div
-                                    className="p-3 rounded-xl"
-                                    style={{ backgroundColor: PRIMARY[50] }}
-                                >
+                                <div className="p-3 rounded-xl" style={{ backgroundColor: PRIMARY[50] }} >
                                     <FiClipboard className="h-6 w-6" style={{ color: PRIMARY[500] }} />
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                        {vaccination.sessionName}
-                                    </h2>
-                                    {/* <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
-                                        {vaccination.description}
-                                    </p> */}
-                                </div>
+                                <h2 className="text-xl font-bold" style={{ color: TEXT.PRIMARY }}>
+                                    {vaccination.sessionName}
+                                </h2>
                             </div>
                             <div className="flex flex-col items-end space-y-3">
                                 {getStatusBadge(vaccination.status)}
@@ -554,47 +429,16 @@ const VaccinationDetail = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <StatCard
-                                icon={<FiCalendar />}
-                                title="Kế hoạch sắp tới"
-                                value="3"
-                                bgColor="#0D9488"
-                            />
-                            <StatCard
-                                icon={<FiCheckCircle />}
-                                title="Đã hoàn thành"
-                                value="1"
-                                bgColor="#22C55E"
-                            />
-                            <StatCard
-                                icon={<FiUsers />}
-                                title="Tổng học sinh"
-                                value="267"
-                                bgColor="#F59E0B"
-                            />
-                        </div>
-                    </div> */}
                 </div>
 
-                {/* Info Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    {/* Vaccination Information */}
                     <div
                         className="bg-white rounded-2xl shadow-lg border overflow-hidden"
-                        style={{
-                            borderColor: BORDER.DEFAULT,
-                            boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}`
-                        }}
+                        style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}
                     >
                         <div
                             className="px-6 py-4 border-b flex items-center"
-                            style={{
-                                background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`,
-                                borderColor: PRIMARY[200]
-                            }}
+                            style={{ background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`, borderColor: PRIMARY[200] }}
                         >
                             <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${PRIMARY[500]}20` }}>
                                 <FiInfo className="h-6 w-6" style={{ color: PRIMARY[700] }} />
@@ -607,10 +451,7 @@ const VaccinationDetail = () => {
                         <div className="p-6">
                             <div className="grid grid-cols-1 gap-6">
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${PRIMARY[50]}50`,
-                                        borderColor: PRIMARY[200]
-                                    }}
+                                    style={{ backgroundColor: `${PRIMARY[50]}50`, borderColor: PRIMARY[200] }}
                                 >
                                     <div className="flex items-center">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${PRIMARY[500]}15` }}>
@@ -623,18 +464,12 @@ const VaccinationDetail = () => {
                                             <p className="text-lg font-semibold mt-1" style={{ color: PRIMARY[700] }}>
                                                 {vaccination.vaccineTypeName}
                                             </p>
-                                            {/* <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                Phương pháp: {vaccination.vaccinationMethod}
-                                            </p> */}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${PRIMARY[50]}50`,
-                                        borderColor: PRIMARY[200]
-                                    }}
+                                    style={{ backgroundColor: `${PRIMARY[50]}50`, borderColor: PRIMARY[200] }}
                                 >
                                     <div className="flex items-center">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${PRIMARY[500]}15` }}>
@@ -655,10 +490,7 @@ const VaccinationDetail = () => {
                                 </div>
 
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${PRIMARY[50]}50`,
-                                        borderColor: PRIMARY[200]
-                                    }}
+                                    style={{ backgroundColor: `${PRIMARY[50]}50`, borderColor: PRIMARY[200] }}
                                 >
                                     <div className="flex items-center">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${PRIMARY[500]}15` }}>
@@ -681,20 +513,13 @@ const VaccinationDetail = () => {
                         </div>
                     </div>
 
-                    {/* Important Notes */}
                     <div
                         className="bg-white rounded-2xl shadow-lg border overflow-hidden"
-                        style={{
-                            borderColor: BORDER.DEFAULT,
-                            boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}`
-                        }}
+                        style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}
                     >
                         <div
                             className="px-6 py-4 border-b flex items-center"
-                            style={{
-                                background: `linear-gradient(135deg, ${WARNING[50]} 0%, ${WARNING[100]} 100%)`,
-                                borderColor: WARNING[200]
-                            }}
+                            style={{ background: `linear-gradient(135deg, ${WARNING[50]} 0%, ${WARNING[100]} 100%)`, borderColor: WARNING[200] }}
                         >
                             <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${WARNING[500]}20` }}>
                                 <FiAlertCircle className="h-6 w-6" style={{ color: WARNING[700] }} />
@@ -707,10 +532,7 @@ const VaccinationDetail = () => {
                         <div className="p-6">
                             <div className="grid grid-cols-1 gap-6">
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${WARNING[50]}50`,
-                                        borderColor: WARNING[200]
-                                    }}
+                                    style={{ backgroundColor: `${WARNING[50]}50`, borderColor: WARNING[200] }}
                                 >
                                     <div className="flex items-center mb-3">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${WARNING[500]}15` }}>
@@ -728,10 +550,7 @@ const VaccinationDetail = () => {
                                 </div>
 
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${ERROR[50]}50`,
-                                        borderColor: ERROR[200]
-                                    }}
+                                    style={{ backgroundColor: `${ERROR[50]}50`, borderColor: ERROR[200] }}
                                 >
                                     <div className="flex items-center mb-3">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${ERROR[500]}15` }}>
@@ -749,10 +568,7 @@ const VaccinationDetail = () => {
                                 </div>
 
                                 <div className="p-4 rounded-xl border transition-all duration-200 hover:shadow-md"
-                                    style={{
-                                        backgroundColor: `${PRIMARY[50]}50`,
-                                        borderColor: PRIMARY[200]
-                                    }}
+                                    style={{ backgroundColor: `${PRIMARY[50]}50`, borderColor: PRIMARY[200] }}
                                 >
                                     <div className="flex items-center mb-3">
                                         <div className="p-2 rounded-lg" style={{ backgroundColor: `${PRIMARY[500]}15` }}>
@@ -773,14 +589,9 @@ const VaccinationDetail = () => {
                     </div>
                 </div>
 
-                {/* Student List */}
                 <div
                     className="bg-white rounded-2xl shadow-xl border backdrop-blur-sm"
-                    style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: BORDER.LIGHT,
-                        boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}`
-                    }}
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}
                 >
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex justify-between items-center">
@@ -824,38 +635,20 @@ const VaccinationDetail = () => {
                                 <input
                                     type="text"
                                     className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{
-                                        borderColor: BORDER.DEFAULT,
-                                        backgroundColor: BACKGROUND.DEFAULT,
-                                        color: TEXT.PRIMARY,
-                                        focusRingColor: `${PRIMARY[500]}40`
-                                    }}
+                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}40` }}
                                     placeholder="Tìm kiếm học sinh..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-
-                            {/* <div className="flex items-center justify-between text-sm" style={{ color: TEXT.SECONDARY }}>
-                                <span>
-                                    Hiển thị {filteredStudents.length} học sinh {selectedClass !== "all" ? `của lớp ${selectedClass}` : ""}
-                                </span>
-                                <span>
-                                    Tổng số: {vaccination?.students.length || 0} học sinh
-                                </span>
-                            </div> */}
                         </div>
                     </div>
 
-                    {/* Student List Table */}
                     <div className="overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr style={{
-                                        backgroundColor: PRIMARY[50],
-                                        borderBottom: `2px solid ${PRIMARY[200]}`
-                                    }}>
+                                    <tr style={{ backgroundColor: PRIMARY[50], borderBottom: `2px solid ${PRIMARY[200]}` }}>
                                         {[
                                             { key: "index", label: "STT", width: "80px" },
                                             { key: "name", label: "Họ và tên", width: "250px" },
@@ -869,11 +662,7 @@ const VaccinationDetail = () => {
                                                 key={idx}
                                                 className={`py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider ${col.key !== 'action' && col.key !== 'index' ? 'cursor-pointer hover:bg-primary-100' : ''
                                                     } transition-all duration-200`}
-                                                style={{
-                                                    color: PRIMARY[700],
-                                                    width: col.width,
-                                                    position: 'relative'
-                                                }}
+                                                style={{ color: PRIMARY[700], width: col.width, position: 'relative' }}
                                                 onClick={col.key !== 'action' && col.key !== 'index' ? () => handleSort(col.key) : undefined}
                                             >
                                                 <div className="flex items-center">
@@ -887,11 +676,7 @@ const VaccinationDetail = () => {
                                                 {idx !== 5 && (
                                                     <div
                                                         className="absolute right-0 top-1/2 -translate-y-1/2"
-                                                        style={{
-                                                            width: '1px',
-                                                            height: '20px',
-                                                            backgroundColor: PRIMARY[200]
-                                                        }}
+                                                        style={{ width: '1px', height: '20px', backgroundColor: PRIMARY[200] }}
                                                     />
                                                 )}
                                             </th>
@@ -956,156 +741,29 @@ const VaccinationDetail = () => {
                 </div>
             </div>
 
-            {/* MarkStudentModal */}
-            <MarkStudentModal
-                isOpen={isMarkStudentModalOpen}
-                onClose={() => setMarkStudentModalOpen(false)}
-                sessionId={id}
-                studentId={selectedStudentId}
-                studentData={filteredStudents.find(student => student.studentId === selectedStudentId)} 
-                onSuccess={() => {
-                    // Handle success, e.g., reload the page or refresh the student data
-                    setMarkStudentModalOpen(false);
-                }}
-            />
             <ViewResultModal
                 isOpen={isViewResultModalOpen}
                 onClose={() => setViewResultModalOpen(false)} // Close modal
                 sessionId={id}
                 studentId={selectedStudentId}
-                studentData={filteredStudents.find(student => student.studentId === selectedStudentId)} 
+                studentData={filteredStudents.find(student => student.studentId === selectedStudentId)}
             />
 
-            {/* Assign Nurse Modal */}
             <AssignNurseModal
                 isOpen={isAssignNurseModalOpen}
                 onClose={() => setAssignNurseModalOpen(false)}
                 sessionId={id}
-                preselectedClassId={selectedClassId}
                 onNurseAssigned={handleNurseAssigned}
             />
 
-            {/* Reassign Nurse Modal */}
             <ReassignNurseModal
                 isOpen={isReassignNurseModalOpen}
                 onClose={() => setReassignNurseModalOpen(false)}
                 sessionId={id}
                 onNurseReassigned={handleNurseAssigned}
-                selectedClassId={selectedClassId}
             />
         </div>
     );
 };
-
-// Component cho thống kê
-const StatCard = ({ icon, title, value, bgColor }) => (
-    <div
-        className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-        style={{
-            background: `linear-gradient(135deg, ${bgColor} 0%, ${bgColor} 100%)`,
-            borderColor: 'rgba(255, 255, 255, 0.2)'
-        }}
-    >
-        <div className="p-6 relative z-10">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                        {title}
-                    </p>
-                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                        {value}
-                    </p>
-                </div>
-                <div
-                    className="h-16 w-16 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-                >
-                    {React.cloneElement(icon, { className: "h-8 w-8", style: { color: TEXT.INVERSE } })}
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
-// Component cho các mục thông tin
-// const InfoItem = ({ icon, label, value, color }) => (
-//     <div className="flex items-start">
-//         <div
-//             className="p-2 rounded-lg mr-4 mt-1"
-//             style={{ backgroundColor: `${color[500]}10` }}
-//         >
-//             {React.cloneElement(icon, {
-//                 className: "h-5 w-5",
-//                 style: { color: color[600] }
-//             })}
-//         </div>
-//         <div className="flex-1">
-//             <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>
-//                 {label}
-//             </p>
-//             <p className="text-base" style={{ color: TEXT.PRIMARY }}>
-//                 {value}
-//             </p>
-//         </div>
-//     </div>
-// );
-
-// Component cho badge trạng thái
-const StatusBadge = ({ status, textTrue, textFalse, colorTrue, colorFalse }) => {
-    const color = status ? colorTrue : colorFalse;
-    return (
-        <div
-            className="px-3 py-1 rounded-full inline-flex items-center"
-            style={{
-                backgroundColor: color[500],
-                color: COMMON.WHITE
-            }}
-        >
-            <span className="text-sm font-medium">
-                {status ? textTrue : textFalse}
-            </span>
-        </div>
-    );
-};
-
-// Component cho modal
-const Modal = ({ title, children, onClose, onConfirm, confirmText, confirmColor }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div
-            className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl"
-            style={{
-                boxShadow: `0 25px 50px -12px ${SHADOW.MEDIUM}`
-            }}
-        >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: TEXT.PRIMARY }}>
-                {title}
-            </h3>
-            <div className="mb-6">{children}</div>
-            <div className="flex justify-end space-x-4">
-                <button
-                    onClick={onClose}
-                    className="px-4 py-2 rounded-xl font-medium border transition-colors duration-200"
-                    style={{
-                        backgroundColor: BACKGROUND.DEFAULT,
-                        color: TEXT.PRIMARY,
-                        borderColor: BORDER.DEFAULT
-                    }}
-                >
-                    Hủy
-                </button>
-                <button
-                    onClick={onConfirm}
-                    className="px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md"
-                    style={{
-                        background: `linear-gradient(135deg, ${confirmColor[500]} 0%, ${confirmColor[600]} 100%)`,
-                        color: TEXT.INVERSE
-                    }}
-                >
-                    {confirmText}
-                </button>
-            </div>
-        </div>
-    </div>
-);
 
 export default VaccinationDetail;
