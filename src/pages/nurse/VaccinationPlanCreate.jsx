@@ -75,9 +75,7 @@ const VaccinationPlanCreate = () => {
     }, []);
 
     useEffect(() => {
-        if (vaccineTypesSearch) {
-            fetchVaccineTypes();
-        }
+        fetchVaccineTypes();
     }, [vaccineTypesSearch]);
 
     const fetchClasses = async () => {
@@ -92,7 +90,6 @@ const VaccinationPlanCreate = () => {
                 throw new Error(response.message || "Không thể tải danh sách lớp học");
             }
         } catch (error) {
-            console.error("Error fetching classes:", error);
             setClassesError(error.message);
         } finally {
             setClassesLoading(false);

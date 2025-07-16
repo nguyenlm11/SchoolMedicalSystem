@@ -232,6 +232,21 @@ const vaccineSessionApi = {
                 data: null
             };
         }
+    },
+
+    // Cập nhật trạng thái tiêm chủng của học sinh
+    updateStudentVaccinationStatus: async (sessionId, studentId, vaccinationData) => {
+        try {
+            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/students/${studentId}/vaccination-status`, vaccinationData);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating student vaccination status:', error);
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể cập nhật trạng thái tiêm chủng.',
+                data: null
+            };
+        }
     }
 };
 
