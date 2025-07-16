@@ -259,16 +259,58 @@ const VaccinationDetail = () => {
         setReassignNurseModalOpen(true);
     };
 
-    const handleNurseAssigned = (assignedNurseData) => {
-        const updatedClassAssignments = vaccination.classNurseAssignments.map(assignment => 
-            assignment.classId === selectedClassId 
-                ? { ...assignment, nurseName: assignedNurseData.nurseName } 
-                : assignment
-        );
+    const handleNurseAssigned = (assignedNurseDataArray) => {
+        // Update vaccination state with new nurse assignments
+        const updatedClassAssignments = [...(vaccination.classNurseAssignments || [])];
+        
+        // Process all assignments from the array
+        assignedNurseDataArray.forEach(assignedNurseData => {
+            // Add new assignments for each class
+            assignedNurseData.classIds.forEach(classId => {
+                const existingIndex = updatedClassAssignments.findIndex(
+                    assignment => assignment.classId === classId
+                );
+                
+                if (existingIndex >= 0) {
+                    // Update existing assignment
+                    updatedClassAssignments[existingIndex] = {
+                        ...updatedClassAssignments[existingIndex],
+                        nurseId: assignedNurseData.nurseId,
+                        nurseName: assignedNurseData.nurseName
+                    };
+                } else {
+                    // Add new assignment
+                    updatedClassAssignments.push({
+                        classId: classId,
+                        nurseId: assignedNurseData.nurseId,
+                        nurseName: assignedNurseData.nurseName
+                    });
+                }
+            });
+        });
+
         setVaccination(prevVaccination => ({
             ...prevVaccination,
             classNurseAssignments: updatedClassAssignments
         }));
+
+        // Update student consent data to reflect new nurse assignments
+        setStudentConsentData(prevData => 
+            prevData.map(item => {
+                // Find the nurse assigned to this class
+                const nurseAssignment = updatedClassAssignments.find(
+                    assignment => assignment.classId === item.classId
+                );
+                
+                return {
+                    ...item,
+                    students: item.students.map(student => ({
+                        ...student,
+                        classNurseAssignments: nurseAssignment ? nurseAssignment.nurseName : "Chưa có"
+                    }))
+                };
+            })
+        );
     };
 
 
@@ -443,33 +485,31 @@ const VaccinationDetail = () => {
                             )}
                             {userRole === "manager" && (
                                 <>
-                                    
-                                        <button
-                                            onClick={() => setAssignNurseModalOpen(true)}
-                                            className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                            style={{
-                                                backgroundColor: PRIMARY[500],
-                                                color: TEXT.INVERSE,
-                                                border: `1px solid ${PRIMARY[600]}`,
-                                            }}
-                                        >
-                                            <FiUserPlus className="w-4 h-4 mr-2" />
-                                            Phân công
-                                        </button>
+                                    <button
+                                        onClick={() => setAssignNurseModalOpen(true)}
+                                        className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                        style={{
+                                            backgroundColor: PRIMARY[500],
+                                            color: TEXT.INVERSE,
+                                            border: `1px solid ${PRIMARY[600]}`,
+                                        }}
+                                    >
+                                        <FiUserPlus className="w-4 h-4 mr-2" />
+                                        Phân công
+                                    </button>
 
-                                   
-                                        <button
-                                            onClick={() => setReassignNurseModalOpen(true)}
-                                            className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
-                                            style={{
-                                                backgroundColor: PRIMARY[500],
-                                                color: TEXT.INVERSE,
-                                                border: `1px solid ${PRIMARY[600]}`,
-                                            }}
-                                        >
-                                            <FiUserCheck className="w-4 h-4 mr-2" />
-                                            Tái phân công
-                                        </button>
+                                    <button
+                                        onClick={() => setReassignNurseModalOpen(true)}
+                                        className="inline-flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:opacity-90"
+                                        style={{
+                                            backgroundColor: PRIMARY[500],
+                                            color: TEXT.INVERSE,
+                                            border: `1px solid ${PRIMARY[600]}`,
+                                        }}
+                                    >
+                                        <FiUserCheck className="w-4 h-4 mr-2" />
+                                        Tái phân công
+                                    </button>
                                 </>
                             )}
                         </div>
@@ -941,8 +981,8 @@ const VaccinationDetail = () => {
                 isOpen={isAssignNurseModalOpen}
                 onClose={() => setAssignNurseModalOpen(false)}
                 sessionId={id}
-                classId={selectedClassId}
-                onNurseAssigned={handleAssignNurse}
+                preselectedClassId={selectedClassId}
+                onNurseAssigned={handleNurseAssigned}
             />
 
             {/* Reassign Nurse Modal */}
@@ -950,7 +990,7 @@ const VaccinationDetail = () => {
                 isOpen={isReassignNurseModalOpen}
                 onClose={() => setReassignNurseModalOpen(false)}
                 sessionId={id}
-                onNurseReassigned={handleReassignNurse}
+                onNurseReassigned={handleNurseAssigned}
                 selectedClassId={selectedClassId}
             />
         </div>
