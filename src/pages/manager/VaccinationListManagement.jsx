@@ -118,7 +118,6 @@ const VaccinationListManagement = () => {
             setLoading(true);
             const result = await apiCall();
             if (result.success) {
-                closeModal();
                 await fetchVaccinationSessions();
                 showAlert("success", successMessage);
             } else {
@@ -223,11 +222,34 @@ const VaccinationListManagement = () => {
     const getConfirmModalProps = () => {
         const { status } = selectedVaccination || {};
         const modalConfig = {
-            PendingApproval: { title: "Xác nhận duyệt kế hoạch", message: "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này?", confirmText: "Duyệt", action: () => handleApprove(selectedVaccination?.id) },
-            WaitingForParentConsent: { title: "Xác nhận chốt danh sách", message: "Bạn có chắc chắn muốn chốt danh sách cho buổi tiêm chủng này?", confirmText: "Chốt danh sách", action: () => handleFinalize(selectedVaccination?.id) },
-            Scheduled: { title: "Xác nhận hoàn thành", message: "Bạn có chắc chắn muốn đánh dấu buổi tiêm chủng này là đã hoàn thành?", confirmText: "Hoàn thành", action: () => handleComplete(selectedVaccination?.id) }
+            PendingApproval: { 
+                title: "Xác nhận duyệt kế hoạch", 
+                message: "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này?", 
+                confirmText: "Duyệt", 
+                action: () => {
+                    closeModal();
+                    handleApprove(selectedVaccination?.id);
+                }
+            },
+            WaitingForParentConsent: { 
+                title: "Xác nhận chốt danh sách", 
+                message: "Bạn có chắc chắn muốn chốt danh sách cho buổi tiêm chủng này?", 
+                confirmText: "Chốt danh sách", 
+                action: () => {
+                    closeModal();
+                    handleFinalize(selectedVaccination?.id);
+                }
+            },
+            Scheduled: { 
+                title: "Xác nhận hoàn thành", 
+                message: "Bạn có chắc chắn muốn đánh dấu buổi tiêm chủng này là đã hoàn thành?", 
+                confirmText: "Hoàn thành", 
+                action: () => {
+                    closeModal();
+                    handleComplete(selectedVaccination?.id);
+                }
+            }
         };
-
         return modalConfig[status] || { title: "Xác nhận", message: "Bạn có chắc chắn?", confirmText: "Xác nhận", action: () => { } };
     };
 

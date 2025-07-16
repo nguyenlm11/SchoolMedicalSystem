@@ -17,10 +17,11 @@ const VaccinationDetail = () => {
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [consentGiven, setConsentGiven] = useState(null);
-    const [submitted, setSubmitted] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const [alertType, setAlertType] = useState("info");
     const [consentStatus, setConsentStatus] = useState(null);
     const [consentData, setConsentData] = useState(null);
 
@@ -100,47 +101,13 @@ const VaccinationDetail = () => {
         }
     }, [id, location.state?.studentId]);
 
-    const getStatusBadge = (status) => {
-        if (status === "scheduled") {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: PRIMARY[500] }}></div>
-                    Đã lên lịch
-                </span>
-            );
-        } else if (status === "pending") {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[800] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: PRIMARY[600] }}></div>
-                    Chờ xác nhận
-                </span>
-            );
-        } else if (status === "completed") {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: PRIMARY[500] }}></div>
-                    Đã hoàn thành
-                </span>
-            );
-        } else {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                    style={{ backgroundColor: GRAY[100], color: GRAY[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: GRAY[500] }}></div>
-                    Đã hủy
-                </span>
-            );
-        }
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
         if (consentGiven !== null) {
             setShowConfirmModal(true);
         } else {
+            setAlertMessage("Vui lòng chọn đồng ý hoặc không đồng ý");
+            setAlertType("warning");
             setShowAlertModal(true);
         }
     };
@@ -149,9 +116,7 @@ const VaccinationDetail = () => {
         setIsSubmitting(true);
 
         try {
-            // Sử dụng API mới submitParentApproval
             const status = consentGiven ? "Confirmed" : "Declined";
-
             const submitResponse = await vaccinationScheduleApi.submitParentApproval(
                 vaccination.vaccinationSessionId,
                 vaccination.studentId,
@@ -159,7 +124,6 @@ const VaccinationDetail = () => {
             );
 
             if (submitResponse.success) {
-                // Fetch lại để cập nhật trạng thái mới
                 const consentResponse = await vaccinationScheduleApi.getParentConsentStatus(
                     vaccination.vaccinationSessionId,
                     vaccination.studentId
@@ -168,13 +132,23 @@ const VaccinationDetail = () => {
                     setConsentData(consentResponse.data);
                     setConsentStatus(consentResponse.data.consentStatus);
                 }
-                setSubmitted(true);
+                setAlertMessage(
+                    consentGiven
+                        ? `Phiếu đồng ý tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được gửi thành công.`
+                        : `Phiếu từ chối tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được ghi nhận.`
+                );
+                setAlertType("success");
+                setShowAlertModal(true);
                 setShowConfirmModal(false);
             } else {
+                setAlertMessage("Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại.");
+                setAlertType("error");
                 setShowAlertModal(true);
             }
         } catch (error) {
             console.error('Error submitting parent approval:', error);
+            setAlertMessage("Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại.");
+            setAlertType("error");
             setShowAlertModal(true);
         } finally {
             setIsSubmitting(false);
@@ -216,265 +190,236 @@ const VaccinationDetail = () => {
     return (
         <div className="min-h-screen bg-gray-100 py-8">
             <div className="w-full px-6 lg:px-12 xl:px-16">
-                {!submitted ? (
-                    <div className="bg-white shadow-lg border border-gray-300 w-full" style={{ fontFamily: 'Times, serif' }}>
-                        <div className="text-center border-b-2 border-black p-8">
-                            <div className="mb-4">
-                                <h1 className="text-3xl font-bold uppercase tracking-wide">TRƯỜNG TIỂU HỌC ABC</h1>
-                                <p className="text-lg mt-2">123 Đường XYZ, Quận 1, TP. Hồ Chí Minh</p>
-                                <p className="text-lg">Điện thoại: (028) 1234-5678 | Email: info@tieuhocabc.edu.vn</p>
-                            </div>
-
-                            <div className="flex justify-between items-center">
-                                <div className="text-left">
-                                    <p className="text-lg">Số: {String(vaccination.id).padStart(4, '0')}/2025/PHĐY-TC</p>
-                                    <p className="text-lg">Ngày: {vaccination.createdDate}</p>
-                                </div>
-                                <div className="text-right">
-                                    {getStatusBadge(vaccination.status)}
-                                </div>
-                            </div>
+                <div className="bg-white shadow-lg border border-gray-300 w-full" style={{ fontFamily: 'Times, serif' }}>
+                    <div className="text-center border-b-2 border-black p-8">
+                        <div className="mb-4">
+                            <h1 className="text-3xl font-bold uppercase tracking-wide">TRƯỜNG TIỂU HỌC ABC</h1>
+                            <p className="text-lg mt-2">123 Đường XYZ, Quận 1, TP. Hồ Chí Minh</p>
+                            <p className="text-lg">Điện thoại: (028) 1234-5678 | Email: info@tieuhocabc.edu.vn</p>
                         </div>
 
-                        <div className="text-center py-8">
-                            <h2 className="text-5xl font-bold uppercase tracking-wider">PHIẾU ĐỒNG Ý TIÊM CHỦNG</h2>
-                            <p className="text-2xl mt-4 italic">Vaccine {vaccinationSession?.vaccineTypeName || "Đang tải..."}</p>
+                        <div className="flex justify-between items-center">
+                            <div className="text-left">
+                                <p className="text-lg">Số: {String(vaccination.id).padStart(4, '0')}/2025/PHĐY-TC</p>
+                                <p className="text-lg">Ngày: {vaccination.createdDate}</p>
+                            </div>
                         </div>
+                    </div>
 
-                        <div className="px-12 pb-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                                <div className="space-y-8">
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">I. THÔNG TIN HỌC SINH</h3>
-                                        <div className="space-y-4 text-xl">
+                    <div className="text-center py-8">
+                        <h2 className="text-5xl font-bold uppercase tracking-wider">PHIẾU ĐỒNG Ý TIÊM CHỦNG</h2>
+                        <p className="text-2xl mt-4 italic">Vaccine {vaccinationSession?.vaccineTypeName || "Đang tải..."}</p>
+                    </div>
+
+                    <div className="px-12 pb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                            <div className="space-y-8">
+                                <div>
+                                    <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">I. THÔNG TIN HỌC SINH</h3>
+                                    <div className="space-y-4 text-xl">
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Họ và tên:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.fullName || "Đang tải..."}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8">
                                             <div className="flex">
-                                                <span className="font-semibold w-40">Họ và tên:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.fullName || "Đang tải..."}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-x-8">
-                                                <div className="flex">
-                                                    <span className="font-semibold w-20">Lớp:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.currentClassName || "Đang tải..."}</span>
-                                                </div>
-                                                <div className="flex">
-                                                    <span className="font-semibold w-24">Mã HS:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.studentCode || "Đang tải..."}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex">
-                                                <span className="font-semibold w-40">Ngày sinh:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.dateOfBirth ? formatDate(student.dateOfBirth) : "Đang tải..."}</span>
+                                                <span className="font-semibold w-20">Lớp:</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.currentClassName || "Đang tải..."}</span>
                                             </div>
                                             <div className="flex">
-                                                <span className="font-semibold w-40">Phụ huynh:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.parentName || "Đang tải..."}</span>
+                                                <span className="font-semibold w-24">Mã HS:</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.studentCode || "Đang tải..."}</span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">II. THÔNG TIN TIÊM CHỦNG</h3>
-                                        <div className="space-y-4 text-xl">
-                                            <div className="flex">
-                                                <span className="font-semibold w-40">Loại vaccine:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1 font-bold">{vaccinationSession?.vaccineTypeName || "Đang tải..."}</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-x-8">
-                                                <div className="flex">
-                                                    <span className="font-semibold w-28">Ngày tiêm:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).date : "Đang tải..."}</span>
-                                                </div>
-                                                <div className="flex">
-                                                    <span className="font-semibold w-16">Giờ:</span>
-                                                    <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).time : "Đang tải..."}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex">
-                                                <span className="font-semibold w-40">Địa điểm:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.location || "Đang tải..."}</span>
-                                            </div>
-                                            <div className="flex">
-                                                <span className="font-semibold w-40">Đơn vị phụ trách:</span>
-                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.responsibleOrganizationName || "Đang tải..."}</span>
-                                            </div>
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Ngày sinh:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.dateOfBirth ? formatDate(student.dateOfBirth) : "Đang tải..."}</span>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">III. THÔNG TIN QUAN TRỌNG</h3>
-                                        <div className="space-y-4 text-lg leading-relaxed">
-                                            <div>
-                                                <p className="font-semibold text-xl">1. Mô tả vaccine:</p>
-                                                <p className="pl-4">{vaccineType?.description || "Đang tải..."}</p>
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-xl">2. Tác dụng phụ có thể xảy ra:</p>
-                                                <p className="pl-4">{vaccinationSession?.sideEffect || "Đang tải..."}</p>
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-xl">3. Chống chỉ định:</p>
-                                                <p className="pl-4">{vaccinationSession?.contraindication || "Đang tải..."}</p>
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-xl">4. Ghi chú:</p>
-                                                <p className="pl-4">{vaccinationSession?.notes || "Không có ghi chú đặc biệt"}</p>
-                                            </div>
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Phụ huynh:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{student?.parentName || "Đang tải..."}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">IV. PHẦN ĐỒNG Ý CỦA PHỤ HUYNH</h3>
-
-                                    <div className="space-y-6 text-xl">
-                                        <p>
-                                            Tôi, <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.parentName || "Đang tải..."}</span>,
-                                            là phụ huynh/người giám hộ của học sinh <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.fullName || "Đang tải..."}</span>,
-                                            số điện thoại: <span className="border-b border-dotted border-gray-400 px-2">{student?.parentPhone || "Đang tải..."}</span>
-                                        </p>
-
-                                        <p className="font-semibold text-xl">Sau khi đã được tư vấn đầy đủ về vaccine, tôi:</p>
-
-                                        <form onSubmit={handleSubmit} className="space-y-8">
-                                            <div className="pl-4 space-y-4">
-                                                <label className="flex items-start cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="consent"
-                                                        className="mr-4 mt-2"
-                                                        style={{ accentColor: PRIMARY[500], transform: 'scale(1.5)' }}
-                                                        onChange={() => setConsentGiven(true)}
-                                                        checked={consentGiven === true}
-                                                        disabled={consentStatus !== "Pending"}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <span className="font-semibold text-xl">ĐỒNG Ý</span>
-                                                        <span className="text-xl"> cho con tôi được tiêm vaccine {vaccinationSession?.vaccineTypeName || "..."} theo lịch trình đã thông báo.</span>
-                                                    </div>
-                                                </label>
-
-                                                <label className="flex items-start cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="consent"
-                                                        className="mr-4 mt-2"
-                                                        style={{ accentColor: GRAY[500], transform: 'scale(1.5)' }}
-                                                        onChange={() => setConsentGiven(false)}
-                                                        checked={consentGiven === false}
-                                                        disabled={consentStatus !== "Pending"}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <span className="font-semibold text-xl">KHÔNG ĐỒNG Ý</span>
-                                                        <span className="text-xl"> cho con tôi tiêm vaccine này.</span>
-                                                    </div>
-                                                </label>
+                                    <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">II. THÔNG TIN TIÊM CHỦNG</h3>
+                                    <div className="space-y-4 text-xl">
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Loại vaccine:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1 font-bold">{vaccinationSession?.vaccineTypeName || "Đang tải..."}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-8">
+                                            <div className="flex">
+                                                <span className="font-semibold w-28">Ngày tiêm:</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).date : "Đang tải..."}</span>
                                             </div>
-
-                                            {consentGiven === true && consentStatus === "Pending" && (
-                                                <div className="border border-gray-300 p-6 bg-gray-50">
-                                                    <p className="font-semibold mb-3 text-xl">Tôi cam kết:</p>
-                                                    <ul className="list-disc pl-8 space-y-2 text-lg">
-                                                        <li>Đã cung cấp thông tin chính xác về tình trạng sức khỏe của con</li>
-                                                        <li>Tôi đã đọc và hiểu thông tin về vaccine.</li>
-                                                        <li>Con tôi không có tiền sử dị ứng với vaccine này</li>
-                                                        <li>Tôi đồng ý cho phép nhà trường và nhân viên y tế tiến hành tiêm chủng cho con tôi.</li>
-                                                    </ul>
-                                                </div>
-                                            )}
-
-                                            {consentStatus === "Confirmed" && (
-                                                <div className="border border-gray-300 p-6 bg-gray-50">
-                                                    <p className="font-semibold mb-3 text-xl">Phụ huynh đã cam kết:</p>
-                                                    <ul className="list-disc pl-8 space-y-2 text-lg">
-                                                        <li>Đã cung cấp thông tin chính xác về tình trạng sức khỏe của con</li>
-                                                        <li>Đã đọc và hiểu thông tin về vaccine.</li>
-                                                        <li>Con em không có tiền sử dị ứng với vaccine này</li>
-                                                        <li>Đồng ý cho phép nhà trường và nhân viên y tế tiến hành tiêm chủng cho con em.</li>
-                                                    </ul>
-                                                </div>
-                                            )}
-
-                                            <div className="text-center pt-6 border-t border-gray-300">
-                                                <p className="text-lg font-semibold mb-2">Phụ huynh xác nhận:</p>
-                                                <p className="text-xl font-bold" style={{ color: PRIMARY[700] }}>
-                                                    {student?.parentName || "Đang tải..."}
-                                                </p>
-                                                {(consentStatus === "Confirmed" || consentStatus === "Declined") && consentData?.consentDate && (
-                                                    <p className="text-sm mt-2" style={{ color: TEXT.SECONDARY }}>
-                                                        Ngày xác nhận: {formatDate(consentData.consentDate)}
-                                                    </p>
-                                                )}
+                                            <div className="flex">
+                                                <span className="font-semibold w-16">Giờ:</span>
+                                                <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.startTime ? formatDateTime(vaccinationSession.startTime).time : "Đang tải..."}</span>
                                             </div>
+                                        </div>
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Địa điểm:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.location || "Đang tải..."}</span>
+                                        </div>
+                                        <div className="flex">
+                                            <span className="font-semibold w-40">Đơn vị phụ trách:</span>
+                                            <span className="flex-1 border-b border-dotted border-gray-400 pb-1">{vaccinationSession?.responsibleOrganizationName || "Đang tải..."}</span>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                            {consentStatus === "Pending" && (
-                                                <div className="text-center pt-8">
-                                                    <button
-                                                        type="submit"
-                                                        className="px-12 py-4 text-xl font-semibold text-white rounded-lg transition-all duration-300 hover:opacity-90"
-                                                        style={{ backgroundColor: PRIMARY[500] }}
-                                                    >
-                                                        Xác nhận và Gửi Phiếu
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {(consentStatus === "Confirmed" || consentStatus === "Declined") && (
-                                                <div className="text-center pt-8">
-                                                    <div className="inline-flex items-center px-8 py-3 rounded-lg text-lg font-semibold"
-                                                        style={{
-                                                            backgroundColor: consentStatus === "Confirmed" ? PRIMARY[100] : GRAY[100],
-                                                            color: consentStatus === "Confirmed" ? PRIMARY[700] : GRAY[700]
-                                                        }}>
-                                                        {consentStatus === "Confirmed" ? (
-                                                            <>
-                                                                <FiCheckCircle className="w-5 h-5 mr-2" />
-                                                                Đã xác nhận đồng ý tiêm chủng
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <FiAlertCircle className="w-5 h-5 mr-2" />
-                                                                Đã xác nhận từ chối tiêm chủng
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </form>
+                                <div>
+                                    <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">III. THÔNG TIN QUAN TRỌNG</h3>
+                                    <div className="space-y-4 text-lg leading-relaxed">
+                                        <div>
+                                            <p className="font-semibold text-xl">1. Mô tả vaccine:</p>
+                                            <p className="pl-4">{vaccineType?.description || "Đang tải..."}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-xl">2. Tác dụng phụ có thể xảy ra:</p>
+                                            <p className="pl-4">{vaccinationSession?.sideEffect || "Đang tải..."}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-xl">3. Chống chỉ định:</p>
+                                            <p className="pl-4">{vaccinationSession?.contraindication || "Đang tải..."}</p>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-xl">4. Ghi chú:</p>
+                                            <p className="pl-4">{vaccinationSession?.notes || "Không có ghi chú đặc biệt"}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="text-center text-base italic pt-8 border-t border-gray-300 mt-8">
-                                <p>Phiếu này có hiệu lực khi được xác nhận trực tuyến</p>
-                                <p className="mt-2">Mọi thắc mắc xin liên hệ phòng y tế trường: (028) 1234-5678</p>
+                            <div>
+                                <h3 className="text-2xl font-bold mb-6 uppercase border-b-2 border-gray-400 pb-2">IV. PHẦN ĐỒNG Ý CỦA PHỤ HUYNH</h3>
+
+                                <div className="space-y-6 text-xl">
+                                    <p>
+                                        Tôi, <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.parentName || "Đang tải..."}</span>,
+                                        là phụ huynh/người giám hộ của học sinh <span className="font-bold border-b border-dotted border-gray-400 px-2">{student?.fullName || "Đang tải..."}</span>,
+                                        số điện thoại: <span className="border-b border-dotted border-gray-400 px-2">{student?.parentPhone || "Đang tải..."}</span>
+                                    </p>
+
+                                    <p className="font-semibold text-xl">Sau khi đã được tư vấn đầy đủ về vaccine, tôi:</p>
+
+                                    <form onSubmit={handleSubmit} className="space-y-8">
+                                        <div className="pl-4 space-y-4">
+                                            <label className="flex items-start cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="consent"
+                                                    className="mr-4 mt-2"
+                                                    style={{ accentColor: PRIMARY[500], transform: 'scale(1.5)' }}
+                                                    onChange={() => setConsentGiven(true)}
+                                                    checked={consentGiven === true}
+                                                    disabled={consentStatus !== "WaitingForParentConsent" || vaccination.status === 'Scheduled'}
+                                                />
+                                                <div className="flex-1">
+                                                    <span className="font-semibold text-xl">ĐỒNG Ý</span>
+                                                    <span className="text-xl"> cho con tôi được tiêm vaccine {vaccinationSession?.vaccineTypeName || "..."} theo lịch trình đã thông báo.</span>
+                                                </div>
+                                            </label>
+
+                                            <label className="flex items-start cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="consent"
+                                                    className="mr-4 mt-2"
+                                                    style={{ accentColor: GRAY[500], transform: 'scale(1.5)' }}
+                                                    onChange={() => setConsentGiven(false)}
+                                                    checked={consentGiven === false}
+                                                    disabled={consentStatus !== "WaitingForParentConsent" || vaccination.status === 'Scheduled'}
+                                                />
+                                                <div className="flex-1">
+                                                    <span className="font-semibold text-xl">KHÔNG ĐỒNG Ý</span>
+                                                    <span className="text-xl"> cho con tôi tiêm vaccine này.</span>
+                                                </div>
+                                            </label>
+                                        </div>
+
+                                        {consentGiven === true && consentStatus === "WaitingForParentConsent" && (
+                                            <div className="border border-gray-300 p-6 bg-gray-50">
+                                                <p className="font-semibold mb-3 text-xl">Tôi cam kết:</p>
+                                                <ul className="list-disc pl-8 space-y-2 text-lg">
+                                                    <li>Đã cung cấp thông tin chính xác về tình trạng sức khỏe của con</li>
+                                                    <li>Tôi đã đọc và hiểu thông tin về vaccine.</li>
+                                                    <li>Con tôi không có tiền sử dị ứng với vaccine này</li>
+                                                    <li>Tôi đồng ý cho phép nhà trường và nhân viên y tế tiến hành tiêm chủng cho con tôi.</li>
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {consentStatus === "Confirmed" && (
+                                            <div className="border border-gray-300 p-6 bg-gray-50">
+                                                <p className="font-semibold mb-3 text-xl">Phụ huynh đã cam kết:</p>
+                                                <ul className="list-disc pl-8 space-y-2 text-lg">
+                                                    <li>Đã cung cấp thông tin chính xác về tình trạng sức khỏe của con</li>
+                                                    <li>Đã đọc và hiểu thông tin về vaccine.</li>
+                                                    <li>Con em không có tiền sử dị ứng với vaccine này</li>
+                                                    <li>Đồng ý cho phép nhà trường và nhân viên y tế tiến hành tiêm chủng cho con em.</li>
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        <div className="text-center pt-6 border-t border-gray-300">
+                                            <p className="text-lg font-semibold mb-2">Phụ huynh xác nhận:</p>
+                                            <p className="text-xl font-bold" style={{ color: PRIMARY[700] }}>
+                                                {student?.parentName || "Đang tải..."}
+                                            </p>
+                                            {(consentStatus === "Confirmed" || consentStatus === "Declined") && consentData?.consentDate && (
+                                                <p className="text-sm mt-2" style={{ color: TEXT.SECONDARY }}>
+                                                    Ngày xác nhận: {formatDate(consentData.consentDate)}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {(consentStatus === "WaitingForParentConsent" && vaccination.status !== 'Scheduled') && (
+                                            <div className="text-center pt-8">
+                                                <button
+                                                    type="submit"
+                                                    className="px-12 py-4 text-xl font-semibold text-white rounded-lg transition-all duration-300 hover:opacity-90"
+                                                    style={{ backgroundColor: PRIMARY[500] }}
+                                                >
+                                                    Xác nhận và Gửi Phiếu
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {(consentStatus === "Confirmed" || consentStatus === "Declined") && (
+                                            <div className="text-center pt-8">
+                                                <div className="inline-flex items-center px-8 py-3 rounded-lg text-lg font-semibold"
+                                                    style={{
+                                                        backgroundColor: consentStatus === "Confirmed" ? PRIMARY[100] : GRAY[100],
+                                                        color: consentStatus === "Confirmed" ? PRIMARY[700] : GRAY[700]
+                                                    }}>
+                                                    {consentStatus === "Confirmed" ? (
+                                                        <>
+                                                            <FiCheckCircle className="w-5 h-5 mr-2" />
+                                                            Đã xác nhận đồng ý tiêm chủng
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <FiAlertCircle className="w-5 h-5 mr-2" />
+                                                            Đã xác nhận từ chối tiêm chủng
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-lg shadow-sm border border-neutral-100 overflow-hidden">
-                        <div className="p-8 text-center">
-                            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: PRIMARY[100] }}>
-                                <FiCheckCircle className="h-10 w-10" style={{ color: PRIMARY[500] }} />
-                            </div>
-                            <h2 className="text-2xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
-                                Đã gửi thành công!
-                            </h2>
-                            <p className="text-base mb-6 max-w-md mx-auto" style={{ color: TEXT.SECONDARY }}>
-                                {consentGiven
-                                    ? `Phiếu đồng ý tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được gửi thành công.`
-                                    : `Phiếu từ chối tiêm vaccine ${vaccinationSession?.vaccineTypeName} cho ${student?.fullName} đã được ghi nhận.`}
-                            </p>
-                            <Link
-                                to="/parent/vaccination/schedule"
-                                className="inline-flex items-center px-6 py-3 rounded-lg font-medium text-white transition-all duration-300 hover:opacity-90"
-                                style={{ backgroundColor: PRIMARY[500] }}
-                            >
-                                <FiArrowLeft className="w-4 h-4 mr-2" />
-                                Quay lại danh sách
-                            </Link>
+
+                        <div className="text-center text-base italic pt-8 border-t border-gray-300 mt-8">
+                            <p>Phiếu này có hiệu lực khi được xác nhận trực tuyến</p>
+                            <p className="mt-2">Mọi thắc mắc xin liên hệ phòng y tế trường: (028) 1234-5678</p>
                         </div>
                     </div>
-                )}
+                </div>
 
                 <ConfirmModal
                     isOpen={showConfirmModal}
@@ -494,8 +439,8 @@ const VaccinationDetail = () => {
                     isOpen={showAlertModal}
                     onClose={() => setShowAlertModal(false)}
                     title="Thông báo"
-                    message={consentGiven === null ? "Vui lòng chọn đồng ý hoặc không đồng ý" : "Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại."}
-                    type="warning"
+                    message={alertMessage}
+                    type={alertType}
                     okText="Đã hiểu"
                 />
             </div>
