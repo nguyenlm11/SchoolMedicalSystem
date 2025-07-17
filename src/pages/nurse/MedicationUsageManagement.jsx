@@ -4,7 +4,7 @@ import { PRIMARY, WARNING, ERROR, SUCCESS, INFO, TEXT, BACKGROUND, BORDER, GRAY 
 import Loading from '../../components/Loading';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../utils/AuthContext';
-import medicationUsageApi from '../../api/medicationusage';
+import medicationUsageApi from '../../api/medicationUsageApi';
 
 const statusColor = {
     PendingApproval: WARNING[500],

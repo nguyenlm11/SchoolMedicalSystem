@@ -1,14 +1,16 @@
 import apiClient from '../config/config';
 
 const medicationUsageApi = {
-    // Lấy danh sách thuốc theo y tá hoặc học sinh
+    // Lấy danh sách thuốc theo y tá hoặc học sinh (cho nurse - xem tất cả trạng thái)
     getMedicationUsage: async (params = {}) => {
         try {
             const {
                 pageIndex = 1,
                 pageSize = 10,
                 nurseId = '',
-                studentId = ''
+                studentId = '',
+                status = '',
+                searchTerm = ''
             } = params;
 
             const queryParams = new URLSearchParams();
@@ -21,8 +23,67 @@ const medicationUsageApi = {
             if (studentId) {
                 queryParams.append('studentId', studentId);
             }
+            if (status) {
+                queryParams.append('status', status);
+            }
+            if (searchTerm) {
+                queryParams.append('searchTerm', searchTerm);
+            }
 
             const response = await apiClient.get(`/student-medications/by-nurse-or-student?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy danh sách sử dụng thuốc",
+                data: [],
+                totalCount: 0,
+                pageSize: 10,
+                currentPage: 1,
+                totalPages: 0,
+                errors: []
+            };
+        }
+    },
+
+    // Lấy danh sách thuốc cho student (loại trừ trạng thái Chờ duyệt)
+    getStudentMedicationUsage: async (params = {}) => {
+        try {
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                studentId = '',
+                searchTerm = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+
+            if (studentId) {
+                queryParams.append('studentId', studentId);
+            }
+            if (searchTerm) {
+                queryParams.append('searchTerm', searchTerm);
+            }
+
+            const response = await apiClient.get(`/student-medications/by-nurse-or-student?${queryParams.toString()}`);
+
+            if (response.data && response.data.success) {
+                // Filter loại trừ trạng thái "Chờ duyệt" cho student
+                const filteredData = (response.data.data || []).filter(item => item.status !== 'PendingApproval');
+
+                return {
+                    ...response.data,
+                    data: filteredData,
+                    totalCount: filteredData.length,
+                    totalPages: Math.ceil(filteredData.length / pageSize)
+                };
+            }
+
             return response.data;
         } catch (error) {
             if (error.response && error.response.data) {
@@ -195,6 +256,32 @@ const medicationUsageApi = {
             return {
                 success: false,
                 message: "Không thể lấy báo cáo sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Xác nhận số lượng thuốc đã nhận
+    confirmQuantityReceived: async (requestId, medications) => {
+        try {
+            const requestBody = {
+                medications: medications.map(med => ({
+                    medicationId: med.id,
+                    quantityReceived: med.quantityReceived || 0,
+                    notes: med.notes || ""
+                }))
+            };
+
+            const response = await apiClient.patch(`/student-medications/student-medical-requests/${requestId}/quantity-received`, requestBody);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể xác nhận số lượng thuốc đã nhận",
                 data: null,
                 errors: []
             };

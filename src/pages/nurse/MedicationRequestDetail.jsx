@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
     FiArrowLeft,
     FiUser,
@@ -11,23 +11,24 @@ import {
     FiX,
     FiFileText,
     FiActivity,
-    FiInfo,
     FiShield,
     FiUserCheck,
-    FiFilter
+    FiFilter,
+    FiCheckSquare
 } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
+import QuantityConfirmationModal from "../../components/modal/QuantityConfirmationModal";
 import medicationRequestApi from "../../api/medicationRequestApi";
+import medicationUsageApi from "../../api/medicationUsageApi";
 import { useAuth } from "../../utils/AuthContext";
 
 const MedicationRequestDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation();
     const { user } = useAuth();
 
     const [loading, setLoading] = useState(true);
@@ -37,10 +38,13 @@ const MedicationRequestDetail = () => {
     const [showApprovalModal, setShowApprovalModal] = useState(false);
     const [approvalAction, setApprovalAction] = useState(""); // "approve" or "reject"
     const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
+    const [showQuantityConfirmModal, setShowQuantityConfirmModal] = useState(false);
+    const [selectedMedication, setSelectedMedication] = useState(null);
+    const [receivedQuantities, setReceivedQuantities] = useState({});
 
-    // Determine user role based on URL path
-    const isParent = location.pathname.includes('/parent/');
-    const isNurse = location.pathname.includes('/schoolnurse/');
+    // User role detection
+    const isParent = user?.role === 'parent';
+    const isNurse = user?.role === 'schoolnurse';
 
     // Status badge configurations
     const STATUS_CONFIG = {
@@ -236,6 +240,62 @@ const MedicationRequestDetail = () => {
         }
     };
 
+    const handleQuantityConfirmClick = (medications) => {
+        setSelectedMedication(medications);
+        // Initialize received quantities with sent quantities as default
+        const initialQuantities = medications.reduce((acc, med) => {
+            acc[med.id] = med.quantitySent || 0;
+            return acc;
+        }, {});
+        setReceivedQuantities(initialQuantities);
+        setShowQuantityConfirmModal(true);
+    };
+
+    const handleQuantityConfirm = async () => {
+        try {
+            const medicationsWithQuantities = selectedMedication.map(med => ({
+                ...med,
+                quantityReceived: receivedQuantities[med.id] || 0,
+                notes: ""
+            }));
+
+            const response = await medicationUsageApi.confirmQuantityReceived(id, medicationsWithQuantities);
+
+            if (response.success) {
+                setShowQuantityConfirmModal(false);
+                setShowAlert(true);
+                setAlertInfo({
+                    type: "success",
+                    message: response.message || "Đã xác nhận số lượng thuốc thành công"
+                });
+
+                // Refresh the medication request data
+                const detailResponse = await medicationRequestApi.getMedicationRequestDetail(id);
+                if (detailResponse.success) {
+                    setMedicationRequest(detailResponse.data);
+                }
+            } else {
+                setShowQuantityConfirmModal(false);
+                setShowAlert(true);
+                setAlertInfo({
+                    type: "error",
+                    message: response.message || "Không thể xác nhận số lượng thuốc"
+                });
+            }
+        } catch (error) {
+            setShowQuantityConfirmModal(false);
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không thể xác nhận số lượng thuốc" });
+        }
+    };
+
+    const handleQuantityChange = (medicationId, value) => {
+        setReceivedQuantities(prev => ({
+            ...prev,
+            [medicationId]: parseInt(value) || 0
+        }));
+    };
+
     const getStatusBadge = (status) => {
         const config = STATUS_CONFIG[status];
         if (!config) return null;
@@ -288,10 +348,7 @@ const MedicationRequestDetail = () => {
                     {label}
                 </label>
             </div>
-            <div
-                className={`text-base ${isLargeNumber ? 'text-2xl font-bold' : ''}`}
-                style={{ color: TEXT.PRIMARY }}
-            >
+            <div className={`text-base ${isLargeNumber ? 'text-2xl font-bold' : ''}`} style={{ color: TEXT.PRIMARY }}>
                 {value || 'Không có thông tin'}
             </div>
         </div>
@@ -351,8 +408,8 @@ const MedicationRequestDetail = () => {
         <div className="p-6 border rounded-lg" style={{ backgroundColor: PRIMARY[25], borderColor: BORDER.DEFAULT }}>
             <div className="space-y-4">
                 <div className="flex items-center space-x-3 mb-4">
-                    <h3 className="text-lg font-semibold flex items-center" style={{ color: TEXT.PRIMARY }}>
-                        <FiFilter className="mr-3 h-5 w-5" /> {medication.medicationName}
+                    <h3 className="text-lg font-semibold flex items-center" style={{ color: PRIMARY[700] }}>
+                        <FiFilter className="mr-3 h-5 w-5" /> {medication.medicationName.toUpperCase()}
                     </h3>
                 </div>
 
@@ -522,22 +579,6 @@ const MedicationRequestDetail = () => {
                                         icon={<FiShield className="h-5 w-5" />}
                                         important={true}
                                     />
-
-                                    {medicationRequest.approvedAt && (
-                                        <InfoItem
-                                            label="Ngày duyệt"
-                                            value={formatDateTime(medicationRequest.approvedAt)}
-                                            icon={<FiClock className="h-5 w-5" />}
-                                        />
-                                    )}
-
-                                    {medicationRequest.approvedByName && (
-                                        <InfoItem
-                                            label="Người duyệt"
-                                            value={medicationRequest.approvedByName}
-                                            icon={<FiUserCheck className="h-5 w-5" />}
-                                        />
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -545,11 +586,23 @@ const MedicationRequestDetail = () => {
 
                     {/* Medications Card */}
                     <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: BORDER.DEFAULT }}>
-                        <div className="p-6 border-b flex items-center" style={{ borderColor: BORDER.LIGHT, backgroundColor: PRIMARY[50] }}>
-                            <FiPackage className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
-                            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
-                                Thuốc đã yêu cầu ({medicationRequest.medications.length})
-                            </h2>
+                        <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: BORDER.LIGHT, backgroundColor: PRIMARY[50] }}>
+                            <div className="flex items-center">
+                                <FiPackage className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
+                                <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
+                                    Thuốc đã yêu cầu ({medicationRequest.medications.length})
+                                </h2>
+                            </div>
+                            {(isNurse && medicationRequest.status === "Approved") && (
+                                <button
+                                    onClick={() => handleQuantityConfirmClick(medicationRequest.medications)}
+                                    className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
+                                    style={{ backgroundColor: PRIMARY[500], color: 'white' }}
+                                >
+                                    <FiCheckSquare className="mr-2 h-4 w-4" />
+                                    Xác nhận số lượng
+                                </button>
+                            )}
                         </div>
 
                         <div className="p-8">
@@ -561,7 +614,7 @@ const MedicationRequestDetail = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-6">
+                                <div className="space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ height: '630px' }}>
                                     {medicationRequest.medications.map((medication) => (
                                         <MedicationCard key={medication.id} medication={medication} />
                                     ))}
@@ -571,6 +624,16 @@ const MedicationRequestDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Quantity Confirmation Modal */}
+            <QuantityConfirmationModal
+                isOpen={showQuantityConfirmModal}
+                onClose={() => setShowQuantityConfirmModal(false)}
+                medications={selectedMedication || []}
+                receivedQuantities={receivedQuantities}
+                onQuantityChange={handleQuantityChange}
+                onConfirm={handleQuantityConfirm}
+            />
 
             {/* Modals */}
             <AlertModal
