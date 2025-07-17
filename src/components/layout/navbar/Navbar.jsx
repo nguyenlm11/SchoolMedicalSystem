@@ -155,6 +155,7 @@ const Navbar = () => {
                     category: "Nhân viên y tế",
                     links: [
                         { to: "/schoolnurse/medication-requests", label: "Danh sách yêu cầu thuốc", desc: "Xem danh sách yêu cầu thuốc" },
+                        { to: "/schoolnurse/medication-usage", label: "Quản lý uống thuốc", desc: "Xem danh sách học sinh uống thuốc" },
                         { to: "/schoolnurse/medication", label: "Danh sách thuốc", desc: "Theo dõi thuốc trong trường" },
                         { to: "/schoolnurse/supply", label: "Vật tư y tế", desc: "Theo dõi vật tư y tế trong trường" },
                     ],

@@ -7,8 +7,8 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
     const [error, setError] = useState("");
 
     const handleConfirm = () => {
-        if (type === "decline" && !reason.trim()) {
-            setError("Vui lòng nhập lý do");
+        if ((type === "decline" || type === "reject") && !reason.trim()) {
+            setError("Vui lòng nhập lý do từ chối");
             return;
         }
         onConfirm(reason);
@@ -66,7 +66,7 @@ const ConfirmActionModal = ({ isOpen, onClose, onConfirm, title, message, type =
                                     className="block text-sm font-medium mb-2"
                                     style={{ color: TEXT.PRIMARY }}
                                 >
-                                    Lý do từ chối
+                                    Lý do từ chối <span style={{ color: ERROR[500] }}>*</span>
                                 </label>
                                 <textarea
                                     id="reason"

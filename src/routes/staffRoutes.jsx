@@ -17,6 +17,7 @@ import MedicationRequestManagement from "../pages/nurse/MedicationRequestManagem
 import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
 import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 import ChangePassword from "../pages/auth/ChangePassword";
+import MedicationUsageManagement from "../pages/nurse/MedicationUsageManagement";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -31,6 +32,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/medication" element={<NurseMedicationPage />} />
     <Route path="/schoolnurse/medication-requests" element={<MedicationRequestManagement />} />
     <Route path="/schoolnurse/medication-requests/:id" element={<MedicationRequestDetail />} />
+    <Route path="/schoolnurse/medication-usage" element={<MedicationUsageManagement />} />
     <Route path="/schoolnurse/medical-items/:id" element={<MedicalItemDetail />} />
     <Route path="/schoolnurse/supply" element={<NurseSupplyPage />} />
 

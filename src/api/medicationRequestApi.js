@@ -157,9 +157,9 @@ const medicationRequestApi = {
         }
     },
 
-    approveMedicationRequest: async (id) => {
+    approveMedicationRequest: async (id, approvalData = { isApproved: true, notes: "" }) => {
         try {
-            const response = await apiClient.put(`/student-medications/requests/${id}/approve`);
+            const response = await apiClient.put(`/student-medications/${id}/approve`, approvalData);
             return response.data;
         } catch (error) {
             if (error.response && error.response.data) {
@@ -174,9 +174,9 @@ const medicationRequestApi = {
         }
     },
 
-    rejectMedicationRequest: async (id) => {
+    rejectMedicationRequest: async (id, rejectionData = { rejectionReason: "", notes: "" }) => {
         try {
-            const response = await apiClient.put(`/student-medications/requests/${id}/reject`);
+            const response = await apiClient.put(`/student-medications/${id}/reject`, rejectionData);
             return response.data;
         } catch (error) {
             if (error.response && error.response.data) {
