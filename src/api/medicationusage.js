@@ -1,0 +1,205 @@
+import apiClient from '../config/config';
+
+const medicationUsageApi = {
+    // Lấy danh sách thuốc theo y tá hoặc học sinh
+    getMedicationUsage: async (params = {}) => {
+        try {
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                nurseId = '',
+                studentId = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+
+            if (nurseId) {
+                queryParams.append('nurseId', nurseId);
+            }
+            if (studentId) {
+                queryParams.append('studentId', studentId);
+            }
+
+            const response = await apiClient.get(`/student-medications/by-nurse-or-student?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy danh sách sử dụng thuốc",
+                data: [],
+                totalCount: 0,
+                pageSize: 10,
+                currentPage: 1,
+                totalPages: 0,
+                errors: []
+            };
+        }
+    },
+
+    // Lấy chi tiết sử dụng thuốc theo ID
+    getMedicationUsageById: async (id) => {
+        try {
+            const response = await apiClient.get(`/student-medications/${id}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy chi tiết sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Cập nhật trạng thái sử dụng thuốc
+    updateMedicationUsage: async (id, updateData) => {
+        try {
+            const response = await apiClient.put(`/student-medications/${id}`, updateData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật thông tin sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Ghi nhận việc cho thuốc
+    recordMedicationAdministration: async (id, administrationData) => {
+        try {
+            const response = await apiClient.post(`/student-medications/${id}/administer`, administrationData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể ghi nhận việc cho thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Lấy lịch sử cho thuốc
+    getAdministrationHistory: async (medicationId, params = {}) => {
+        try {
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                fromDate = '',
+                toDate = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+
+            if (fromDate) {
+                queryParams.append('fromDate', fromDate);
+            }
+            if (toDate) {
+                queryParams.append('toDate', toDate);
+            }
+
+            const response = await apiClient.get(`/student-medications/${medicationId}/administration-history?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy lịch sử cho thuốc",
+                data: [],
+                totalCount: 0,
+                pageSize: 10,
+                currentPage: 1,
+                totalPages: 0,
+                errors: []
+            };
+        }
+    },
+
+    // Dừng sử dụng thuốc
+    discontinueMedication: async (id, reason) => {
+        try {
+            const response = await apiClient.put(`/student-medications/${id}/discontinue`, { reason });
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể dừng sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Lấy báo cáo sử dụng thuốc
+    getMedicationUsageReport: async (params = {}) => {
+        try {
+            const {
+                fromDate = '',
+                toDate = '',
+                nurseId = '',
+                studentId = '',
+                status = '',
+                priority = ''
+            } = params;
+
+            const queryParams = new URLSearchParams();
+
+            if (fromDate) {
+                queryParams.append('fromDate', fromDate);
+            }
+            if (toDate) {
+                queryParams.append('toDate', toDate);
+            }
+            if (nurseId) {
+                queryParams.append('nurseId', nurseId);
+            }
+            if (studentId) {
+                queryParams.append('studentId', studentId);
+            }
+            if (status) {
+                queryParams.append('status', status);
+            }
+            if (priority) {
+                queryParams.append('priority', priority);
+            }
+
+            const response = await apiClient.get(`/student-medications/usage-report?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy báo cáo sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    }
+};
+
+export default medicationUsageApi;

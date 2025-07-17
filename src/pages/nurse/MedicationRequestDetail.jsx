@@ -20,6 +20,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO 
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
+import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
 import medicationRequestApi from "../../api/medicationRequestApi";
 import { useAuth } from "../../utils/AuthContext";
 
@@ -33,6 +34,8 @@ const MedicationRequestDetail = () => {
     const [medicationRequest, setMedicationRequest] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showApprovalModal, setShowApprovalModal] = useState(false);
+    const [approvalAction, setApprovalAction] = useState(""); // "approve" or "reject"
     const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
 
     // Determine user role based on URL path
@@ -140,9 +143,22 @@ const MedicationRequestDetail = () => {
         if (id) fetchDetail();
     }, [id, user?.id, isParent]);
 
-    const handleApprove = async () => {
+    const handleApproveClick = () => {
+        setApprovalAction("approve");
+        setShowApprovalModal(true);
+    };
+
+    const handleRejectClick = () => {
+        setApprovalAction("reject");
+        setShowApprovalModal(true);
+    };
+
+    const handleApprove = async (notes = "") => {
         try {
-            const response = await medicationRequestApi.approveMedicationRequest(id);
+            const response = await medicationRequestApi.approveMedicationRequest(id, {
+                isApproved: true,
+                notes: notes
+            });
 
             if (response.success) {
                 // Refresh the medication request data
@@ -151,6 +167,7 @@ const MedicationRequestDetail = () => {
                     setMedicationRequest(detailResponse.data);
                 }
 
+                setShowApprovalModal(false);
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: response.message || "Đã duyệt yêu cầu thuốc thành công" });
             } else {
@@ -163,9 +180,12 @@ const MedicationRequestDetail = () => {
         }
     };
 
-    const handleReject = async () => {
+    const handleReject = async (rejectionReason = "") => {
         try {
-            const response = await medicationRequestApi.rejectMedicationRequest(id);
+            const response = await medicationRequestApi.rejectMedicationRequest(id, {
+                rejectionReason: rejectionReason,
+                notes: ""
+            });
 
             if (response.success) {
                 // Refresh the medication request data
@@ -174,6 +194,7 @@ const MedicationRequestDetail = () => {
                     setMedicationRequest(detailResponse.data);
                 }
 
+                setShowApprovalModal(false);
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: response.message || "Đã từ chối yêu cầu thuốc" });
             } else {
@@ -437,7 +458,7 @@ const MedicationRequestDetail = () => {
                             {medicationRequest.status === "PendingApproval" && isNurse && (
                                 <>
                                     <button
-                                        onClick={handleApprove}
+                                        onClick={handleApproveClick}
                                         className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
                                         style={{ backgroundColor: PRIMARY[500], color: 'white' }}
                                     >
@@ -445,7 +466,7 @@ const MedicationRequestDetail = () => {
                                         Duyệt
                                     </button>
                                     <button
-                                        onClick={handleReject}
+                                        onClick={handleRejectClick}
                                         className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
                                         style={{ backgroundColor: ERROR[500], color: 'white' }}
                                     >
@@ -568,6 +589,21 @@ const MedicationRequestDetail = () => {
                 cancelText="Hủy"
                 onConfirm={handleDelete}
                 onClose={() => setShowDeleteModal(false)}
+            />
+
+            {/* Approval Modal */}
+            <ConfirmActionModal
+                isOpen={showApprovalModal}
+                onClose={() => setShowApprovalModal(false)}
+                onConfirm={approvalAction === "approve" ? handleApprove : handleReject}
+                title={approvalAction === "approve" ? "Duyệt yêu cầu thuốc" : "Từ chối yêu cầu thuốc"}
+                message={approvalAction === "approve"
+                    ? "Bạn có chắc chắn muốn duyệt yêu cầu thuốc này? Hành động này sẽ cập nhật trạng thái yêu cầu thành 'Đã duyệt'."
+                    : "Bạn có chắc chắn muốn từ chối yêu cầu thuốc này? Hành động này sẽ cập nhật trạng thái yêu cầu thành 'Từ chối'."
+                }
+                type={approvalAction === "approve" ? "approve" : "reject"}
+                confirmText={approvalAction === "approve" ? "Duyệt" : "Từ chối"}
+                cancelText="Hủy"
             />
         </div>
     );
