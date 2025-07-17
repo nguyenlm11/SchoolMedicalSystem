@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { FiHome, FiUsers, FiBarChart2, FiLogOut, FiMenu, FiX } from "react-icons/fi";
+import { FiHome, FiUsers, FiBarChart2, FiLogOut, FiMenu, FiX, FiUser } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW } from "../../constants/colors";
 import { useAuth } from "../../utils/AuthContext";
 import UnauthorizedPage from "../../pages/auth/UnauthorizedPage";
@@ -213,7 +213,11 @@ const AdminLayout = () => {
                                 style={{ backgroundColor: PRIMARY[500] }}
                             >
                                 <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
-                                    {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                                    {user?.avatar ? (
+                                        <img src={user.avatar} alt="avatar" className="w-full h-full rounded-full" />
+                                    ) : (
+                                        <FiUser className="w-5 h-5" />
+                                    )}
                                 </span>
                             </div>
                         </div>

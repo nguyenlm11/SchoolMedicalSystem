@@ -9,7 +9,7 @@ import AlertModal from '../../components/modal/AlertModal';
 
 const ParentProfile = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, updateUserProfile } = useAuth();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saveLoading, setSaveLoading] = useState(false);
@@ -120,6 +120,7 @@ const ParentProfile = () => {
             });
             showAlertMessage('success', 'Thành công', 'Thông tin đã được cập nhật thành công!');
             setIsEditing(false);
+            updateUserProfile({ avatar: verifyResponse.data.profileImageUrl, name: verifyResponse.data.fullName });
         } catch (error) {
             showAlertMessage('error', 'Lỗi', error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
         } finally {
@@ -387,11 +388,7 @@ const ParentProfile = () => {
                             <div className="relative mb-8">
                                 <div style={avatarContainerStyle}>
                                     <img
-                                        src={
-                                            isEditing
-                                                ? (editedProfile.profileImageUrl || profile.profileImageUrl)
-                                                : (profile.profileImageUrl)
-                                        }
+                                        src={isEditing ? (editedProfile.profileImageUrl) : (profile.profileImageUrl)}
                                         alt="Profile"
                                         style={avatarStyle}
                                     />
