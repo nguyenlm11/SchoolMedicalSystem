@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 const StudentProfile = () => {
     const navigate = useNavigate();
+    const { user, updateUserProfile } = useAuth();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saveLoading, setSaveLoading] = useState(false);
@@ -24,7 +25,6 @@ const StudentProfile = () => {
         profileImage: null,
         profileImageUrl: null,
     });
-    const { user } = useAuth();
 
     const fetchStudentProfile = async () => {
         try {
@@ -138,6 +138,10 @@ const StudentProfile = () => {
             });
             showAlertMessage('success', 'Thành công', 'Thông tin đã được cập nhật thành công!');
             setIsEditing(false);
+            updateUserProfile({ 
+                avatar: verifyResponse.data.profileImageUrl,
+                name: verifyResponse.data.fullName 
+            });
         } catch (error) {
             showAlertMessage('error', 'Lỗi', error.message || 'Có lỗi xảy ra khi cập nhật thông tin');
         } finally {

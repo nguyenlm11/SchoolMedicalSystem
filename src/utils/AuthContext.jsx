@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const refreshAuthToken = async () => {
         try {
             const refreshToken = localStorage.getItem('refreshToken');
-            
+
             if (!refreshToken) {
                 throw new Error("No token or refresh token found");
             }
@@ -63,6 +63,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('refreshToken');
     };
 
+    // Cập nhật thông tin user profile
+    const updateUserProfile = (updatedData) => {
+        const updatedUser = { ...user, ...updatedData };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+    };
+
     // Kiểm tra quyền của người dùng
     const hasRole = (role) => {
         if (!user) return false;
@@ -95,6 +102,7 @@ export const AuthProvider = ({ children }) => {
                 name: responseData.fullName,
                 email: responseData.email,
                 username: responseData.username,
+                avatar: responseData.profileImageUrl,
                 role: serverRole.toLowerCase(),
                 token: responseData.token,
                 refreshToken: responseData.refreshToken,
@@ -102,7 +110,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('token', responseData.token);
             localStorage.setItem('refreshToken', responseData.refreshToken);
             login(userData);
-            
+
             return { success: true, data: userData, message: response.message };
         }
         return {
@@ -135,6 +143,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        updateUserProfile,
         hasRole,
         isAuthenticated,
         loginWithCredentials,
