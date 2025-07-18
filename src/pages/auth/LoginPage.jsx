@@ -71,7 +71,7 @@ const LoginPage = () => {
                 const redirectMap = {
                     admin: "/admin/dashboard",
                     schoolnurse: "/schoolnurse/dashboard",
-                    manager: "/manager/dashboard",
+                    manager: "/manager/student-management",
                     parent: "/parent/dashboard",
                     student: "/student/dashboard",
                 };
