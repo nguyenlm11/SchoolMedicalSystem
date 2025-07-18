@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch, FiFilter, FiUsers, FiTrash2, FiPlus, FiEye, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../../constants/colors";
-import Loading from "../../../components/Loading";
-import userApi from "../../../api/userApi";
-import AddStaffModal from "../../../components/modal/AddStaffModal";
-import ConfirmModal from "../../../components/modal/ConfirmModal";
-import AlertModal from "../../../components/modal/AlertModal";
+import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW, SUCCESS, WARNING, ERROR, INFO } from "../../constants/colors";
+import Loading from "../../components/Loading";
+import userApi from "../../api/userApi";
+import AddStaffModal from "../../components/modal/AddStaffModal";
+import ConfirmModal from "../../components/modal/ConfirmModal";
+import AlertModal from "../../components/modal/AlertModal";
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -178,10 +178,20 @@ const UserList = () => {
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                // Lấy tên file từ Content-Disposition header
-                const contentDisposition = response.headers['content-disposition'];
-                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
-                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : '';
+                // Lấy tên file từ Content-Disposition header (an toàn hơn)
+                let fileName = 'staff_template.xlsx';
+                if (type === 'manager') {
+                    fileName = 'manager_template.xlsx';
+                } else {
+                    fileName = 'nurse_template.xlsx';
+                }
+                if (response.headers && response.headers['content-disposition']) {
+                    const contentDisposition = response.headers['content-disposition'];
+                    const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                    if (filenameMatch) {
+                        fileName = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
                 link.setAttribute('download', fileName);
                 document.body.appendChild(link);
                 link.click();
@@ -306,7 +316,7 @@ const UserList = () => {
             )}
 
             {!loading && (
-                <div className="h-full">
+                <div className="h-full py-4 px-4">
                     <div className="flex flex-col space-y-4 mb-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                             <div className="mb-4 lg:mb-0">
@@ -477,15 +487,15 @@ const UserList = () => {
                         <div className="overflow-x-auto">
                             <table className="min-w-full">
                                 <thead>
-                                    <tr className="border-b" style={{ backgroundColor: '#f8fafc', borderColor: BORDER.DEFAULT }}>
+                                    <tr className="border-b" style={{ backgroundColor: PRIMARY[50], borderColor: BORDER.DEFAULT }}>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSort("fullName")}
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <span>Người dùng</span>
+                                                <span>NGƯỜI DÙNG</span>
                                                 {sortColumn === "fullName" && (
                                                     <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                         {sortDirection === "asc" ? "↑" : "↓"}
@@ -495,12 +505,12 @@ const UserList = () => {
                                         </th>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSort("role")}
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <span>Vai trò</span>
+                                                <span>VAI TRÒ</span>
                                                 {sortColumn === "role" && (
                                                     <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                         {sortDirection === "asc" ? "↑" : "↓"}
@@ -510,12 +520,12 @@ const UserList = () => {
                                         </th>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSort("isActive")}
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <span>Trạng thái</span>
+                                                <span>TRẠNG THÁI</span>
                                                 {sortColumn === "isActive" && (
                                                     <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                         {sortDirection === "asc" ? "↑" : "↓"}
@@ -525,12 +535,12 @@ const UserList = () => {
                                         </th>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSort("staffCode")}
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <span>Mã NV</span>
+                                                <span>MÃ NHÂN VIÊN</span>
                                                 {sortColumn === "staffCode" && (
                                                     <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                         {sortDirection === "asc" ? "↑" : "↓"}
@@ -540,12 +550,12 @@ const UserList = () => {
                                         </th>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-gray-100/80"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider cursor-pointer transition-all duration-200 hover:bg-opacity-80"
+                                            style={{ color: TEXT.PRIMARY }}
                                             onClick={() => handleSort("createdDate")}
                                         >
                                             <div className="flex items-center space-x-2">
-                                                <span>Ngày tạo</span>
+                                                <span>NGÀY TẠO</span>
                                                 {sortColumn === "createdDate" && (
                                                     <span className="text-sm font-bold" style={{ color: PRIMARY[600] }}>
                                                         {sortDirection === "asc" ? "↑" : "↓"}
@@ -555,17 +565,21 @@ const UserList = () => {
                                         </th>
                                         <th
                                             scope="col"
-                                            className="px-6 py-5 text-center text-xs font-bold uppercase tracking-wider"
-                                            style={{ color: TEXT.SECONDARY }}
+                                            className="px-6 py-4 text-center text-sm font-semibold uppercase tracking-wider"
+                                            style={{ color: TEXT.PRIMARY }}
                                         >
-                                            Thao tác
+                                            THAO TÁC
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody style={{ backgroundColor: BACKGROUND.DEFAULT }}>
-                                    {users.map((user) => (
-                                        <tr key={user.id} className="border-b hover:bg-gray-50/70 transition-all duration-200" style={{ borderColor: BORDER.DEFAULT }}>
-                                            <td className="px-6 py-6">
+                                <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
+                                    {users.map((user, index) => (
+                                        <tr
+                                            key={user.id}
+                                            className="hover:bg-opacity-50 transition-all duration-200 group"
+                                            style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
+                                        >
+                                            <td className="py-4 px-6">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-12 w-12">
                                                         <div
@@ -576,7 +590,7 @@ const UserList = () => {
                                                         </div>
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                        <div className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
                                                             {user.fullName}
                                                         </div>
                                                         <div className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
@@ -585,49 +599,46 @@ const UserList = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-6">
+                                            <td className="py-4 px-6">
                                                 <span
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
+                                                    className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border shadow-sm"
                                                     style={getRoleStyle(user.role)}
                                                 >
                                                     {getRoleLabel(user.role)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-6">
+                                            <td className="py-4 px-6">
                                                 <span
-                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border shadow-sm"
+                                                    className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium border shadow-sm"
                                                     style={getStatusStyle(user.isActive)}
                                                 >
                                                     {getStatusLabel(user.isActive)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-6">
-                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                            <td className="py-4 px-6">
+                                                <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {user.staffCode || 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-6">
-                                                <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                            <td className="py-4 px-6">
+                                                <span className="text-base" style={{ color: TEXT.SECONDARY }}>
                                                     {formatDate(user.createdDate)}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-6 text-right">
-                                                <div className="flex justify-end space-x-2">
+                                            <td className="py-4 px-6 text-center">
+                                                <div className="flex justify-center space-x-2">
                                                     <button
                                                         onClick={() => navigate(`/admin/users/${user.id}`)}
-                                                        className="p-2.5 rounded-lg transition-all duration-200 hover:bg-blue-50 border"
-                                                        style={{ color: PRIMARY[600], borderColor: PRIMARY[200] }}
+                                                        className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                                                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
                                                         title="Xem chi tiết"
                                                     >
                                                         <FiEye className="h-4 w-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteClick(user)}
-                                                        className="p-2.5 rounded-lg transition-all duration-200 hover:bg-red-50 border"
-                                                        style={{
-                                                            color: ERROR[600],
-                                                            borderColor: ERROR[200]
-                                                        }}
+                                                        className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                                                        style={{ backgroundColor: ERROR[50], color: ERROR[600] }}
                                                         title="Xóa người dùng"
                                                     >
                                                         <FiTrash2 className="h-4 w-4" />

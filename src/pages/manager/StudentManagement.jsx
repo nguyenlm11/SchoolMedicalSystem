@@ -217,7 +217,7 @@ const StudentManagement = () => {
     const formatDate = (dateString) => {
         if (!dateString) return "";
         const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN");
+        return date.toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     const getClassesByGrade = (gradeLevel) => {
@@ -271,10 +271,15 @@ const StudentManagement = () => {
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                // Lấy tên file từ Content-Disposition header
-                const contentDisposition = response.headers['content-disposition'];
-                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
-                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : 'student_template.xlsx';
+                // Lấy tên file từ Content-Disposition header (an toàn hơn)
+                let fileName = 'student_template.xlsx';
+                if (response.headers && response.headers['content-disposition']) {
+                    const contentDisposition = response.headers['content-disposition'];
+                    const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                    if (filenameMatch) {
+                        fileName = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
                 link.setAttribute('download', fileName);
                 document.body.appendChild(link);
                 link.click();
