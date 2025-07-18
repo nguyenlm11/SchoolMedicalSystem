@@ -65,9 +65,9 @@ const AssignNurseModal = ({ isOpen, onClose, sessionId, preselectedClassId = nul
         const validClasses = classes.filter(cls => cls !== null);
 
         // Lọc các lớp đã được phân công y tá
-        const assignedClassIds = (res.data.classNurseAssignments || []).map(
-          (assignment) => assignment.classId
-        );
+        const assignedClassIds = (res.data.classNurseAssignments || [])
+          .filter(assignment => assignment.nurseId !== null)
+          .map(assignment => assignment.classId);
 
         const availableClasses = validClasses.filter(
           (cls) => !assignedClassIds.includes(cls.id)
