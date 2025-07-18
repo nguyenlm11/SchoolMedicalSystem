@@ -38,14 +38,9 @@ const ManagerLayout = () => {
 
     const menuItems = [
         {
-            path: "/manager/dashboard",
-            name: "Tổng quan",
-            icon: <FiHome className="w-5 h-5" />,
-        },
-        {
-            path: "/manager/class-management",
-            name: "Quản lý lớp học",
-            icon: <FiPackage className="w-5 h-5" />,
+            path: "/manager/student-management",
+            name: "Quản lý học sinh",
+            icon: <FiUserCheck className="w-5 h-5" />,
         },
         {
             path: "/manager/parent-management",
@@ -53,9 +48,9 @@ const ManagerLayout = () => {
             icon: <FiUsers className="w-5 h-5" />,
         },
         {
-            path: "/manager/student-management",
-            name: "Quản lý học sinh",
-            icon: <FiUserCheck className="w-5 h-5" />,
+            path: "/manager/class-management",
+            name: "Quản lý lớp học",
+            icon: <FiPackage className="w-5 h-5" />,
         },
         {
             path: "/manager/vaccination-list-management",

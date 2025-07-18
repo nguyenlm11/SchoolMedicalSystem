@@ -376,7 +376,7 @@ const Navbar = () => {
                                 >
                                     <div className="flex items-center">
                                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mr-4">
-                                            {user?.avatar ? (
+                                            {(user?.avatar && user?.avatar !== "https://yourdomain.com/images/default.jpg") ? (
                                                 <img src={user.avatar} alt="avatar" className="w-10 h-10 rounded-full" key={user.avatar} />
                                             ) : (
                                                 <FiUser className="w-6 h-6 text-black" />
