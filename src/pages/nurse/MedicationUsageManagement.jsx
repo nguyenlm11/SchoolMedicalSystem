@@ -41,7 +41,7 @@ const MedicationUsageManagement = () => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (!event.target.closest('.dropdown-container')) {
+            if (!event.target.closest('[data-dropdown]')) {
                 setOpenActionId(null);
             }
         };
@@ -542,7 +542,7 @@ const MedicationUsageManagement = () => {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 text-center text-base" style={{ width: '80px' }}>
-                                                <div style={{ position: 'relative' }} className="dropdown-container">
+                                                <div style={{ position: 'relative', display: 'inline-block' }} data-dropdown>
                                                     <button
                                                         onClick={() => toggleDropdown(item.id)}
                                                         className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
@@ -554,7 +554,7 @@ const MedicationUsageManagement = () => {
                                                     {openActionId === item.id && (
                                                         <div
                                                             className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: 'calc(100% + 10px)', top: '50%', transform: 'translateY(-50%)', zIndex: 50 }}
+                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '2px', zIndex: 50 }}
                                                         >
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"

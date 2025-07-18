@@ -163,7 +163,7 @@ const Navbar = () => {
                 {
                     category: "Học sinh",
                     links: [
-                        { to: "/student/medication", label: "Lịch uống thuốc", desc: "Theo dõi và quản lý lịch trình uống thuốc của bạn" },
+                        { to: "/student/medication-usage", label: "Lịch uống thuốc", desc: "Theo dõi và quản lý lịch trình uống thuốc của bạn" },
                     ],
                 },
             ],
