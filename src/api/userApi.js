@@ -321,7 +321,7 @@ const userApi = {
                     // Có thể thêm logic để hiển thị progress ở đây
                 }
             });
-            
+
             if (response.data.success) {
                 return response.data;
             } else {
@@ -466,6 +466,30 @@ const userApi = {
                 message: error.message || 'Có lỗi xảy ra khi tạo học sinh mới',
                 data: null,
                 errors: []
+            };
+        }
+    },
+
+    // Lấy danh sách học sinh của phụ huynh
+    getParentStudents: async (parentId, params = {}) => {
+        try {
+            const { pageSize = 100 } = params;
+            if (!parentId) {
+                return {
+                    success: false,
+                    message: 'Parent ID là bắt buộc',
+                    data: [],
+                    errors: ['Parent ID không được để trống']
+                };
+            }
+            const response = await apiClient.get(`/users/parents/${parentId}/students?pageSize=${pageSize}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Không thể tải danh sách học sinh',
+                data: [],
+                errors: [error.message || 'Lỗi kết nối server']
             };
         }
     },

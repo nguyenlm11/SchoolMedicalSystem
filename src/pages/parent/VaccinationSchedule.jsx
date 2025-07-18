@@ -1,130 +1,85 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiClock, FiMapPin, FiSearch, FiEye, FiAlertCircle, FiX, FiCheck } from "react-icons/fi";
+import { FiCalendar, FiSearch, FiEye, FiAlertCircle, FiCheckCircle, FiAlertTriangle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth } from "../../utils/AuthContext";
 import vaccinationScheduleApi from "../../api/VaccinationScheduleApi";
-import AlertModal from "../../components/modal/AlertModal";
+import userApi from "../../api/userApi";
 
 const VaccinationSchedule = () => {
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState("waiting");
     const [vaccinationSchedule, setVaccinationSchedule] = useState([]);
     const [students, setStudents] = useState([]);
     const [selectedStudentData, setSelectedStudentData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadingVaccinations, setLoadingVaccinations] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [selectedStudent, setSelectedStudent] = useState("");
     const [isSearching, setIsSearching] = useState(false);
     const [error, setError] = useState(null);
-    const [showAlert, setShowAlert] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize] = useState(10);
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
 
     useEffect(() => {
-        const fetchStudents = async () => {
-            if (!user || !user.id) {
-                setError("Không thể xác định thông tin phụ huynh");
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-                const response = await vaccinationScheduleApi.getParentStudents(user.id, {
-                    pageIndex: 1,
-                    pageSize: 100,
-                });
-                if (response.success) {
-                    setStudents(response.data);
-                    // Auto-select first student if available
-                    if (response.data.length > 0) {
-                        const firstStudent = response.data[0];
-                        setSelectedStudent(firstStudent.fullName);
-                        setSelectedStudentData(firstStudent);
-                    }
-                } else {
-                    setError(response.message || "Không thể tải danh sách học sinh");
-                    setShowAlert(true);
-                }
-            } catch (error) {
-                setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
-                setShowAlert(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchStudents();
     }, [user]);
 
+    const fetchStudents = async () => {
+        if (!user || !user.id) {
+            setLoading(false);
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100 });
+            if (response.success) {
+                setStudents(response.data);
+                setSelectedStudent(response.data[0].fullName);
+                setSelectedStudentData(response.data[0]);
+            } else {
+                setError(response.message || "Không thể tải danh sách học sinh");
+            }
+        } catch (error) {
+            setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchVaccinationSessions = async () => {
-            if (!selectedStudentData) {
-                setVaccinationSchedule([]);
-                return;
-            }
-            try {
-                setLoadingVaccinations(true);
-                const response = await vaccinationScheduleApi.getStudentVaccinationSessions(
-                    selectedStudentData.id,
-                    { pageIndex: 1, pageSize: 100 }
-                );
-
-                if (response.success) {
-                    const transformedSchedule = transformVaccinationData(response.data, selectedStudentData);
-                    setVaccinationSchedule(transformedSchedule);
-                } else {
-                    setVaccinationSchedule([]);
-                }
-            } catch (error) {
-                setVaccinationSchedule([]);
-            } finally {
-                setLoadingVaccinations(false);
-            }
-        };
-
         fetchVaccinationSessions();
     }, [selectedStudentData]);
 
-    const transformVaccinationData = (apiData, studentData) => {
-        return apiData.map((session, index) => {
-            const startDate = new Date(session.startTime);
-            const endDate = new Date(session.endTime);
-            const now = new Date();
-            const dueIn = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
-            const timeFormatter = new Intl.DateTimeFormat('vi-VN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
-            const finalStudentId = studentData.id;
-            return {
-                id: session.id,
-                studentName: studentData.fullName,
-                studentId: finalStudentId,
-                class: studentData.currentClassName || 'N/A',
-                vaccineName: session.vaccineTypeName || session.sessionName || 'Vaccine không xác định',
-                displayDate: startDate.toLocaleDateString('vi-VN'),
-                time: timeFormatter.format(startDate),
-                endTime: timeFormatter.format(endDate),
-                location: session.location || "Phòng y tế trường",
-                status: mapApiStatusToComponentStatus(session.status),
-                description: session.notes || `Tiêm chủng ${session.vaccineTypeName || session.sessionName}`,
-                dueIn: dueIn,
-                avatar: studentData.fullName.charAt(0).toUpperCase(),
-                sessionName: session.sessionName,
-                classes: session.classes || []
-            };
-        });
+    const fetchVaccinationSessions = async () => {
+        if (!selectedStudentData) {
+            setVaccinationSchedule([]);
+            return;
+        }
+        try {
+            setLoadingVaccinations(true);
+            const response = await vaccinationScheduleApi.getStudentVaccinationSessions(selectedStudentData.id, { pageIndex: 1, pageSize: 100 });
+            if (response.success) {
+                setVaccinationSchedule(response.data);
+            } else {
+                setVaccinationSchedule([]);
+            }
+        } catch (error) {
+            setVaccinationSchedule([]);
+        } finally {
+            setLoadingVaccinations(false);
+        }
     };
 
     const mapApiStatusToComponentStatus = (apiStatus) => {
         if (!apiStatus) return 'waiting';
         const statusMap = {
-            'pendingapproval': 'planning',
             'waitingforparentconsent': 'waiting',
             'scheduled': 'scheduled',
-            'declined': 'declined',
             'completed': 'completed'
         };
         return statusMap[apiStatus.toLowerCase()] || 'waiting';
@@ -135,6 +90,18 @@ const VaccinationSchedule = () => {
         const studentData = students.find(s => s.fullName === studentName);
         setSelectedStudentData(studentData);
     };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setCurrentPage(1);
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     useEffect(() => {
         if (searchTerm) {
@@ -148,31 +115,46 @@ const VaccinationSchedule = () => {
 
     const uniqueStudents = [...new Set(students.map(student => student.fullName))];
 
-    const filteredSchedule = vaccinationSchedule
-        .filter(item => {
-            const matchesSearch = item.vaccineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.sessionName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStudent = !selectedStudent || item.studentName === selectedStudent;
-            return matchesSearch && matchesStudent;
-        })
-        .sort((a, b) => a.dueIn - b.dueIn);
+    const filteredSchedule = useMemo(() => {
+        let filteredData = vaccinationSchedule.filter(item => {
+            const statusMap = {
+                'waiting': 'waitingforparentconsent',
+                'scheduled': 'scheduled',
+                'completed': 'completed'
+            };
+            const statusFilter = statusMap[activeTab];
+            const matchesStatus = !statusFilter || item.status?.toLowerCase() === statusFilter;
+            const matchesSearch = (item.vaccineTypeName || item.sessionName || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                (item.location || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                (item.notes || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+            return matchesStatus && matchesSearch;
+        }).sort((a, b) => {
+            const startDateA = new Date(a.startTime);
+            const startDateB = new Date(b.startTime);
+            return startDateA - startDateB;
+        });
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedData = filteredData.slice(startIndex, endIndex);
+
+        setTotalCount(filteredData.length);
+        setTotalPages(Math.ceil(filteredData.length / pageSize));
+
+        return paginatedData;
+    }, [vaccinationSchedule, activeTab, debouncedSearchTerm, currentPage, pageSize]);
+
+    const handleTabChange = (newTab) => {
+        setActiveTab(newTab);
+    };
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const getStatusBadge = (status) => {
-        if (status === "planning") {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
-                    style={{ backgroundColor: GRAY[50], color: GRAY[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: GRAY[500] }}></div>
-                    Lên kế hoạch
-                </span>
-            );
-        } else if (status === "waiting") {
+        if (status === "waiting") {
             return (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
                     style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: WARNING[500] }}></div>
                     Chờ xác nhận từ phụ huynh
                 </span>
             );
@@ -180,23 +162,13 @@ const VaccinationSchedule = () => {
             return (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
                     style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: PRIMARY[500] }}></div>
                     Đã lên lịch
-                </span>
-            );
-        } else if (status === "declined") {
-            return (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
-                    style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: ERROR[500] }}></div>
-                    Từ chối
                 </span>
             );
         } else if (status === "completed") {
             return (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
                     style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: SUCCESS[500] }}></div>
                     Đã hoàn thành
                 </span>
             );
@@ -204,18 +176,10 @@ const VaccinationSchedule = () => {
             return (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
                     style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: WARNING[500] }}></div>
                     Chờ xác nhận từ phụ huynh
                 </span>
             );
         }
-    };
-
-    const getDueInText = (dueIn) => {
-        if (dueIn < 0) return `Đã qua ${Math.abs(dueIn)} ngày`;
-        if (dueIn === 0) return "Hôm nay";
-        if (dueIn === 1) return "Ngày mai";
-        return `Còn ${dueIn} ngày`;
     };
 
     if (loading) {
@@ -228,73 +192,29 @@ const VaccinationSchedule = () => {
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            <AlertModal
-                isOpen={showAlert}
-                onClose={() => setShowAlert(false)}
-                type="error"
-                title="Lỗi tải dữ liệu"
-                message={error || "Có lỗi xảy ra khi tải danh sách học sinh."}
-            />
-
-            <section className="py-12 sm:py-16 lg:py-20 xl:py-28 relative overflow-hidden" style={{ backgroundColor: PRIMARY[500] }}>
+            <section className="py-12 sm:py-16 relative overflow-hidden" style={{ backgroundColor: PRIMARY[500] }}>
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="text-center text-white max-w-5xl mx-auto">
-                        <div className="flex items-center justify-center mb-6 lg:mb-8">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-6xl font-black text-white">
-                                Lịch Tiêm Chủng
-                            </h1>
-                        </div>
-                        <p className="text-base sm:text-lg lg:text-xl xl:text-2xl opacity-90 leading-relaxed font-medium px-4">
-                            Theo dõi và quản lý lịch tiêm chủng của con em tại trường một cách khoa học và an toàn
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-4">
+                            Lịch tiêm chủng
+                        </h1>
+                        <p className="text-base sm:text-lg opacity-90 leading-relaxed font-medium px-4">
+                            Quản lý lịch tiêm chủng cho con em
                         </p>
-
-                        <div className="grid grid-cols-4 gap-4 lg:gap-8 mt-8 lg:mt-12 max-w-4xl mx-auto">
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                                <div className="text-2xl lg:text-3xl font-bold text-white">{vaccinationSchedule.length}</div>
-                                <div className="text-sm lg:text-base text-teal-100 font-medium">Tổng lịch</div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                                <div className="text-2xl lg:text-3xl font-bold text-white">
-                                    {vaccinationSchedule.filter(v => v.status === 'planning').length}
-                                </div>
-                                <div className="text-sm lg:text-base text-teal-100 font-medium">Lên kế hoạch</div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                                <div className="text-2xl lg:text-3xl font-bold text-white">
-                                    {vaccinationSchedule.filter(v => v.status === 'waiting').length}
-                                </div>
-                                <div className="text-sm lg:text-base text-teal-100 font-medium">Chờ xác nhận từ phụ huynh</div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-6">
-                                <div className="text-2xl lg:text-3xl font-bold text-white">
-                                    {vaccinationSchedule.filter(v => v.status === 'scheduled').length}
-                                </div>
-                                <div className="text-sm lg:text-base text-teal-100 font-medium">Đã lên lịch</div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </section>
 
-            <section className="py-8 lg:py-12 bg-white bg-opacity-50 backdrop-blur-sm" style={{ borderBottomColor: GRAY[200], borderBottomWidth: 1 }}>
-                <div className="container mx-auto px-4">
-                    <div className="max-w-6xl mx-auto">
-                        <div className="text-center mb-6 lg:mb-8">
-                            <h2 className="text-xl lg:text-2xl font-bold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                Tìm kiếm và lọc lịch tiêm chủng
-                            </h2>
-                            <p className="text-sm lg:text-base" style={{ color: TEXT.SECONDARY }}>
-                                Chọn con em để xem lịch tiêm chủng hoặc tìm kiếm theo vaccine
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-center">
+            <div className="px-4 sm:px-6 lg:px-8 py-8">
+                <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: GRAY[200] }}>
+                    <div className="p-6 border-b" style={{ borderColor: GRAY[100] }}>
+                        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                             <div className="flex-shrink-0">
                                 <select
                                     value={selectedStudent}
                                     onChange={(e) => handleStudentChange(e.target.value)}
-                                    className="px-4 py-4 lg:py-5 text-base lg:text-lg rounded-xl lg:rounded-2xl border-2 focus:outline-none transition-all duration-300 font-medium shadow-sm min-w-[200px]"
-                                    style={{ borderColor: GRAY[200], backgroundColor: GRAY[25] || '#fafafa', color: TEXT.PRIMARY }}
+                                    className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 font-medium"
+                                    style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
                                 >
                                     {uniqueStudents.map((student, index) => (
                                         <option key={index} value={student}>{student}</option>
@@ -302,167 +222,269 @@ const VaccinationSchedule = () => {
                                 </select>
                             </div>
 
-                            <div className="relative flex-1 w-full">
-                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
-                                    <FiSearch className="w-5 h-5 lg:w-6 lg:h-6" style={{ color: PRIMARY[400] }} />
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Tìm kiếm theo tên vaccine, địa điểm..."
+                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    {searchTerm !== debouncedSearchTerm && (
+                                        <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent" style={{ borderColor: PRIMARY[500] }}></div>
+                                        </div>
+                                    )}
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="Tìm kiếm theo tên vaccine, địa điểm..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-12 lg:pl-14 pr-12 py-4 lg:py-5 text-base lg:text-lg rounded-xl lg:rounded-2xl border-2 focus:outline-none transition-all duration-300 font-medium shadow-sm"
-                                    style={{ borderColor: GRAY[200], backgroundColor: GRAY[25] || '#fafafa', color: TEXT.PRIMARY }}
-                                />
-                                {searchTerm && (
+                            </div>
+
+                            <div className="flex gap-4">
+                                {[
+                                    { key: "waiting", label: "Chờ xác nhận", icon: FiAlertTriangle },
+                                    { key: "scheduled", label: "Đã lên lịch", icon: FiCalendar },
+                                    { key: "completed", label: "Đã hoàn thành", icon: FiCheckCircle }
+                                ].map(tab => (
                                     <button
-                                        onClick={() => setSearchTerm("")}
-                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors duration-200 text-lg"
-                                        style={{ color: GRAY[400] }}
+                                        key={tab.key}
+                                        onClick={() => handleTabChange(tab.key)}
+                                        className="px-4 py-2 rounded-lg flex items-center transition-all duration-200"
+                                        style={{
+                                            backgroundColor: activeTab === tab.key ? PRIMARY[500] : 'white',
+                                            color: activeTab === tab.key ? 'white' : TEXT.PRIMARY,
+                                            border: `1px solid ${activeTab === tab.key ? PRIMARY[500] : GRAY[200]}`
+                                        }}
                                     >
-                                        <FiX className="w-4 h-4" />
+                                        <tab.icon className="mr-2 h-4 w-4" />
+                                        {tab.label}
                                     </button>
-                                )}
+                                ))}
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
 
-            <div className="container mx-auto px-4 py-8 lg:py-16">
-                {isSearching || loadingVaccinations ? (
-                    <div className="text-center py-12">
-                        <Loading type="medical" size="large" color="primary" text="Đang tìm kiếm lịch tiêm chủng..." />
-                    </div>
-                ) : filteredSchedule.length > 0 ? (
-                    <div className="bg-white rounded-2xl lg:rounded-3xl border-2 overflow-hidden shadow-lg" style={{ borderColor: GRAY[200] }}>
-                        <div className="divide-y" style={{ borderColor: GRAY[100] }}>
-                            {filteredSchedule.map((vaccination) => (
-                                <div key={vaccination.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center mb-3">
-                                                <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-bold text-white text-sm lg:text-base mr-4 shadow-sm"
-                                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[400]} 0%, ${PRIMARY[600]} 100%)` }}>
-                                                    {vaccination.avatar}
+                    <div className="overflow-hidden relative">
+                        {isSearching || loadingVaccinations ? (
+                            <div className="text-center py-16">
+                                <Loading type="medical" size="large" color="primary" text={isSearching ? "Đang tìm kiếm lịch tiêm chủng..." : "Đang tải lịch tiêm chủng..."} />
+                            </div>
+                        ) : filteredSchedule.length > 0 ? (
+                            <table className="w-full table-fixed">
+                                <thead>
+                                    <tr style={{ backgroundColor: PRIMARY[50] }}>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/4" style={{ color: TEXT.PRIMARY }}>
+                                            Tiêm chủng
+                                        </th>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/6" style={{ color: TEXT.PRIMARY }}>
+                                            Ngày tiêm
+                                        </th>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/6" style={{ color: TEXT.PRIMARY }}>
+                                            Thời gian
+                                        </th>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/5" style={{ color: TEXT.PRIMARY }}>
+                                            Địa điểm
+                                        </th>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/6" style={{ color: TEXT.PRIMARY }}>
+                                            Trạng thái
+                                        </th>
+                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-40" style={{ color: TEXT.PRIMARY }}>
+                                            Thao tác
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y" style={{ divideColor: GRAY[100] }}>
+                                    {filteredSchedule.map((vaccination, index) => (
+                                        <tr key={vaccination.id} className="hover:bg-gray-50 transition-all duration-200 group"
+                                            style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}>
+                                            <td className="py-4 px-6 w-1/4">
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                        {vaccination.sessionName || vaccination.vaccineTypeName || "Buổi tiêm chủng"}
+                                                    </span>
+                                                    <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
+                                                        {selectedStudentData?.fullName} • Lớp {selectedStudentData?.currentClassName || 'N/A'}
+                                                    </span>
                                                 </div>
-                                                <div>
-                                                    <h4 className="font-bold text-lg lg:text-xl" style={{ color: TEXT.PRIMARY }}>
-                                                        {vaccination.studentName}
-                                                    </h4>
-                                                    <p className="text-sm font-medium" style={{ color: GRAY[500] }}>
-                                                        Lớp {vaccination.class}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="ml-14 lg:ml-16">
-                                                <h5 className="font-bold text-lg lg:text-xl mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                    {vaccination.sessionName}
-                                                </h5>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                                                    <div className="flex items-center">
-                                                        <FiCalendar className="w-4 h-4 mr-2" style={{ color: PRIMARY[600] }} />
-                                                        <span className="text-sm font-medium" style={{ color: GRAY[600] }}>
-                                                            {vaccination.displayDate}
+                                            </td>
+                                            <td className="py-4 px-6 w-1/6">
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                    {new Date(vaccination.startTime).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 w-1/6">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                        {new Date(vaccination.startTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                                                        <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                            - {new Date(vaccination.endTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center">
-                                                        <FiClock className="w-4 h-4 mr-2" style={{ color: PRIMARY[600] }} />
-                                                        <span className="text-sm font-medium" style={{ color: GRAY[600] }}>
-                                                            {vaccination.time} - {vaccination.endTime}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <FiMapPin className="w-4 h-4 mr-2" style={{ color: PRIMARY[600] }} />
-                                                        <span className="text-sm font-medium" style={{ color: GRAY[600] }}>
-                                                            {vaccination.location}
-                                                        </span>
+                                                    <div
+                                                        className="px-2 py-0.5 rounded-full text-xs font-medium inline-block w-fit"
+                                                        style={{
+                                                            backgroundColor: (() => {
+                                                                const startDate = new Date(vaccination.startTime);
+                                                                const now = new Date();
+                                                                const dueIn = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+                                                                return dueIn <= 7 && dueIn >= 0 ? ERROR[100] : PRIMARY[100];
+                                                            })(),
+                                                            color: (() => {
+                                                                const startDate = new Date(vaccination.startTime);
+                                                                const now = new Date();
+                                                                const dueIn = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+                                                                return dueIn <= 7 && dueIn >= 0 ? ERROR[700] : PRIMARY[700];
+                                                            })()
+                                                        }}
+                                                    >
+                                                        {(() => {
+                                                            const startDate = new Date(vaccination.startTime);
+                                                            const now = new Date();
+                                                            const dueIn = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
+                                                            if (dueIn < 0) return `Đã qua ${Math.abs(dueIn)} ngày`;
+                                                            if (dueIn === 0) return "Hôm nay";
+                                                            if (dueIn === 1) return "Ngày mai";
+                                                            return `Còn ${dueIn} ngày`;
+                                                        })()}
                                                     </div>
                                                 </div>
-
-                                                <p className="text-sm leading-relaxed mb-3" style={{ color: GRAY[600] }}>
-                                                    {vaccination.description}
-                                                </p>
-
-                                                {vaccination.classes && vaccination.classes.length > 0 && (
-                                                    <div className="flex items-center mb-2">
-                                                        <span className="text-xs font-medium mr-2" style={{ color: GRAY[500] }}>
-                                                            Các lớp tham gia:
-                                                        </span>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {vaccination.classes.map((cls, index) => (
-                                                                <span key={index} className="px-2 py-1 rounded text-xs font-medium"
-                                                                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
-                                                                    {cls.name}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col items-start lg:items-end gap-3 lg:ml-6">
-                                            <div className="flex flex-col items-start lg:items-end gap-2">
-                                                {getStatusBadge(vaccination.status)}
-                                                <div
-                                                    className="px-3 py-1 rounded-full text-sm font-medium"
-                                                    style={{
-                                                        backgroundColor: vaccination.dueIn <= 7 && vaccination.dueIn >= 0 ? ERROR[100] : PRIMARY[100],
-                                                        color: vaccination.dueIn <= 7 && vaccination.dueIn >= 0 ? ERROR[700] : PRIMARY[700]
-                                                    }}
-                                                >
-                                                    {getDueInText(vaccination.dueIn)}
+                                            </td>
+                                            <td className="py-4 px-6 w-1/5">
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                    {vaccination.location}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-6 w-1/6">
+                                                {getStatusBadge(mapApiStatusToComponentStatus(vaccination.status))}
+                                            </td>
+                                            <td className="py-4 px-6 w-40">
+                                                <div className="flex items-center space-x-2">
+                                                    {mapApiStatusToComponentStatus(vaccination.status) === 'completed' ? (
+                                                        <Link
+                                                            to={`/parent/vaccination/result/${vaccination.id}`}
+                                                            state={{ studentId: selectedStudentData?.id }}
+                                                            className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
+                                                            title="Xem kết quả"
+                                                            style={{ color: PRIMARY[700], border: `1px solid ${PRIMARY[700]}` }}
+                                                        >
+                                                            <FiEye className="h-3 w-3" />
+                                                            <span>Kết quả</span>
+                                                        </Link>
+                                                    ) : (
+                                                        <Link
+                                                            to={`/parent/vaccination/details/${vaccination.id}`}
+                                                            state={{ studentId: selectedStudentData?.id }}
+                                                            className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
+                                                            title="Xem chi tiết"
+                                                            style={{ color: PRIMARY[700], border: `1px solid ${PRIMARY[700]}` }}
+                                                        >
+                                                            <FiEye className="h-3 w-3" />
+                                                            <span>Chi tiết</span>
+                                                        </Link>
+                                                    )}
                                                 </div>
-                                            </div>
-
-                                            {vaccination.status === 'completed' ? (
-                                                <Link
-                                                    to={`/parent/vaccination/result/${vaccination.id}`}
-                                                    state={{ studentId: vaccination.studentId }}
-                                                    className="group flex items-center px-4 py-2 font-semibold text-sm rounded-lg border transition-all duration-300 hover:scale-105"
-                                                    style={{ borderColor: PRIMARY[500], color: PRIMARY[600], backgroundColor: 'white' }}
-                                                >
-                                                    <FiCheck className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                                                    Xem kết quả
-                                                </Link>
-                                            ) : (
-                                                <Link
-                                                    to={`/parent/vaccination/details/${vaccination.id}`}
-                                                    state={{ studentId: vaccination.studentId }}
-                                                    className="group flex items-center px-4 py-2 font-semibold text-sm rounded-lg border transition-all duration-300 hover:scale-105"
-                                                    style={{ borderColor: PRIMARY[500], color: PRIMARY[600], backgroundColor: 'white' }}
-                                                >
-                                                    <FiEye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                                                    Xem chi tiết
-                                                </Link>
-                                            )}
-                                        </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="text-center py-16 lg:py-24">
+                                <div className="max-w-md mx-auto">
+                                    <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: GRAY[100] }}>
+                                        <FiAlertCircle className="w-10 h-10 lg:w-12 lg:h-12" style={{ color: GRAY[400] }} />
+                                    </div>
+                                    <h3 className="text-xl lg:text-2xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
+                                        Không tìm thấy lịch tiêm chủng nào
+                                    </h3>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <button
+                                            onClick={() => setSearchTerm("")}
+                                            className="px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:shadow-md"
+                                            style={{ backgroundColor: PRIMARY[500], color: 'white', border: `2px solid ${PRIMARY[500]}` }}
+                                        >
+                                            Xóa bộ lọc
+                                        </button>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        )}
+
+                        {totalPages > 0 && (
+                            <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: GRAY[100] }}>
+                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                    Hiển thị{" "}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {totalCount > 0 ? ((currentPage - 1) * pageSize) + 1 : 0}
+                                    </span>{" "}
+                                    -{" "}
+                                    <span className="font-bold" style={{ color: TEXT.PRIMARY }}>
+                                        {Math.min(currentPage * pageSize, totalCount)}
+                                    </span>{" "}
+                                    trong tổng số{" "}
+                                    <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
+                                    lịch tiêm chủng
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <button
+                                        onClick={() => paginate(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: currentPage === 1 ? GRAY[200] : PRIMARY[300],
+                                            color: currentPage === 1 ? GRAY[400] : PRIMARY[600],
+                                            backgroundColor: 'white'
+                                        }}
+                                    >
+                                        <FiChevronLeft className="h-4 w-4" />
+                                    </button>
+
+                                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                                        let pageNumber;
+                                        if (totalPages <= 5) {
+                                            pageNumber = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNumber = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNumber = totalPages - 4 + i;
+                                        } else {
+                                            pageNumber = currentPage - 2 + i;
+                                        }
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                onClick={() => paginate(pageNumber)}
+                                                className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200"
+                                                style={{
+                                                    borderColor: currentPage === pageNumber ? PRIMARY[500] : GRAY[200],
+                                                    backgroundColor: currentPage === pageNumber ? PRIMARY[500] : 'white',
+                                                    color: currentPage === pageNumber ? 'white' : TEXT.PRIMARY
+                                                }}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        );
+                                    })}
+
+                                    <button
+                                        onClick={() => paginate(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-2 text-sm font-medium border rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: currentPage === totalPages ? GRAY[200] : PRIMARY[300],
+                                            color: currentPage === totalPages ? GRAY[400] : PRIMARY[600],
+                                            backgroundColor: 'white'
+                                        }}
+                                    >
+                                        <FiChevronRight className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    <div className="text-center py-12 lg:py-20 rounded-2xl lg:rounded-3xl" style={{ backgroundColor: GRAY[50] }}>
-                        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full flex items-center justify-center mx-auto mb-4 lg:mb-6" style={{ backgroundColor: GRAY[300] }}>
-                            <FiAlertCircle className="w-8 h-8 lg:w-12 lg:h-12 text-white" />
-                        </div>
-                        <h3 className="text-xl lg:text-2xl font-bold mb-3 lg:mb-4" style={{ color: TEXT.PRIMARY }}>
-                            Không tìm thấy lịch tiêm chủng nào
-                        </h3>
-                        <p className="text-base lg:text-lg mb-4 lg:mb-6 px-4" style={{ color: TEXT.SECONDARY }}>
-                            {students.length === 0
-                                ? "Chưa có học sinh nào được đăng ký dưới tài khoản này."
-                                : selectedStudentData
-                                    ? `${selectedStudentData.fullName} chưa có lịch tiêm chủng nào hoặc thử thay đổi từ khóa tìm kiếm!`
-                                    : "Thử chọn học sinh khác hoặc thay đổi từ khóa tìm kiếm!"
-                            }
-                        </p>
-                    </div>
-                )}
+                </div>
             </div>
         </div>
     );

@@ -4,7 +4,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/
 import { FiSave, FiUser, FiTablet, FiAlertTriangle, FiCheck, FiChevronDown, FiPlus, FiTrash2, FiChevronLeft } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import AlertModal from '../../components/modal/AlertModal';
-import vaccinationScheduleApi from '../../api/VaccinationScheduleApi';
+import userApi from '../../api/userApi';
 import medicationRequestApi from '../../api/medicationRequestApi';
 import { useAuth } from '../../utils/AuthContext';
 
@@ -77,7 +77,7 @@ const MedicationRequestCreate = () => {
     const fetchStudents = async () => {
         setStudentsLoading(true);
         try {
-            const response = await vaccinationScheduleApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100, searchTerm: studentSearch, orderBy: 'name' });
+            const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100, searchTerm: studentSearch, orderBy: 'name' });
             if (response.success) {
                 setStudents(response.data);
             } else {

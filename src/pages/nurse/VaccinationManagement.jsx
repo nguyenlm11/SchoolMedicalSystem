@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiPlus, FiSearch, FiCalendar, FiCheckCircle, FiClock, FiAlertTriangle, FiRefreshCw, FiEye, FiTrash2, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import { FiPlus, FiSearch, FiCalendar, FiCheckCircle, FiClock, FiAlertTriangle, FiEye, FiTrash2, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, WARNING, INFO, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -9,7 +9,7 @@ import vaccineSessionApi from "../../api/vaccineSessionApi";
 import vaccineApi from "../../api/vaccineApi";
 
 const VaccinationManagement = () => {
-    const [activeTab, setActiveTab] = useState("all");
+    const [activeTab, setActiveTab] = useState("planning");
     const [allData, setAllData] = useState([]);
     const [vaccinationList, setVaccinationList] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -114,15 +114,13 @@ const VaccinationManagement = () => {
 
     const filterAndPaginateData = () => {
         let filteredData = allData;
-        if (activeTab !== 'all') {
-            const statusMap = {
-                'planning': 'PendingApproval',
-                'upcoming': 'WaitingForParentConsent',
-                'scheduled': 'Scheduled',
-                'completed': 'Completed'
-            };
-            filteredData = allData.filter(item => item.status === statusMap[activeTab]);
-        }
+        const statusMap = {
+            'planning': 'PendingApproval',
+            'upcoming': 'WaitingForParentConsent',
+            'scheduled': 'Scheduled',
+            'completed': 'Completed'
+        };
+        filteredData = allData.filter(item => item.status === statusMap[activeTab]);
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -298,7 +296,6 @@ const VaccinationManagement = () => {
 
                             <div className="flex gap-4">
                                 {[
-                                    { key: "all", label: "Tất cả", icon: FiRefreshCw },
                                     { key: "planning", label: "Lên kế hoạch", icon: FiClock },
                                     { key: "upcoming", label: "Chờ phụ huynh", icon: FiCalendar },
                                     { key: "scheduled", label: "Đã lên lịch", icon: FiCheckCircle },
