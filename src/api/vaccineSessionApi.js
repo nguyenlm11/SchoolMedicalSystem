@@ -9,12 +9,14 @@ const vaccineSessionApi = {
                 pageIndex = 1,
                 pageSize = 10,
                 searchTerm = '',
-                orderBy = ''
+                orderBy = '',
+                nurseId = ''
             } = params;
 
             const queryParams = new URLSearchParams();
             queryParams.append('pageIndex', pageIndex);
             queryParams.append('pageSize', pageSize);
+            queryParams.append('nurseId', nurseId);
 
             if (searchTerm) {
                 queryParams.append('searchTerm', searchTerm);

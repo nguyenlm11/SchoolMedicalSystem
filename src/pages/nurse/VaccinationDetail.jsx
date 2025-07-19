@@ -323,7 +323,7 @@ const VaccinationDetail = () => {
                                         <FiEdit className="h-4 w-4 mr-2" />Chỉnh sửa
                                     </Link>
 
-                                    {vaccination?.classNurseAssignments?.some(assignment => assignment.nurseId === user?.id) && (
+                                    {(vaccination?.classNurseAssignments?.some(assignment => assignment.nurseId === user?.id) && vaccination.status === "Scheduled") && (
                                         <Link
                                             to={`/schoolnurse/vaccination/${id}/process`}
                                             className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
