@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiEdit3, FiSave, FiX, FiUsers, FiShield, FiHeart, FiCamera, FiStar, FiCheckCircle, FiAlertCircle, FiCopy } from 'react-icons/fi';
 import { PRIMARY, SECONDARY, SUCCESS, ERROR, TEXT, BACKGROUND, BORDER, SHADOW, COMMON } from '../../constants/colors';
 import { useAuth } from '../../utils/AuthContext';
@@ -26,15 +26,25 @@ const ParentProfile = () => {
         profileImageUrl: null,
     });
 
+    const { id } = useParams();
+    
+    const userRole = user?.role;
+
     useEffect(() => {
         fetchProfile();
-    }, [user?.id]);
+    }, [user.id, id]);
 
     const fetchProfile = async () => {
-        if (!user?.id) return;
+        // Use the 'id' from params if it exists, otherwise fall back to user?.id
+        const profileId = id || user.id;
+    
+        if (!profileId) return;
+    
         setLoading(true);
         try {
-            const response = await authApi.getParentProfile(user.id);
+            // Fetch profile based on the profileId (either from params or user id)
+            const response = await authApi.getParentProfile(profileId);
+            
             if (response.success) {
                 setProfile(response.data);
                 setEditedProfile({
@@ -55,6 +65,7 @@ const ParentProfile = () => {
             setLoading(false);
         }
     };
+    
 
     const showAlertMessage = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -543,22 +554,26 @@ const ParentProfile = () => {
                                     </div>
                                 ) : (
                                     <div className="flex items-center space-x-4">
-                                        <button
-                                            onClick={handleStartEdit}
-                                            className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
-                                        >
-                                            <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                                            <span className="font-semibold text-base">Chỉnh sửa</span>
-                                        </button>
-                                        <button
-                                            onClick={() => navigate('/parent/change-password')}
-                                            className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                                            style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
-                                        >
-                                            <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
-                                            <span className="font-semibold text-base">Đổi mật khẩu</span>
-                                        </button>
+                                        {userRole === 'parent' && (
+                                            <>
+                                                <button
+                                                    onClick={handleStartEdit}
+                                                    className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                                    style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, color: COMMON.WHITE }}
+                                                >
+                                                    <FiEdit3 className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                                    <span className="font-semibold text-base">Chỉnh sửa</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate('/parent/change-password')}
+                                                    className="group flex items-center px-8 py-4 rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                                                    style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
+                                                >
+                                                    <FiShield className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                                                    <span className="font-semibold text-base">Đổi mật khẩu</span>
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 )}
                             </div>
