@@ -1,21 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-    FiArrowLeft,
-    FiUser,
-    FiPackage,
-    FiCalendar,
-    FiClock,
-    FiCheckCircle,
-    FiAlertTriangle,
-    FiX,
-    FiFileText,
-    FiActivity,
-    FiShield,
-    FiUserCheck,
-    FiFilter,
-    FiCheckSquare
-} from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiPackage, FiClock, FiCheckCircle, FiAlertTriangle, FiX, FiActivity, FiCheckSquare } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -30,122 +15,75 @@ const MedicationRequestDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
-
     const [loading, setLoading] = useState(true);
     const [medicationRequest, setMedicationRequest] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showApprovalModal, setShowApprovalModal] = useState(false);
-    const [approvalAction, setApprovalAction] = useState(""); // "approve" or "reject"
+    const [approvalAction, setApprovalAction] = useState("");
     const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
     const [showQuantityConfirmModal, setShowQuantityConfirmModal] = useState(false);
     const [selectedMedication, setSelectedMedication] = useState(null);
     const [receivedQuantities, setReceivedQuantities] = useState({});
-
-    // User role detection
     const isParent = user?.role === 'parent';
     const isNurse = user?.role === 'schoolnurse';
 
-    // Status badge configurations
     const STATUS_CONFIG = {
-        PendingApproval: {
-            icon: FiClock,
-            label: "Chờ duyệt",
-            bgColor: WARNING[50],
-            textColor: WARNING[700]
-        },
-        Approved: {
-            icon: FiCheckCircle,
-            label: "Đã duyệt",
-            bgColor: SUCCESS[50],
-            textColor: SUCCESS[700]
-        },
-        Rejected: {
-            icon: FiX,
-            label: "Từ chối",
-            bgColor: ERROR[50],
-            textColor: ERROR[700]
-        },
-        Active: {
-            icon: FiActivity,
-            label: "Đang hoạt động",
-            bgColor: PRIMARY[50],
-            textColor: PRIMARY[700]
-        },
-        Completed: {
-            icon: FiCheckCircle,
-            label: "Đã hoàn thành",
-            bgColor: INFO[50],
-            textColor: INFO[700]
-        },
-        Discontinued: {
-            icon: FiAlertTriangle,
-            label: "Đã ngừng",
-            bgColor: GRAY[50],
-            textColor: GRAY[700]
-        }
+        PendingApproval: { icon: FiClock, label: "Chờ duyệt", bgColor: WARNING[50], textColor: WARNING[700], borderColor: WARNING[200] },
+        Approved: { icon: FiCheckCircle, label: "Đã duyệt", bgColor: SUCCESS[50], textColor: SUCCESS[700], borderColor: SUCCESS[200] },
+        Rejected: { icon: FiX, label: "Từ chối", bgColor: ERROR[50], textColor: ERROR[700], borderColor: ERROR[200] },
+        Active: { icon: FiActivity, label: "Đang hoạt động", bgColor: PRIMARY[50], textColor: PRIMARY[700], borderColor: PRIMARY[200] },
+        Completed: { icon: FiCheckCircle, label: "Đã hoàn thành", bgColor: INFO[50], textColor: INFO[700], borderColor: INFO[200] },
+        Discontinued: { icon: FiAlertTriangle, label: "Đã ngừng", bgColor: GRAY[50], textColor: GRAY[700], borderColor: GRAY[200] }
     };
 
-    // Priority badge configurations
     const PRIORITY_CONFIG = {
-        Critical: {
-            label: "Khẩn cấp",
-            bgColor: ERROR[50],
-            textColor: ERROR[700]
-        },
-        High: {
-            label: "Cao",
-            bgColor: WARNING[50],
-            textColor: WARNING[700]
-        },
-        Normal: {
-            label: "Bình thường",
-            bgColor: PRIMARY[50],
-            textColor: PRIMARY[700]
-        },
-        Low: {
-            label: "Thấp",
-            bgColor: SUCCESS[50],
-            textColor: SUCCESS[700]
-        }
+        Critical: { label: "Khẩn cấp", bgColor: ERROR[50], textColor: ERROR[700], borderColor: ERROR[200] },
+        High: { label: "Cao", bgColor: WARNING[50], textColor: WARNING[700], borderColor: WARNING[200] },
+        Normal: { label: "Bình thường", bgColor: PRIMARY[50], textColor: PRIMARY[700], borderColor: PRIMARY[200] },
+        Low: { label: "Thấp", bgColor: SUCCESS[50], textColor: SUCCESS[700], borderColor: SUCCESS[200] }
+    };
+
+    const QUANTITY_UNIT_CONFIG = {
+        Tablet: "Viên",
+        Bottle: "Chai",
+        Package: "Gói"
     };
 
     useEffect(() => {
-        const fetchDetail = async () => {
-            if (isParent && !user?.id) {
-                setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
-                return;
-            }
+        if (id) { fetchDetail() }
+    }, [id, user?.id, isParent]);
 
-            setLoading(true);
-            try {
-                const response = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (response.success) {
-                    // Check access permission for parent
-                    if (isParent && response.data.parentId !== user.id) {
-                        setMedicationRequest(null);
-                        setShowAlert(true);
-                        setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
-                        return;
-                    }
-                    setMedicationRequest(response.data);
-                } else {
+    const fetchDetail = async () => {
+        if (isParent && !user?.id) {
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await medicationRequestApi.getMedicationRequestDetail(id);
+            if (response.success) {
+                if (isParent && response.data.parentId !== user.id) {
                     setMedicationRequest(null);
                     setShowAlert(true);
-                    setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
+                    setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
+                    return;
                 }
-            } catch (error) {
+                setMedicationRequest(response.data);
+            } else {
                 setMedicationRequest(null);
                 setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
-            } finally {
-                setLoading(false);
+                setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
             }
-        };
-
-        if (id) fetchDetail();
-    }, [id, user?.id, isParent]);
+        } catch (error) {
+            setMedicationRequest(null);
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleApproveClick = () => {
         setApprovalAction("approve");
@@ -159,18 +97,11 @@ const MedicationRequestDetail = () => {
 
     const handleApprove = async (notes = "") => {
         try {
-            const response = await medicationRequestApi.approveMedicationRequest(id, {
-                isApproved: true,
-                notes: notes
-            });
+            const response = await medicationRequestApi.approveMedicationRequest(id, { isApproved: true, notes: notes });
 
             if (response.success) {
-                // Refresh the medication request data
                 const detailResponse = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (detailResponse.success) {
-                    setMedicationRequest(detailResponse.data);
-                }
-
+                if (detailResponse.success) { setMedicationRequest(detailResponse.data); }
                 setShowApprovalModal(false);
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: response.message || "Đã duyệt yêu cầu thuốc thành công" });
@@ -186,18 +117,11 @@ const MedicationRequestDetail = () => {
 
     const handleReject = async (rejectionReason = "") => {
         try {
-            const response = await medicationRequestApi.rejectMedicationRequest(id, {
-                rejectionReason: rejectionReason,
-                notes: ""
-            });
+            const response = await medicationRequestApi.rejectMedicationRequest(id, { rejectionReason: rejectionReason, notes: "" });
 
             if (response.success) {
-                // Refresh the medication request data
                 const detailResponse = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (detailResponse.success) {
-                    setMedicationRequest(detailResponse.data);
-                }
-
+                if (detailResponse.success) { setMedicationRequest(detailResponse.data); }
                 setShowApprovalModal(false);
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: response.message || "Đã từ chối yêu cầu thuốc" });
@@ -214,20 +138,11 @@ const MedicationRequestDetail = () => {
     const handleDelete = async () => {
         try {
             const response = await medicationRequestApi.deleteMedicationRequest(id);
-
             if (response.success) {
                 setShowDeleteModal(false);
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: response.message || "Đã xóa yêu cầu thuốc thành công" });
-
-                // Navigate back to list after a short delay
-                setTimeout(() => {
-                    if (isParent) {
-                        navigate('/parent/medication-requests');
-                    } else {
-                        navigate('/schoolnurse/medication-requests');
-                    }
-                }, 1500);
+                navigate(isParent ? '/parent/medication-requests' : '/schoolnurse/medication-requests');
             } else {
                 setShowDeleteModal(false);
                 setShowAlert(true);
@@ -242,9 +157,8 @@ const MedicationRequestDetail = () => {
 
     const handleQuantityConfirmClick = (medications) => {
         setSelectedMedication(medications);
-        // Initialize received quantities with sent quantities as default
         const initialQuantities = medications.reduce((acc, med) => {
-            acc[med.id] = med.quantitySent || 0;
+            acc[med.id] = med.quantityReceived || 0;
             return acc;
         }, {});
         setReceivedQuantities(initialQuantities);
@@ -260,27 +174,16 @@ const MedicationRequestDetail = () => {
             }));
 
             const response = await medicationUsageApi.confirmQuantityReceived(id, medicationsWithQuantities);
-
             if (response.success) {
                 setShowQuantityConfirmModal(false);
                 setShowAlert(true);
-                setAlertInfo({
-                    type: "success",
-                    message: response.message || "Đã xác nhận số lượng thuốc thành công"
-                });
-
-                // Refresh the medication request data
+                setAlertInfo({ type: "success", message: response.message || "Đã xác nhận số lượng thuốc thành công" });
                 const detailResponse = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (detailResponse.success) {
-                    setMedicationRequest(detailResponse.data);
-                }
+                if (detailResponse.success) { setMedicationRequest(detailResponse.data) }
             } else {
                 setShowQuantityConfirmModal(false);
                 setShowAlert(true);
-                setAlertInfo({
-                    type: "error",
-                    message: response.message || "Không thể xác nhận số lượng thuốc"
-                });
+                setAlertInfo({ type: "error", message: response.message || "Không thể xác nhận số lượng thuốc" });
             }
         } catch (error) {
             setShowQuantityConfirmModal(false);
@@ -297,17 +200,16 @@ const MedicationRequestDetail = () => {
     };
 
     const getStatusBadge = (status) => {
-        const config = STATUS_CONFIG[status];
-        if (!config) return null;
-
-        const IconComponent = config.icon;
+        const statusConfig = STATUS_CONFIG[status];
+        if (!statusConfig) return null;
+        const IconComponent = statusConfig.icon;
         return (
             <span
-                className="px-4 py-2 inline-flex items-center text-sm font-medium rounded-lg"
-                style={{ backgroundColor: config.bgColor, color: config.textColor }}
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full border"
+                style={{ backgroundColor: statusConfig.bgColor, color: statusConfig.textColor, borderColor: statusConfig.borderColor }}
             >
-                <IconComponent className="mr-2 h-4 w-4" />
-                {config.label}
+                <IconComponent className="mr-1.5 h-4 w-4" />
+                {statusConfig.label}
             </span>
         );
     };
@@ -315,143 +217,41 @@ const MedicationRequestDetail = () => {
     const getPriorityBadge = (priority) => {
         const config = PRIORITY_CONFIG[priority];
         if (!config) return null;
-
         return (
             <span
-                className="px-3 py-1 text-sm font-medium rounded-md"
-                style={{ backgroundColor: config.bgColor, color: config.textColor }}
+                className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border"
+                style={{ backgroundColor: config.bgColor, color: config.textColor, borderColor: config.borderColor }}
             >
                 {config.label}
             </span>
         );
     };
 
+    const getQuantityUnitText = (unit) => { return QUANTITY_UNIT_CONFIG[unit] || unit };
+
     const formatDateTime = (dateString) => {
-        if (!dateString) return 'N/A';
+        if (!dateString) return 'Không có';
         const date = new Date(dateString);
-        const dateStr = date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        return (
-            <div className="flex items-center space-x-2">
-                <span>{dateStr}</span>
-                <span style={{ color: GRAY[400] }}>|</span>
-                <span>{timeStr}</span>
-            </div>
-        );
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
 
-    const renderInfoItem = (label, value, icon = null, isCentered = false, isLargeNumber = false) => (
-        <div className={`flex flex-col space-y-2 ${isCentered ? 'text-center' : ''}`}>
-            <div className={`flex items-center ${isCentered ? 'justify-center' : ''} space-x-2`}>
-                {icon && <span style={{ color: GRAY[400] }}>{icon}</span>}
-                <label className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                    {label}
-                </label>
-            </div>
-            <div className={`text-base ${isLargeNumber ? 'text-2xl font-bold' : ''}`} style={{ color: TEXT.PRIMARY }}>
-                {value || 'Không có thông tin'}
-            </div>
-        </div>
-    );
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Không có';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
 
-    const InfoItem = ({ label, value, icon, badge, error, className = '', important = false }) => (
-        <div
-            className={`bg-white p-5 rounded-xl border ${className}`}
-            style={{
-                borderColor: error ? ERROR[200] : important ? PRIMARY[200] : BORDER.DEFAULT,
-                backgroundColor: important ? PRIMARY[50] : 'white'
-            }}
-        >
-            <div className="flex items-center mb-2">
-                <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: PRIMARY[100] }}>
-                    {React.cloneElement(icon, { style: { color: PRIMARY[600] } })}
-                </div>
-                <label className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                    {label}
-                </label>
-            </div>
-            <div className="flex items-center mt-1">
-                <span className="text-lg font-medium" style={{ color: error ? ERROR[700] : TEXT.PRIMARY }}>
-                    {value}
-                </span>
-                {badge && <div className="ml-3">{badge}</div>}
-            </div>
-        </div>
-    );
+    const shouldShowSpecialNotes = (notes) => {
+        return notes && notes !== "Không có" && notes.trim() !== "";
+    };
 
-    const StudentInfoCard = ({ studentName, studentCode, parentName }) => (
-        <div className="bg-white rounded-2xl shadow-md border p-8 flex flex-col items-center mb-8" style={{ borderColor: BORDER.LIGHT }}>
-            <div className="w-24 h-24 rounded-full flex items-center justify-center shadow-lg mb-4" style={{ backgroundColor: SUCCESS[100] }}>
-                <FiUser className="h-12 w-12" style={{ color: SUCCESS[600] }} />
-            </div>
-            <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: TEXT.PRIMARY }}>
-                {studentName}
-            </h2>
-            <div
-                className="inline-flex items-center px-4 py-1 rounded-full text-base font-semibold mb-4"
-                style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}
-            >
-                {studentCode}
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                    Phụ huynh
-                </span>
-                <span className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
-                    {parentName}
-                </span>
-            </div>
-        </div>
-    );
+    const shouldShowInstructions = (instructions) => {
+        return instructions && instructions !== "Không có hướng dẫn" && instructions.trim() !== "";
+    };
 
-    const MedicationCard = ({ medication }) => (
-        <div className="p-6 border rounded-lg" style={{ backgroundColor: PRIMARY[25], borderColor: BORDER.DEFAULT }}>
-            <div className="space-y-4">
-                <div className="flex items-center space-x-3 mb-4">
-                    <h3 className="text-lg font-semibold flex items-center" style={{ color: PRIMARY[700] }}>
-                        <FiFilter className="mr-3 h-5 w-5" /> {medication.medicationName.toUpperCase()}
-                    </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {renderInfoItem("Liều lượng", `${medication.dosage}`, null, true, true)}
-                    {renderInfoItem("Số lượng", `${medication.quantitySent}`, null, true, true)}
-                    {renderInfoItem("Tần suất", `${medication.frequency} lần/ngày`, null, true, true)}
-                    {renderInfoItem("Hạn sử dụng", new Date(medication.expiryDate).toLocaleDateString("vi-VN"), null, true, true)}
-                </div>
-
-                {medication.timesOfDay && medication.timesOfDay.length > 0 && (
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold mb-2 text-blue-800">Thời gian uống:</h4>
-                        <div className="flex flex-wrap gap-2">
-                            {medication.timesOfDay.map((time, timeIndex) => (
-                                <span
-                                    key={timeIndex}
-                                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                                >
-                                    {time}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {medication.specialNotes && (
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <h4 className="font-semibold mb-2 text-yellow-800">Ghi chú đặc biệt:</h4>
-                        <p className="text-sm text-yellow-700">{medication.specialNotes}</p>
-                    </div>
-                )}
-
-                {medication.instructions && medication.instructions !== "Không có hướng dẫn" && (
-                    <div className="bg-white p-4 rounded-lg border" style={{ borderColor: BORDER.DEFAULT }}>
-                        <h4 className="font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>Hướng dẫn sử dụng:</h4>
-                        <p className="text-sm" style={{ color: TEXT.SECONDARY }}>{medication.instructions}</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+    const shouldShowFrequency = (frequency) => {
+        return frequency && frequency !== "Không xác định" && frequency.trim() !== "";
+    };
 
     if (loading) {
         return (
@@ -486,24 +286,23 @@ const MedicationRequestDetail = () => {
     }
 
     return (
-        <div className="min-h-screen p-6" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-            <div className="w-full">
-                {/* Header */}
-                <div className="mb-6">
+        <div className="min-h-screen" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+            <div className="w-full mx-auto py-6 px-6">
+                <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <button
                                 onClick={() => navigate(-1)}
-                                className="p-2 rounded-lg transition-all duration-200 hover:scale-105"
-                                style={{ backgroundColor: BACKGROUND.DEFAULT, border: `1px solid ${BORDER.DEFAULT}` }}
+                                className="p-2 rounded-lg transition-all duration-200 hover:bg-white hover:shadow-sm"
+                                style={{ color: GRAY[600] }}
                             >
-                                <FiArrowLeft className="h-5 w-5" style={{ color: TEXT.PRIMARY }} />
+                                <FiArrowLeft className="h-6 w-6" />
                             </button>
                             <div>
-                                <h1 className="text-3xl font-bold" style={{ color: PRIMARY[700] }}>
+                                <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
                                     Chi tiết yêu cầu thuốc
                                 </h1>
-                                <p className="text-base mt-1" style={{ color: TEXT.SECONDARY }}>
+                                <p className="text-base mt-2" style={{ color: TEXT.SECONDARY }}>
                                     Mã yêu cầu: {medicationRequest.code}
                                 </p>
                             </div>
@@ -511,23 +310,22 @@ const MedicationRequestDetail = () => {
 
                         <div className="flex items-center space-x-3">
                             {getStatusBadge(medicationRequest.status)}
-
                             {medicationRequest.status === "PendingApproval" && isNurse && (
                                 <>
                                     <button
                                         onClick={handleApproveClick}
-                                        className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
-                                        style={{ backgroundColor: PRIMARY[500], color: 'white' }}
+                                        className="inline-flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:opacity-90"
+                                        style={{ backgroundColor: SUCCESS[500], color: 'white' }}
                                     >
-                                        <FiCheckCircle className="mr-2 h-4 w-4" />
+                                        <FiCheckCircle className="mr-2 h-5 w-5" />
                                         Duyệt
                                     </button>
                                     <button
                                         onClick={handleRejectClick}
-                                        className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
+                                        className="inline-flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:opacity-90"
                                         style={{ backgroundColor: ERROR[500], color: 'white' }}
                                     >
-                                        <FiX className="mr-2 h-4 w-4" />
+                                        <FiX className="mr-2 h-5 w-5" />
                                         Từ chối
                                     </button>
                                 </>
@@ -536,96 +334,231 @@ const MedicationRequestDetail = () => {
                     </div>
                 </div>
 
-                {/* Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Basic Information Card */}
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden h-full" style={{ borderColor: BORDER.DEFAULT }}>
-                        <div className="p-6 border-b flex items-center" style={{ borderColor: BORDER.LIGHT, backgroundColor: PRIMARY[50] }}>
-                            <FiFileText className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
-                            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
-                                Thông tin cơ bản
-                            </h2>
-                        </div>
-
-                        <div className="p-8 flex-1">
-                            <div className="pb-8 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                                <h3 className="text-lg font-semibold mb-6 flex items-center" style={{ color: TEXT.PRIMARY }}>
-                                    <FiUser className="mr-3 h-5 w-5" style={{ color: PRIMARY[500] }} />
-                                    Thông tin học sinh
-                                </h3>
-                                <StudentInfoCard
-                                    studentName={medicationRequest.studentName}
-                                    studentCode={medicationRequest.studentCode}
-                                    parentName={medicationRequest.parentName}
-                                />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+                    <div className="lg:col-span-1 flex flex-col h-full">
+                        <div className="bg-white rounded-xl shadow-sm border p-8 flex-1" style={{ borderColor: BORDER.DEFAULT }}>
+                            <div className="flex items-center mb-6">
+                                <div className="w-16 h-16 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
+                                    <FiUser className="h-8 w-8" style={{ color: PRIMARY[600] }} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                        {medicationRequest.studentName}
+                                    </h3>
+                                    <p className="text-base" style={{ color: TEXT.SECONDARY }}>
+                                        Mã học sinh: {medicationRequest.studentCode}
+                                    </p>
+                                </div>
                             </div>
-
-                            <div className="pb-8 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                                <h3 className="text-lg font-semibold mb-6 flex items-center" style={{ color: TEXT.PRIMARY }}>
-                                    <FiFileText className="mr-3 h-5 w-5" style={{ color: PRIMARY[500] }} />
-                                    Thông tin yêu cầu
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <InfoItem
-                                        label="Ngày gửi yêu cầu"
-                                        value={formatDateTime(medicationRequest.submittedAt)}
-                                        icon={<FiCalendar className="h-5 w-5" />}
-                                        important={true}
-                                    />
-
-                                    <InfoItem
-                                        label="Độ ưu tiên"
-                                        value={getPriorityBadge(medicationRequest.priorityDisplayName)}
-                                        icon={<FiShield className="h-5 w-5" />}
-                                        important={true}
-                                    />
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between py-3 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                    <span className="text-base" style={{ color: TEXT.SECONDARY }}>Phụ huynh:</span>
+                                    <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                        {medicationRequest.parentName}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between py-3 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                    <span className="text-base" style={{ color: TEXT.SECONDARY }}>Ngày gửi yêu cầu:</span>
+                                    <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                        {formatDateTime(medicationRequest.submittedAt)}
+                                    </span>
+                                </div>
+                                {medicationRequest.approvedAt && (
+                                    <div className="flex items-center justify-between py-3 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                        <span className="text-base" style={{ color: TEXT.SECONDARY }}>Ngày duyệt:</span>
+                                        <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                            {formatDateTime(medicationRequest.approvedAt)}
+                                        </span>
+                                    </div>
+                                )}
+                                {medicationRequest.approvedByName && (
+                                    <div className="flex items-center justify-between py-3 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                        <span className="text-base" style={{ color: TEXT.SECONDARY }}>Người duyệt:</span>
+                                        <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                            {medicationRequest.approvedByName}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between py-3">
+                                    <span className="text-base" style={{ color: TEXT.SECONDARY }}>Độ ưu tiên:</span>
+                                    {getPriorityBadge(medicationRequest.priorityDisplayName)}
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Medications Card */}
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: BORDER.DEFAULT }}>
-                        <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: BORDER.LIGHT, backgroundColor: PRIMARY[50] }}>
-                            <div className="flex items-center">
-                                <FiPackage className="h-6 w-6 mr-3" style={{ color: PRIMARY[500] }} />
-                                <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
-                                    Thuốc đã yêu cầu ({medicationRequest.medications.length})
-                                </h2>
-                            </div>
-                            {(isNurse && medicationRequest.status === "Approved") && (
+                        <div className="flex-1"></div>
+                        {(isNurse && medicationRequest.status === "Approved") && (
+                            <div className="bg-white rounded-xl shadow-sm border p-8 mt-6" style={{ borderColor: BORDER.DEFAULT }}>
+                                <h4 className="text-base font-semibold mb-6" style={{ color: TEXT.PRIMARY }}>
+                                    Thao tác
+                                </h4>
                                 <button
                                     onClick={() => handleQuantityConfirmClick(medicationRequest.medications)}
-                                    className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
+                                    className="w-full inline-flex items-center justify-center px-6 py-4 rounded-lg font-medium transition-all duration-200 hover:opacity-90"
                                     style={{ backgroundColor: PRIMARY[500], color: 'white' }}
                                 >
-                                    <FiCheckSquare className="mr-2 h-4 w-4" />
+                                    <FiCheckSquare className="mr-3 h-5 w-5" />
                                     Xác nhận số lượng
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                    </div>
 
-                        <div className="p-8">
-                            {medicationRequest.medications.length === 0 ? (
-                                <div className="flex items-center justify-center" style={{ height: '540px' }}>
-                                    <div className="text-center" style={{ color: TEXT.SECONDARY }}>
-                                        <FiPackage className="h-16 w-16 mx-auto mb-4" style={{ color: GRAY[300] }} />
-                                        <p className="text-lg font-medium">Không có thuốc nào được yêu cầu</p>
+                    <div className="lg:col-span-2 h-full">
+                        <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col" style={{ borderColor: BORDER.DEFAULT }}>
+                            <div className="p-8 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <FiPackage className="h-6 w-6 mr-4" style={{ color: PRIMARY[500] }} />
+                                        <h2 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                            Danh sách thuốc ({medicationRequest.medications.length})
+                                        </h2>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ height: '630px' }}>
-                                    {medicationRequest.medications.map((medication) => (
-                                        <MedicationCard key={medication.id} medication={medication} />
-                                    ))}
-                                </div>
-                            )}
+                            </div>
+
+                            <div className="p-8 flex-1">
+                                {medicationRequest.medications.length === 0 ? (
+                                    <div className="text-center py-16">
+                                        <FiPackage className="h-16 w-16 mx-auto mb-6" style={{ color: GRAY[300] }} />
+                                        <p className="text-base" style={{ color: TEXT.SECONDARY }}>
+                                            Không có thuốc nào được yêu cầu
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={`space-y-6 ${medicationRequest.medications.length > 2 ? 'max-h-[700px] overflow-y-auto pr-3' : ''}`}
+                                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                    >
+                                        {medicationRequest.medications.map((medication, index) => (
+                                            <div key={medication.id} className="bg-gray-50 rounded-lg p-6 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div className="flex items-center">
+                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
+                                                            <span className="text-base font-semibold" style={{ color: PRIMARY[600] }}>
+                                                                {index + 1}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {medication.medicationName}
+                                                            </h3>
+                                                            <div className="flex items-center mt-2 space-x-3">
+                                                                {getStatusBadge(medication.status)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Liều lượng</span>
+                                                        </div>
+                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {medication.dosage}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng gửi</span>
+                                                        </div>
+                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {medication.quantitySent} {getQuantityUnitText(medication.quantityUnit)}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng nhận</span>
+                                                        </div>
+                                                        <p className="text-base font-semibold" style={{ color: medication.quantityReceived > 0 ? SUCCESS[600] : TEXT.PRIMARY }}>
+                                                            {medication.quantityReceived} {getQuantityUnitText(medication.quantityUnit)}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tần suất</span>
+                                                        </div>
+                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {shouldShowFrequency(medication.frequency) ? medication.frequency : "Không xác định"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-2">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Hạn sử dụng</span>
+                                                        </div>
+                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                            {formatDate(medication.expiryDate)}
+                                                        </p>
+                                                    </div>
+
+                                                    {medication.startDate && (
+                                                        <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-2">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ngày bắt đầu</span>
+                                                            </div>
+                                                            <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {formatDate(medication.startDate)}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {medication.timesOfDay && medication.timesOfDay.length > 0 && (
+                                                    <div className="bg-white rounded-lg p-4 border mb-6" style={{ borderColor: BORDER.LIGHT }}>
+                                                        <div className="flex items-center mb-3">
+                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Thời gian uống</span>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-3">
+                                                            {medication.timesOfDay.map((time, timeIndex) => (
+                                                                <span
+                                                                    key={timeIndex}
+                                                                    className="px-4 py-2 text-sm rounded-full font-medium"
+                                                                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}
+                                                                >
+                                                                    {time}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {(shouldShowSpecialNotes(medication.specialNotes) || shouldShowInstructions(medication.instructions)) && (
+                                                    <div className="space-y-4">
+                                                        {shouldShowSpecialNotes(medication.specialNotes) && (
+                                                            <div className="bg-white rounded-lg p-4 border" style={{ borderColor: WARNING[200] }}>
+                                                                <div className="flex items-center mb-3">
+                                                                    <span className="text-sm font-medium" style={{ color: WARNING[700] }}>⚠️ Ghi chú đặc biệt</span>
+                                                                </div>
+                                                                <p className="text-base" style={{ color: WARNING[700] }}>{medication.specialNotes}</p>
+                                                            </div>
+                                                        )}
+                                                        {shouldShowInstructions(medication.instructions) && (
+                                                            <div className="bg-white rounded-lg p-4 border" style={{ borderColor: INFO[200] }}>
+                                                                <div className="flex items-center mb-3">
+                                                                    <span className="text-sm font-medium" style={{ color: INFO[700] }}>📋 Hướng dẫn sử dụng</span>
+                                                                </div>
+                                                                <p className="text-base" style={{ color: INFO[700] }}>{medication.instructions}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Quantity Confirmation Modal */}
             <QuantityConfirmationModal
                 isOpen={showQuantityConfirmModal}
                 onClose={() => setShowQuantityConfirmModal(false)}
@@ -635,7 +568,6 @@ const MedicationRequestDetail = () => {
                 onConfirm={handleQuantityConfirm}
             />
 
-            {/* Modals */}
             <AlertModal
                 isOpen={showAlert}
                 type={alertInfo.type}
@@ -654,7 +586,6 @@ const MedicationRequestDetail = () => {
                 onClose={() => setShowDeleteModal(false)}
             />
 
-            {/* Approval Modal */}
             <ConfirmActionModal
                 isOpen={showApprovalModal}
                 onClose={() => setShowApprovalModal(false)}
