@@ -13,6 +13,8 @@ import VaccinationListManagement from "../pages/manager/VaccinationListManagemen
 import VaccinationDetail from "../pages/nurse/VaccinationDetail";
 import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 import ChangePassword from "../pages/auth/ChangePassword";
+import ParentProfile from "../pages/parent/ParentProfile";
+import StudentProfile from "../pages/student/StudentProfile";
 
 const PlaceholderPage = ({ title }) => (
   <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
@@ -24,8 +26,10 @@ const managerRoutes = (
   <Route element={<ManagerLayout />}>
     <Route path="/manager/dashboard" element={<PlaceholderPage title="Manager Dashboard (đang phát triển)" />} />
     <Route path="/manager/parent-management" element={<ParentManagement />} />
+    <Route path="/manager/parents/:id" element={<ParentProfile />} />
     <Route path="/manager/student-health-profile/:id" element={<StudentHealthProfile viewOnly={true} />} />
     <Route path="/manager/student-management" element={<StudentManagement />} />
+    <Route path="/manager/student/:id" element={<StudentProfile />} />
     <Route path="/manager/class-management" element={<ClassManagement />} />
     <Route path="/manager/class-details/:id" element={<ClassDetails />} />
     <Route path="/manager/medicine-inventory" element={<MedicineInventory />} />

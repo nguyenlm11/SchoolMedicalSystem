@@ -786,7 +786,7 @@ const StudentManagement = () => {
                                                             <button
                                                                 className="p-2 rounded-lg transition-all duration-200 hover:bg-opacity-80"
                                                                 style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                                                                onClick={() => navigate(`/manager/student-management/${student.id}`)}
+                                                                onClick={() => navigate(`/manager/student/${student.id}`)}
                                                                 title="Xem chi tiết"
                                                             >
                                                                 <FiEye className="w-5 h-5" />
