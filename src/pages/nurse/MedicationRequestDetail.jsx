@@ -54,36 +54,36 @@ const MedicationRequestDetail = () => {
         if (id) { fetchDetail() }
     }, [id, user?.id, isParent]);
 
-    const fetchDetail = async () => {
-        if (isParent && !user?.id) {
-            setShowAlert(true);
-            setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
-            return;
-        }
-        setLoading(true);
-        try {
-            const response = await medicationRequestApi.getMedicationRequestDetail(id);
-            if (response.success) {
-                if (isParent && response.data.parentId !== user.id) {
+        const fetchDetail = async () => {
+            if (isParent && !user?.id) {
+                setShowAlert(true);
+                setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
+                return;
+            }
+            setLoading(true);
+            try {
+                const response = await medicationRequestApi.getMedicationRequestDetail(id);
+                if (response.success) {
+                    if (isParent && response.data.parentId !== user.id) {
+                        setMedicationRequest(null);
+                        setShowAlert(true);
+                        setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
+                        return;
+                    }
+                    setMedicationRequest(response.data);
+                } else {
                     setMedicationRequest(null);
                     setShowAlert(true);
-                    setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
-                    return;
+                    setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
                 }
-                setMedicationRequest(response.data);
-            } else {
+            } catch (error) {
                 setMedicationRequest(null);
                 setShowAlert(true);
-                setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
+                setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            setMedicationRequest(null);
-            setShowAlert(true);
-            setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
 
     const handleApproveClick = () => {
         setApprovalAction("approve");
@@ -340,11 +340,11 @@ const MedicationRequestDetail = () => {
                             <div className="flex items-center mb-6">
                                 <div className="w-16 h-16 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
                                     <FiUser className="h-8 w-8" style={{ color: PRIMARY[600] }} />
-                                </div>
+                        </div>
                                 <div>
                                     <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
                                         {medicationRequest.studentName}
-                                    </h3>
+                                </h3>
                                     <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                         Mã học sinh: {medicationRequest.studentCode}
                                     </p>
@@ -382,12 +382,12 @@ const MedicationRequestDetail = () => {
                                 <div className="flex items-center justify-between py-3">
                                     <span className="text-base" style={{ color: TEXT.SECONDARY }}>Độ ưu tiên:</span>
                                     {getPriorityBadge(medicationRequest.priorityDisplayName)}
-                                </div>
                             </div>
                         </div>
+                    </div>
 
                         <div className="flex-1"></div>
-                        {(isNurse && medicationRequest.status === "Approved") && (
+                            {(isNurse && medicationRequest.status === "Approved") && (
                             <div className="bg-white rounded-xl shadow-sm border p-8 mt-6" style={{ borderColor: BORDER.DEFAULT }}>
                                 <h4 className="text-base font-semibold mb-6" style={{ color: TEXT.PRIMARY }}>
                                     Thao tác
@@ -401,8 +401,8 @@ const MedicationRequestDetail = () => {
                                     Xác nhận số lượng
                                 </button>
                             </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
 
                     <div className="lg:col-span-2 h-full">
                         <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col" style={{ borderColor: BORDER.DEFAULT }}>
@@ -424,8 +424,8 @@ const MedicationRequestDetail = () => {
                                         <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                             Không có thuốc nào được yêu cầu
                                         </p>
-                                    </div>
-                                ) : (
+                                </div>
+                            ) : (
                                     <div
                                         className={`space-y-6 ${medicationRequest.medications.length > 2 ? 'max-h-[700px] overflow-y-auto pr-3' : ''}`}
                                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -550,9 +550,9 @@ const MedicationRequestDetail = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                    ))}
+                                </div>
+                            )}
                             </div>
                         </div>
                     </div>

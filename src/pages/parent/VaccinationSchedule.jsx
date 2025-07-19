@@ -29,50 +29,50 @@ const VaccinationSchedule = () => {
         fetchStudents();
     }, [user]);
 
-    const fetchStudents = async () => {
-        if (!user || !user.id) {
-            setLoading(false);
-            return;
-        }
-        try {
-            setLoading(true);
+        const fetchStudents = async () => {
+            if (!user || !user.id) {
+                setLoading(false);
+                return;
+            }
+            try {
+                setLoading(true);
             const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100 });
-            if (response.success) {
-                setStudents(response.data);
+                if (response.success) {
+                    setStudents(response.data);
                 setSelectedStudent(response.data[0].fullName);
                 setSelectedStudentData(response.data[0]);
-            } else {
-                setError(response.message || "Không thể tải danh sách học sinh");
+                } else {
+                    setError(response.message || "Không thể tải danh sách học sinh");
+                }
+            } catch (error) {
+                setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
 
     useEffect(() => {
         fetchVaccinationSessions();
     }, [selectedStudentData]);
 
-    const fetchVaccinationSessions = async () => {
-        if (!selectedStudentData) {
-            setVaccinationSchedule([]);
-            return;
-        }
-        try {
-            setLoadingVaccinations(true);
-            const response = await vaccinationScheduleApi.getStudentVaccinationSessions(selectedStudentData.id, { pageIndex: 1, pageSize: 100 });
-            if (response.success) {
-                setVaccinationSchedule(response.data);
-            } else {
+        const fetchVaccinationSessions = async () => {
+            if (!selectedStudentData) {
                 setVaccinationSchedule([]);
+                return;
             }
-        } catch (error) {
-            setVaccinationSchedule([]);
-        } finally {
-            setLoadingVaccinations(false);
-        }
+            try {
+                setLoadingVaccinations(true);
+            const response = await vaccinationScheduleApi.getStudentVaccinationSessions(selectedStudentData.id, { pageIndex: 1, pageSize: 100 });
+                if (response.success) {
+                setVaccinationSchedule(response.data);
+                } else {
+                    setVaccinationSchedule([]);
+                }
+            } catch (error) {
+                setVaccinationSchedule([]);
+            } finally {
+                setLoadingVaccinations(false);
+            }
     };
 
     const mapApiStatusToComponentStatus = (apiStatus) => {
@@ -225,13 +225,13 @@ const VaccinationSchedule = () => {
                             <div className="flex-1">
                                 <div className="relative">
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm kiếm theo tên vaccine, địa điểm..."
+                                <input
+                                    type="text"
+                                    placeholder="Tìm kiếm theo tên vaccine, địa điểm..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                     {searchTerm !== debouncedSearchTerm && (
                                         <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -266,11 +266,11 @@ const VaccinationSchedule = () => {
                     </div>
 
                     <div className="overflow-hidden relative">
-                        {isSearching || loadingVaccinations ? (
+                {isSearching || loadingVaccinations ? (
                             <div className="text-center py-16">
                                 <Loading type="medical" size="large" color="primary" text={isSearching ? "Đang tìm kiếm lịch tiêm chủng..." : "Đang tải lịch tiêm chủng..."} />
-                            </div>
-                        ) : filteredSchedule.length > 0 ? (
+                    </div>
+                ) : filteredSchedule.length > 0 ? (
                             <table className="w-full table-fixed">
                                 <thead>
                                     <tr style={{ backgroundColor: PRIMARY[50] }}>
@@ -311,7 +311,7 @@ const VaccinationSchedule = () => {
                                             <td className="py-4 px-6 w-1/6">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {new Date(vaccination.startTime).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                </span>
+                                                        </span>
                                             </td>
                                             <td className="py-4 px-6 w-1/6">
                                                 <div className="flex flex-col gap-1">
@@ -353,7 +353,7 @@ const VaccinationSchedule = () => {
                                             <td className="py-4 px-6 w-1/5">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {vaccination.location}
-                                                </span>
+                                                        </span>
                                             </td>
                                             <td className="py-4 px-6 w-1/6">
                                                 {getStatusBadge(mapApiStatusToComponentStatus(vaccination.status))}
@@ -361,8 +361,8 @@ const VaccinationSchedule = () => {
                                             <td className="py-4 px-6 w-40">
                                                 <div className="flex items-center space-x-2">
                                                     {mapApiStatusToComponentStatus(vaccination.status) === 'completed' ? (
-                                                        <Link
-                                                            to={`/parent/vaccination/result/${vaccination.id}`}
+                                                <Link
+                                                    to={`/parent/vaccination/result/${vaccination.id}`}
                                                             state={{ studentId: selectedStudentData?.id }}
                                                             className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
                                                             title="Xem kết quả"
@@ -370,10 +370,10 @@ const VaccinationSchedule = () => {
                                                         >
                                                             <FiEye className="h-3 w-3" />
                                                             <span>Kết quả</span>
-                                                        </Link>
-                                                    ) : (
-                                                        <Link
-                                                            to={`/parent/vaccination/details/${vaccination.id}`}
+                                                </Link>
+                                            ) : (
+                                                <Link
+                                                    to={`/parent/vaccination/details/${vaccination.id}`}
                                                             state={{ studentId: selectedStudentData?.id }}
                                                             className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
                                                             title="Xem chi tiết"
@@ -381,9 +381,9 @@ const VaccinationSchedule = () => {
                                                         >
                                                             <FiEye className="h-3 w-3" />
                                                             <span>Chi tiết</span>
-                                                        </Link>
-                                                    )}
-                                                </div>
+                                                </Link>
+                                            )}
+                                        </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -480,8 +480,8 @@ const VaccinationSchedule = () => {
                                     >
                                         <FiChevronRight className="h-4 w-4" />
                                     </button>
-                                </div>
-                            </div>
+                        </div>
+                    </div>
                         )}
                     </div>
                 </div>

@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiPlus, FiSearch, FiCalendar, FiCheckCircle, FiClock, FiAlertTriangle, FiEye, FiTrash2, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import { FiPlus, FiSearch, FiCalendar, FiCheckCircle, FiClock, FiAlertTriangle, FiEye, FiTrash2, FiChevronRight, FiChevronLeft, FiUser } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, WARNING, INFO, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import vaccineSessionApi from "../../api/vaccineSessionApi";
 import vaccineApi from "../../api/vaccineApi";
+
+const TAB_CONFIG = [
+    { key: "planning", label: "Lên kế hoạch", icon: FiClock, color: WARNING },
+    { key: "upcoming", label: "Chờ phụ huynh", icon: FiCalendar, color: PRIMARY },
+    { key: "scheduled", label: "Đã lên lịch", icon: FiCheckCircle, color: INFO },
+    { key: "completed", label: "Đã hoàn thành", icon: FiCheckCircle, color: SUCCESS },
+    { key: "assigned", label: "Được phân công", icon: FiUser, color: INFO }
+];
+
+const STATUS_MAP = {
+    'planning': 'PendingApproval',
+    'upcoming': 'WaitingForParentConsent',
+    'scheduled': 'Scheduled',
+    'completed': 'Completed'
+};
 
 const VaccinationManagement = () => {
     const [activeTab, setActiveTab] = useState("planning");
@@ -19,7 +34,8 @@ const VaccinationManagement = () => {
     const [pageSize] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [stats, setStats] = useState({ planning: 0, upcoming: 0, scheduled: 0, completed: 0 });
+    const [stats, setStats] = useState({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, assigned: 0 });
+    const user = JSON.parse(localStorage.getItem("user"));
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
@@ -27,7 +43,6 @@ const VaccinationManagement = () => {
     const [selectedItemName, setSelectedItemName] = useState("");
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ type: "info", title: "", message: "" });
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const showAlert = (type, title, message) => {
         setAlertConfig({ type, title, message });
@@ -48,8 +63,7 @@ const VaccinationManagement = () => {
             if (response.success) {
                 showAlert("success", "Thành công", "Đã xóa buổi tiêm chủng thành công!");
                 setShowConfirmModal(false);
-                const remainingItems = vaccinationList.length - 1;
-                if (remainingItems === 0 && currentPage > 1) {
+                if (vaccinationList.length === 1 && currentPage > 1) {
                     setCurrentPage(currentPage - 1);
                 }
                 await fetchVaccinationSessions();
@@ -83,44 +97,51 @@ const VaccinationManagement = () => {
 
     useEffect(() => {
         fetchVaccinationSessions();
-    }, [debouncedSearchTerm]);
+    }, [debouncedSearchTerm, activeTab]);
 
     const fetchVaccinationSessions = async () => {
         try {
-            setLoading(true);
             const params = { pageIndex: 1, pageSize: 1000, orderBy: "startTime" };
             if (debouncedSearchTerm) {
                 params.searchTerm = debouncedSearchTerm;
             }
+            if (activeTab === 'assigned' && user?.id) {
+                params.nurseId = user.id;
+            }
             const response = await vaccineSessionApi.getVaccineSessions(params);
             if (response.success) {
                 setAllData(response.data);
-                const planning = response.data.filter(v => v.status === 'PendingApproval').length;
-                const upcoming = response.data.filter(v => v.status === 'WaitingForParentConsent').length;
-                const scheduled = response.data.filter(v => v.status === 'Scheduled').length;
-                const completed = response.data.filter(v => v.status === 'Completed').length;
-                setStats({ planning, upcoming, scheduled, completed });
+                calculateStats(response.data);
             } else {
                 setAllData([]);
-                setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0 });
+                resetStats();
             }
         } catch (error) {
             setAllData([]);
-            setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0 });
+            resetStats();
         } finally {
             setLoading(false);
         }
     };
 
+    const calculateStats = (data) => {
+        const planning = data.filter(v => v.status === 'PendingApproval').length;
+        const upcoming = data.filter(v => v.status === 'WaitingForParentConsent').length;
+        const scheduled = data.filter(v => v.status === 'Scheduled').length;
+        const completed = data.filter(v => v.status === 'Completed').length;
+        const assigned = data.filter(v => v.classNurseAssignments?.some(assignment => assignment.nurseId === user?.id)).length;
+        setStats({ planning, upcoming, scheduled, completed, assigned });
+    };
+
+    const resetStats = () => {
+        setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, assigned: 0 });
+    };
+
     const filterAndPaginateData = () => {
         let filteredData = allData;
-        const statusMap = {
-            'planning': 'PendingApproval',
-            'upcoming': 'WaitingForParentConsent',
-            'scheduled': 'Scheduled',
-            'completed': 'Completed'
-        };
-        filteredData = allData.filter(item => item.status === statusMap[activeTab]);
+        if (activeTab !== 'assigned') {
+            filteredData = allData.filter(item => item.status === STATUS_MAP[activeTab]);
+        }
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedData = filteredData.slice(startIndex, endIndex);
@@ -128,62 +149,54 @@ const VaccinationManagement = () => {
         setTotalCount(filteredData.length);
         setTotalPages(Math.ceil(filteredData.length / pageSize));
     };
-
-    const handleTabChange = (newTab) => {
-        setActiveTab(newTab);
-    };
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const getStatusBadge = (status) => {
-        switch (status) {
-            case "PendingApproval":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                        <FiClock className="mr-1.5 h-4 w-4" />
-                        Lên kế hoạch
-                    </span>
-                );
-            case "WaitingForParentConsent":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                        <FiAlertTriangle className="mr-1.5 h-4 w-4" />
-                        Chờ phụ huynh
-                    </span>
-                );
-            case "Scheduled":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: INFO[50], color: INFO[700] }}>
-                        <FiCalendar className="mr-1.5 h-4 w-4" />
-                        Đã lên lịch
-                    </span>
-                );
-            case "Completed":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700] }}>
-                        <FiCheckCircle className="mr-1.5 h-4 w-4" />
-                        Đã hoàn thành
-                    </span>
-                );
-            case "Declined":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                        <FiAlertTriangle className="mr-1.5 h-4 w-4" />
-                        Đã bị từ chối
-                    </span>
-                );
-            default:
-                return null;
-        }
+        const statusConfig = {
+            "PendingApproval": { label: "Lên kế hoạch", color: WARNING, icon: FiClock },
+            "WaitingForParentConsent": { label: "Chờ phụ huynh", color: PRIMARY, icon: FiAlertTriangle },
+            "Scheduled": { label: "Đã lên lịch", color: INFO, icon: FiCalendar },
+            "Completed": { label: "Đã hoàn thành", color: SUCCESS, icon: FiCheckCircle },
+            "Declined": { label: "Đã bị từ chối", color: ERROR, icon: FiAlertTriangle }
+        };
+        const config = statusConfig[status];
+        if (!config) return null;
+
+        return (
+            <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
+                style={{ backgroundColor: config.color[50], color: config.color[700] }}>
+                <config.icon className="mr-1.5 h-4 w-4" />
+                {config.label}
+            </span>
+        );
+    };
+
+    const DashboardCard = ({ tab, stats }) => {
+        const config = TAB_CONFIG.find(t => t.key === tab);
+        if (!config) return null;
+
+        return (
+            <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
+                style={{ background: `linear-gradient(135deg, ${config.color[500]} 0%, ${config.color[600]} 100%)`, borderColor: config.color[200] }}>
+                <div className="p-6 relative z-10">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>{config.label}</p>
+                            <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>{stats[tab]}</p>
+                        </div>
+                        <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+                            <config.icon className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách vật tư..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách tiêm chủng..." />
             </div>
         );
     }
@@ -210,66 +223,10 @@ const VaccinationManagement = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${WARNING[500]} 0%, ${WARNING[600]} 100%)`, borderColor: WARNING[200] }}>
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>Lên kế hoạch</p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>{stats.planning}</p>
-                                </div>
-                                <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-                                    <FiClock className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}>
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>Chờ phụ huynh</p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>{stats.upcoming}</p>
-                                </div>
-                                <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-                                    <FiCalendar className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${INFO[400]} 0%, ${INFO[500]} 100%)`, borderColor: INFO[200] }}>
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>Đã lên lịch</p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>{stats.scheduled}</p>
-                                </div>
-                                <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-                                    <FiCalendar className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${SUCCESS[400]} 0%, ${SUCCESS[500]} 100%)`, borderColor: SUCCESS[200] }}>
-                        <div className="p-6 relative z-10">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>Đã hoàn thành</p>
-                                    <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>{stats.completed}</p>
-                                </div>
-                                <div className="h-16 w-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
-                                    <FiCheckCircle className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                    {TAB_CONFIG.map(tab => (
+                        <DashboardCard key={tab.key} tab={tab.key} stats={stats} />
+                    ))}
                 </div>
 
                 <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
@@ -295,15 +252,10 @@ const VaccinationManagement = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                {[
-                                    { key: "planning", label: "Lên kế hoạch", icon: FiClock },
-                                    { key: "upcoming", label: "Chờ phụ huynh", icon: FiCalendar },
-                                    { key: "scheduled", label: "Đã lên lịch", icon: FiCheckCircle },
-                                    { key: "completed", label: "Đã hoàn thành", icon: FiCheckCircle }
-                                ].map(tab => (
+                                {TAB_CONFIG.map(tab => (
                                     <button
                                         key={tab.key}
-                                        onClick={() => handleTabChange(tab.key)}
+                                        onClick={() => setActiveTab(tab.key)}
                                         className="px-4 py-2 rounded-lg flex items-center transition-all duration-200"
                                         style={{
                                             backgroundColor: activeTab === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
