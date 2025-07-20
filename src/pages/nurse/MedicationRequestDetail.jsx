@@ -50,40 +50,45 @@ const MedicationRequestDetail = () => {
         Package: "Gói"
     };
 
+    const RECEIVED_STATUS_CONFIG = {
+        NotReceive: { label: "Chưa nhận", bgColor: WARNING[50], textColor: WARNING[700], borderColor: WARNING[200] },
+        Received: { label: "Đã nhận", bgColor: SUCCESS[50], textColor: SUCCESS[700], borderColor: SUCCESS[200] }
+    };
+
     useEffect(() => {
         if (id) { fetchDetail() }
     }, [id, user?.id, isParent]);
 
-        const fetchDetail = async () => {
-            if (isParent && !user?.id) {
-                setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
-                return;
-            }
-            setLoading(true);
-            try {
-                const response = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (response.success) {
-                    if (isParent && response.data.parentId !== user.id) {
-                        setMedicationRequest(null);
-                        setShowAlert(true);
-                        setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
-                        return;
-                    }
-                    setMedicationRequest(response.data);
-                } else {
+    const fetchDetail = async () => {
+        if (isParent && !user?.id) {
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await medicationRequestApi.getMedicationRequestDetail(id);
+            if (response.success) {
+                if (isParent && response.data.parentId !== user.id) {
                     setMedicationRequest(null);
                     setShowAlert(true);
-                    setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
+                    setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
+                    return;
                 }
-            } catch (error) {
+                setMedicationRequest(response.data);
+            } else {
                 setMedicationRequest(null);
                 setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
-            } finally {
-                setLoading(false);
+                setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
             }
-        };
+        } catch (error) {
+            setMedicationRequest(null);
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleApproveClick = () => {
         setApprovalAction("approve");
@@ -192,6 +197,8 @@ const MedicationRequestDetail = () => {
         }
     };
 
+
+
     const handleQuantityChange = (medicationId, value) => {
         setReceivedQuantities(prev => ({
             ...prev,
@@ -216,6 +223,19 @@ const MedicationRequestDetail = () => {
 
     const getPriorityBadge = (priority) => {
         const config = PRIORITY_CONFIG[priority];
+        if (!config) return null;
+        return (
+            <span
+                className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border"
+                style={{ backgroundColor: config.bgColor, color: config.textColor, borderColor: config.borderColor }}
+            >
+                {config.label}
+            </span>
+        );
+    };
+
+    const getReceivedStatusBadge = (received) => {
+        const config = RECEIVED_STATUS_CONFIG[received];
         if (!config) return null;
         return (
             <span
@@ -340,11 +360,11 @@ const MedicationRequestDetail = () => {
                             <div className="flex items-center mb-6">
                                 <div className="w-16 h-16 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
                                     <FiUser className="h-8 w-8" style={{ color: PRIMARY[600] }} />
-                        </div>
+                                </div>
                                 <div>
                                     <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
                                         {medicationRequest.studentName}
-                                </h3>
+                                    </h3>
                                     <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                         Mã học sinh: {medicationRequest.studentCode}
                                     </p>
@@ -382,12 +402,12 @@ const MedicationRequestDetail = () => {
                                 <div className="flex items-center justify-between py-3">
                                     <span className="text-base" style={{ color: TEXT.SECONDARY }}>Độ ưu tiên:</span>
                                     {getPriorityBadge(medicationRequest.priorityDisplayName)}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                         <div className="flex-1"></div>
-                            {(isNurse && medicationRequest.status === "Approved") && (
+                        {(isNurse && medicationRequest.status === "Approved") && (
                             <div className="bg-white rounded-xl shadow-sm border p-8 mt-6" style={{ borderColor: BORDER.DEFAULT }}>
                                 <h4 className="text-base font-semibold mb-6" style={{ color: TEXT.PRIMARY }}>
                                     Thao tác
@@ -401,8 +421,8 @@ const MedicationRequestDetail = () => {
                                     Xác nhận số lượng
                                 </button>
                             </div>
-                            )}
-                        </div>
+                        )}
+                    </div>
 
                     <div className="lg:col-span-2 h-full">
                         <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col" style={{ borderColor: BORDER.DEFAULT }}>
@@ -424,8 +444,8 @@ const MedicationRequestDetail = () => {
                                         <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                             Không có thuốc nào được yêu cầu
                                         </p>
-                                </div>
-                            ) : (
+                                    </div>
+                                ) : (
                                     <div
                                         className={`space-y-6 ${medicationRequest.medications.length > 2 ? 'max-h-[700px] overflow-y-auto pr-3' : ''}`}
                                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -450,7 +470,7 @@ const MedicationRequestDetail = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                                                     <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
                                                         <div className="flex items-center mb-2">
                                                             <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Liều lượng</span>
@@ -473,8 +493,11 @@ const MedicationRequestDetail = () => {
                                                         <div className="flex items-center mb-2">
                                                             <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng nhận</span>
                                                         </div>
-                                                        <p className="text-base font-semibold" style={{ color: medication.quantityReceived > 0 ? SUCCESS[600] : TEXT.PRIMARY }}>
-                                                            {medication.quantityReceived} {getQuantityUnitText(medication.quantityUnit)}
+                                                        <p className="text-base font-semibold" style={{ color: medication.quantityReceived > 0 ? SUCCESS[600] : WARNING[600] }}>
+                                                            {medication.quantityReceived > 0
+                                                                ? `${medication.quantityReceived} ${getQuantityUnitText(medication.quantityUnit)}`
+                                                                : "Chưa nhận"
+                                                            }
                                                         </p>
                                                     </div>
 
@@ -483,7 +506,7 @@ const MedicationRequestDetail = () => {
                                                             <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tần suất</span>
                                                         </div>
                                                         <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {shouldShowFrequency(medication.frequency) ? medication.frequency : "Không xác định"}
+                                                            {medication.frequencyCount} lần/ngày
                                                         </p>
                                                     </div>
                                                 </div>
@@ -550,9 +573,9 @@ const MedicationRequestDetail = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO 
 import Loading from "../../components/Loading";
 import { useNavigate } from "react-router-dom";
 import medicationRequestApi from "../../api/medicationRequestApi";
+import userApi from "../../api/userApi";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import AlertModal from "../../components/modal/AlertModal";
 import { useAuth } from "../../utils/AuthContext";
@@ -17,11 +18,15 @@ const ParentMedicationRequestList = () => {
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [openActionId, setOpenActionId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
+    const [students, setStudents] = useState([]);
+    const [selectedStudent, setSelectedStudent] = useState("");
+    const [selectedStudentData, setSelectedStudentData] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertInfo, setAlertInfo] = useState({ type: "", message: "" });
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,6 +38,34 @@ const ParentMedicationRequestList = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        fetchStudents();
+    }, [user]);
+
+    const fetchStudents = async () => {
+        if (!user || !user.id) {
+            setLoading(false);
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100 });
+            if (response.success) {
+                setStudents(response.data);
+                if (response.data.length > 0) {
+                    setSelectedStudent(response.data[0].fullName);
+                    setSelectedStudentData(response.data[0]);
+                }
+            } else {
+                setError(response.message || "Không thể tải danh sách học sinh");
+            }
+        } catch (error) {
+            setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Fetch data from API
     const fetchMedicationRequests = async (params = {}) => {
         if (!user?.id) {
@@ -41,7 +74,7 @@ const ParentMedicationRequestList = () => {
             return;
         }
 
-        setLoading(true);
+        // setLoading(true);
         try {
             const apiParams = {
                 pageIndex: params.pageIndex || pagination.pageIndex,
@@ -49,6 +82,7 @@ const ParentMedicationRequestList = () => {
             };
             if (filterStatus !== "all") apiParams.status = filterStatus;
             if (debouncedSearchTerm) apiParams.searchTerm = debouncedSearchTerm;
+            if (selectedStudentData) apiParams.studentId = selectedStudentData.id;
 
             const response = await medicationRequestApi.getParentMedicationRequests(user.id, apiParams);
             if (response.success) {
@@ -81,7 +115,7 @@ const ParentMedicationRequestList = () => {
 
     useEffect(() => {
         fetchMedicationRequests();
-    }, [filterStatus, debouncedSearchTerm]);
+    }, [filterStatus, debouncedSearchTerm, selectedStudentData]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -94,6 +128,12 @@ const ParentMedicationRequestList = () => {
         setFilterStatus("all");
         setSearchTerm("");
         fetchMedicationRequests();
+    };
+
+    const handleStudentChange = (studentName) => {
+        setSelectedStudent(studentName);
+        const studentData = students.find(s => s.fullName === studentName);
+        setSelectedStudentData(studentData);
     };
 
     const handlePageChange = (newPageIndex) => {
@@ -381,6 +421,19 @@ const ParentMedicationRequestList = () => {
                 <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                         <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+                            <div className="flex-shrink-0">
+                                <select
+                                    value={selectedStudent}
+                                    onChange={(e) => handleStudentChange(e.target.value)}
+                                    className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 font-medium"
+                                    style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
+                                >
+                                    {students.map((student, index) => (
+                                        <option key={index} value={student.fullName}>{student.fullName}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="flex-1">
                                 <div className="relative">
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
@@ -388,14 +441,14 @@ const ParentMedicationRequestList = () => {
                                         type="text"
                                         placeholder="Tìm kiếm theo mã yêu cầu, tên học sinh..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                        style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex gap-4">
                                 <select
                                     value={filterStatus}
                                     onChange={(e) => setFilterStatus(e.target.value)}
@@ -435,10 +488,6 @@ const ParentMedicationRequestList = () => {
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         TRẠNG THÁI
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
-                                        ĐỘ ƯU TIÊN
-                                    </th>
-
                                     <th className="py-4 px-6 text-center text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '80px' }}>
                                         THAO TÁC
                                     </th>
@@ -476,11 +525,6 @@ const ParentMedicationRequestList = () => {
                                         </td>
                                         <td className="py-4 px-6 text-base" style={{ width: '120px' }}>
                                             {getStatusBadge(request.status)}
-                                        </td>
-                                        <td className="py-4 px-6 text-lg font-bold" style={{ width: '120px' }}>
-                                            <span style={{ fontSize: '1.25rem', lineHeight: 1.5 }}>
-                                                {getPriorityBadge(request.priorityDisplayName)}
-                                            </span>
                                         </td>
 
                                         <td className="py-4 px-6 text-center text-base" style={{ width: '80px' }}>
