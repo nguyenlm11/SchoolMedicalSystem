@@ -1,27 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { FiSearch, FiRefreshCw, FiEye, FiMoreVertical, FiClock, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiEye, FiMoreVertical, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
 import { PRIMARY, WARNING, ERROR, SUCCESS, INFO, TEXT, BACKGROUND, BORDER, GRAY } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
-
-const statusColor = {
-    PendingApproval: WARNING[500],
-    Approved: SUCCESS[500],
-    Rejected: ERROR[500],
-    Active: PRIMARY[500],
-    Completed: INFO[500],
-    Discontinued: GRAY[500],
-};
-
-const priorityColor = {
-    High: ERROR[500],
-    Medium: WARNING[500],
-    Low: SUCCESS[500],
-    Normal: PRIMARY[500],
-    Critical: ERROR[600],
-};
 
 const MedicationUsageManagement = () => {
     const navigate = useNavigate();
@@ -31,13 +14,13 @@ const MedicationUsageManagement = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [openActionId, setOpenActionId] = useState(null);
-    const [filterStatus, setFilterStatus] = useState("all");
-    const [filterPriority, setFilterPriority] = useState("all");
+    const [filterStatus, setFilterStatus] = useState("Approved");
+    const [filterActive, setFilterActive] = useState(false);
+    const [filterCompleted, setFilterCompleted] = useState(false);
+    const [filterDiscontinued, setFilterDiscontinued] = useState(false);
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-    // Parameters từ user context
     const nurseId = user?.id || '';
-    const studentId = ''; // Có thể thêm filter theo student nếu cần
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -49,28 +32,29 @@ const MedicationUsageManagement = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Fetch data từ API thực tế
     const fetchMedicationUsage = async () => {
-        setLoading(true);
         try {
             const params = {
                 pageIndex: pagination.pageIndex,
                 pageSize: pagination.pageSize,
-                nurseId: nurseId,
-                studentId: studentId
+                nurseId: nurseId
             };
 
-            // Thêm search term nếu có
             if (debouncedSearchTerm) {
                 params.searchTerm = debouncedSearchTerm;
             }
 
-            // Thêm filters nếu có
-            if (filterStatus !== "all") {
+            if (filterStatus) {
                 params.status = filterStatus;
             }
-            if (filterPriority !== "all") {
-                params.priority = filterPriority;
+            if (filterActive) {
+                params.status = 'Active';
+            }
+            if (filterCompleted) {
+                params.status = 'Completed';
+            }
+            if (filterDiscontinued) {
+                params.status = 'Discontinued';
             }
 
             const response = await medicationUsageApi.getMedicationUsage(params);
@@ -99,7 +83,7 @@ const MedicationUsageManagement = () => {
 
     useEffect(() => {
         fetchMedicationUsage();
-    }, [pagination.pageIndex, pagination.pageSize, nurseId, studentId, filterStatus, filterPriority, debouncedSearchTerm]);
+    }, [pagination.pageIndex, pagination.pageSize, nurseId, filterStatus, filterActive, filterCompleted, filterDiscontinued, debouncedSearchTerm]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -109,8 +93,10 @@ const MedicationUsageManagement = () => {
     }, [searchTerm]);
 
     const handleRefresh = () => {
-        setFilterStatus("all");
-        setFilterPriority("all");
+        setFilterStatus("Approved");
+        setFilterActive(false);
+        setFilterCompleted(false);
+        setFilterDiscontinued(false);
         setSearchTerm("");
         setPagination(prev => ({ ...prev, pageIndex: 1 }));
     };
@@ -124,14 +110,13 @@ const MedicationUsageManagement = () => {
     };
 
     const getStats = () => {
-        const pendingCount = data.filter(r => r.status === 'PendingApproval').length;
         const approvedCount = data.filter(r => r.status === 'Approved').length;
         const activeCount = data.filter(r => r.status === 'Active').length;
         const completedCount = data.filter(r => r.status === 'Completed').length;
         const expiringSoonCount = data.filter(r => r.isExpiringSoon).length;
         const lowStockCount = data.filter(r => r.isLowStock).length;
+
         return {
-            pending: pendingCount,
             approved: approvedCount,
             active: activeCount,
             completed: completedCount,
@@ -143,34 +128,32 @@ const MedicationUsageManagement = () => {
 
     const stats = getStats();
 
-    const statusOptions = [
-        { value: "all", label: "Tất cả trạng thái" },
-        { value: 'PendingApproval', label: 'Chờ duyệt' },
-        { value: 'Approved', label: 'Đã duyệt' },
-        { value: 'Active', label: 'Đang sử dụng' },
-        { value: 'Completed', label: 'Đã hoàn thành' },
-        { value: 'Rejected', label: 'Từ chối' },
-        { value: 'Discontinued', label: 'Đã ngừng' }
-    ];
-
-    const priorityOptions = [
-        { value: "all", label: "Tất cả độ ưu tiên" },
-        { value: 'Critical', label: 'Khẩn cấp' },
-        { value: 'High', label: 'Cao' },
-        { value: 'Normal', label: 'Bình thường' },
-        { value: 'Low', label: 'Thấp' }
-    ];
+    const handleStatusFilter = (status) => {
+        if (status === 'Approved') {
+            setFilterStatus('Approved');
+            setFilterActive(false);
+            setFilterCompleted(false);
+            setFilterDiscontinued(false);
+        } else if (status === 'Active') {
+            setFilterStatus('');
+            setFilterActive(true);
+            setFilterCompleted(false);
+            setFilterDiscontinued(false);
+        } else if (status === 'Completed') {
+            setFilterStatus('');
+            setFilterActive(false);
+            setFilterCompleted(true);
+            setFilterDiscontinued(false);
+        } else if (status === 'Discontinued') {
+            setFilterStatus('');
+            setFilterActive(false);
+            setFilterCompleted(false);
+            setFilterDiscontinued(true);
+        }
+    };
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case "PendingApproval":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: WARNING[50], color: WARNING[700] }}>
-                        <FiClock className="mr-1.5 h-4 w-4" />
-                        Chờ duyệt
-                    </span>
-                );
             case "Approved":
                 return (
                     <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
@@ -195,55 +178,12 @@ const MedicationUsageManagement = () => {
                         Đã hoàn thành
                     </span>
                 );
-            case "Rejected":
-                return (
-                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
-                        style={{ backgroundColor: ERROR[50], color: ERROR[700] }}>
-                        <FiAlertTriangle className="mr-1.5 h-4 w-4" />
-                        Từ chối
-                    </span>
-                );
             case "Discontinued":
                 return (
                     <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
                         style={{ backgroundColor: GRAY[50], color: GRAY[700] }}>
                         <FiAlertTriangle className="mr-1.5 h-4 w-4" />
                         Đã ngừng
-                    </span>
-                );
-            default:
-                return null;
-        }
-    };
-
-    const getPriorityBadge = (priority) => {
-        switch (priority) {
-            case "Critical":
-                return (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg inline-flex items-center"
-                        style={{ backgroundColor: ERROR[50], color: ERROR[700], minWidth: 80, justifyContent: 'center' }}>
-                        Khẩn cấp
-                    </span>
-                );
-            case "High":
-                return (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg inline-flex items-center"
-                        style={{ backgroundColor: WARNING[50], color: WARNING[700], minWidth: 80, justifyContent: 'center' }}>
-                        Cao
-                    </span>
-                );
-            case "Normal":
-                return (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg inline-flex items-center"
-                        style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700], minWidth: 80, justifyContent: 'center' }}>
-                        Bình thường
-                    </span>
-                );
-            case "Low":
-                return (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg inline-flex items-center"
-                        style={{ backgroundColor: SUCCESS[50], color: SUCCESS[700], minWidth: 80, justifyContent: 'center' }}>
-                        Thấp
                     </span>
                 );
             default:
@@ -278,23 +218,23 @@ const MedicationUsageManagement = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${WARNING[500]} 0%, ${WARNING[600]} 100%)`, borderColor: WARNING[200] }}
+                        style={{ background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`, borderColor: SUCCESS[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium opacity-90" style={{ color: TEXT.INVERSE }}>
-                                        Chờ duyệt
+                                        Đã duyệt
                                     </p>
                                     <p className="text-4xl font-bold mt-2" style={{ color: TEXT.INVERSE }}>
-                                        {stats.pending}
+                                        {stats.approved}
                                     </p>
                                 </div>
                                 <div
                                     className="h-16 w-16 rounded-full flex items-center justify-center"
                                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
                                 >
-                                    <FiClock className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
+                                    <FiCheckCircle className="h-8 w-8" style={{ color: TEXT.INVERSE }} />
                                 </div>
                             </div>
                         </div>
@@ -302,7 +242,7 @@ const MedicationUsageManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`, borderColor: SUCCESS[200] }}
+                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
@@ -350,7 +290,7 @@ const MedicationUsageManagement = () => {
 
                     <div
                         className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
-                        style={{ background: `linear-gradient(135deg, ${PRIMARY[500]} 0%, ${PRIMARY[600]} 100%)`, borderColor: PRIMARY[200] }}
+                        style={{ background: `linear-gradient(135deg, ${INFO[500]} 0%, ${INFO[600]} 100%)`, borderColor: INFO[200] }}
                     >
                         <div className="p-6 relative z-10">
                             <div className="flex items-center justify-between">
@@ -391,30 +331,54 @@ const MedicationUsageManagement = () => {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                                <select
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                <button
+                                    onClick={() => handleStatusFilter('Approved')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterStatus === 'Approved' ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                    style={{
+                                        backgroundColor: filterStatus === 'Approved' ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                        color: filterStatus === 'Approved' ? 'white' : TEXT.PRIMARY,
+                                        border: `1px solid ${filterStatus === 'Approved' ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                    }}
                                 >
-                                    {statusOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={filterPriority}
-                                    onChange={(e) => setFilterPriority(e.target.value)}
-                                    className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
+                                    <FiCheckCircle className="h-4 w-4" />
+                                    Đã duyệt
+                                </button>
+                                <button
+                                    onClick={() => handleStatusFilter('Active')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterActive ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                    style={{
+                                        backgroundColor: filterActive ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                        color: filterActive ? 'white' : TEXT.PRIMARY,
+                                        border: `1px solid ${filterActive ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                    }}
                                 >
-                                    {priorityOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <FiActivity className="h-4 w-4" />
+                                    Đang sử dụng
+                                </button>
+                                <button
+                                    onClick={() => handleStatusFilter('Completed')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterCompleted ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                    style={{
+                                        backgroundColor: filterCompleted ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                        color: filterCompleted ? 'white' : TEXT.PRIMARY,
+                                        border: `1px solid ${filterCompleted ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                    }}
+                                >
+                                    <FiTrendingUp className="h-4 w-4" />
+                                    Đã hoàn thành
+                                </button>
+                                <button
+                                    onClick={() => handleStatusFilter('Discontinued')}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterDiscontinued ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                    style={{
+                                        backgroundColor: filterDiscontinued ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                        color: filterDiscontinued ? 'white' : TEXT.PRIMARY,
+                                        border: `1px solid ${filterDiscontinued ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                    }}
+                                >
+                                    <FiAlertTriangle className="h-4 w-4" />
+                                    Đã ngừng
+                                </button>
                                 <button
                                     onClick={handleRefresh}
                                     className="px-3 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
@@ -443,9 +407,6 @@ const MedicationUsageManagement = () => {
                                         TRẠNG THÁI
                                     </th>
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
-                                        ĐỘ ƯU TIÊN
-                                    </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         LỊCH TRÌNH
                                     </th>
                                     <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
@@ -459,13 +420,13 @@ const MedicationUsageManagement = () => {
                             <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                 {data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
+                                        <td colSpan={7} className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
                                             <FiPackage className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
                                             <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
                                                 Không có dữ liệu sử dụng thuốc
                                             </h3>
                                             <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                {searchTerm || filterStatus !== "all" || filterPriority !== "all"
+                                                {searchTerm || filterStatus !== "Approved" || filterActive || filterCompleted || filterDiscontinued
                                                     ? "Không tìm thấy kết quả phù hợp với bộ lọc."
                                                     : "Chưa có dữ liệu sử dụng thuốc nào."}
                                             </p>
@@ -508,11 +469,6 @@ const MedicationUsageManagement = () => {
                                             </td>
                                             <td className="py-4 px-6 text-base" style={{ width: '120px' }}>
                                                 {getStatusBadge(item.status)}
-                                            </td>
-                                            <td className="py-4 px-6 text-lg font-bold" style={{ width: '120px' }}>
-                                                <span style={{ fontSize: '1.25rem', lineHeight: 1.5 }}>
-                                                    {getPriorityBadge(item.priority)}
-                                                </span>
                                             </td>
                                             <td className="py-4 px-6 text-base" style={{ width: '120px' }}>
                                                 <div className="flex flex-col">
