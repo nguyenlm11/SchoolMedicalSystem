@@ -222,28 +222,28 @@ const VaccinationListManagement = () => {
     const getConfirmModalProps = () => {
         const { status } = selectedVaccination || {};
         const modalConfig = {
-            PendingApproval: { 
-                title: "Xác nhận duyệt kế hoạch", 
-                message: "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này?", 
-                confirmText: "Duyệt", 
+            PendingApproval: {
+                title: "Xác nhận duyệt kế hoạch",
+                message: "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này?",
+                confirmText: "Duyệt",
                 action: () => {
                     closeModal();
                     handleApprove(selectedVaccination?.id);
                 }
             },
-            WaitingForParentConsent: { 
-                title: "Xác nhận chốt danh sách", 
-                message: "Bạn có chắc chắn muốn chốt danh sách cho buổi tiêm chủng này?", 
-                confirmText: "Chốt danh sách", 
+            WaitingForParentConsent: {
+                title: "Xác nhận chốt danh sách",
+                message: "Bạn có chắc chắn muốn chốt danh sách cho buổi tiêm chủng này?",
+                confirmText: "Chốt danh sách",
                 action: () => {
                     closeModal();
                     handleFinalize(selectedVaccination?.id);
                 }
             },
-            Scheduled: { 
-                title: "Xác nhận hoàn thành", 
-                message: "Bạn có chắc chắn muốn đánh dấu buổi tiêm chủng này là đã hoàn thành?", 
-                confirmText: "Hoàn thành", 
+            Scheduled: {
+                title: "Xác nhận hoàn thành",
+                message: "Bạn có chắc chắn muốn đánh dấu buổi tiêm chủng này là đã hoàn thành?",
+                confirmText: "Hoàn thành",
                 action: () => {
                     closeModal();
                     handleComplete(selectedVaccination?.id);
@@ -508,30 +508,16 @@ const VaccinationRow = ({ vaccination, index, getStatusBadge, renderActionMenu }
             {getStatusBadge(vaccination.status)}
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
-            {vaccination.status === "Scheduled" ? (
-                <div>
-                    <div className="text-sm font-medium" style={{ color: SUCCESS[600] }}>
-                        {vaccination.vaccinatedStudents}/{vaccination.totalStudents}
-                    </div>
-                    <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã hoàn thành</div>
+
+            <div>
+                <div className="text-sm font-medium" style={{ color: PRIMARY[600] }}>
+                    {vaccination.approvedStudents}/{vaccination.totalStudents}
                 </div>
-            ) : (
-                <div>
-                    <div className="text-sm font-medium" style={{ color: PRIMARY[600] }}>
-                        {vaccination.confirmedParents}/{vaccination.totalStudents}
-                    </div>
-                    <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                        <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                                width: `${Math.round((vaccination.confirmedParents / vaccination.totalStudents) * 100)}%`,
-                                backgroundColor: PRIMARY[500]
-                            }}
-                        ></div>
-                    </div>
+                <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((vaccination.approvedStudents) / (vaccination.totalStudents)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
                 </div>
-            )}
+            </div>
         </td>
         <td className="py-4 px-6 text-center overflow-visible" style={{ width: '100px' }}>
             {renderActionMenu(vaccination)}
