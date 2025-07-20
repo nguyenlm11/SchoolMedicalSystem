@@ -22,9 +22,7 @@ const QUANTITY_UNITS = [
 ];
 
 const PRIORITY_OPTIONS = [
-    { value: 'Low', label: 'Thấp' },
     { value: 'Normal', label: 'Bình thường' },
-    { value: 'High', label: 'Cao' },
     { value: 'Critical', label: 'Khẩn cấp' }
 ];
 
@@ -187,6 +185,9 @@ const MedicationRequestCreate = () => {
     const handleMedicationChange = (index, field, value) => {
         const newMedications = [...formData.medications];
         newMedications[index] = { ...newMedications[index], [field]: value };
+        if (field === 'frequencyCount') {
+            newMedications[index].timesOfDay = [];
+        }
         setFormData({ ...formData, medications: newMedications });
         clearError(`medications.${index}.${field}`);
     };
@@ -253,10 +254,10 @@ const MedicationRequestCreate = () => {
                             <div>
                                 <h1 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
                                     Tạo yêu cầu thuốc
-                        </h1>
+                                </h1>
                                 <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
                                     Điền thông tin để gửi yêu cầu cấp phát thuốc
-                        </p>
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -275,75 +276,75 @@ const MedicationRequestCreate = () => {
                             </h2>
                         </div>
 
-                            <div className="relative" ref={studentDropdownRef}>
-                                <div className="relative">
-                                    <input
-                                        ref={studentInputRef}
-                                        type="text"
-                                        value={studentSearch}
-                                        onChange={handleStudentSearchChange}
-                                        onFocus={() => setShowStudentDropdown(true)}
+                        <div className="relative" ref={studentDropdownRef}>
+                            <div className="relative">
+                                <input
+                                    ref={studentInputRef}
+                                    type="text"
+                                    value={studentSearch}
+                                    onChange={handleStudentSearchChange}
+                                    onFocus={() => setShowStudentDropdown(true)}
                                     placeholder="Chọn học sinh..."
                                     className={`w-full pl-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${errors.studentId ? 'border-red-500' : ''}`}
-                                        style={{
+                                    style={{
                                         borderColor: errors.studentId ? ERROR[500] : (formData.studentId ? PRIMARY[500] : BORDER.DEFAULT),
                                         backgroundColor: formData.studentId ? PRIMARY[50] : BACKGROUND.DEFAULT
-                                        }}
-                                    />
+                                    }}
+                                />
                                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                                        {formData.studentId && (
+                                    {formData.studentId && (
                                         <div className="px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}>
-                                                Đã chọn
-                                            </div>
-                                        )}
-                                        {studentsLoading ? (
-                                            <Loading type="spinner" size="small" color="primary" />
-                                        ) : (
+                                            Đã chọn
+                                        </div>
+                                    )}
+                                    {studentsLoading ? (
+                                        <Loading type="spinner" size="small" color="primary" />
+                                    ) : (
                                         <FiChevronDown className={`h-4 w-4 transition-transform ${showStudentDropdown ? 'rotate-180' : ''}`} style={{ color: GRAY[400] }} />
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
+                            </div>
 
-                                {showStudentDropdown && (
+                            {showStudentDropdown && (
                                 <div className="absolute left-0 right-0 z-50 mt-2">
                                     <div className="bg-white border rounded-lg shadow-lg overflow-hidden" style={{ borderColor: BORDER.DEFAULT, maxHeight: '240px' }}>
                                         <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
-                                                {students.length === 0 ? (
+                                            {students.length === 0 ? (
                                                 <div className="p-4 text-center text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                        {studentSearch ? 'Không tìm thấy học sinh' : 'Nhập để tìm kiếm học sinh'}
-                                                    </div>
-                                                ) : (
-                                                    students.map((student) => (
-                                                        <div
-                                                            key={student.id}
-                                                            onClick={() => handleStudentSelect(student)}
+                                                    {studentSearch ? 'Không tìm thấy học sinh' : 'Nhập để tìm kiếm học sinh'}
+                                                </div>
+                                            ) : (
+                                                students.map((student) => (
+                                                    <div
+                                                        key={student.id}
+                                                        onClick={() => handleStudentSelect(student)}
                                                         className="p-3 cursor-pointer hover:bg-gray-50 transition-colors border-b last:border-b-0"
-                                                            style={{ borderColor: BORDER.LIGHT }}
-                                                        >
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <div className="font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                                        {student.fullName}
-                                                                    </div>
-                                                                    <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                                        {student.studentCode} - Lớp {student.currentClassName}
-                                                                    </div>
+                                                        style={{ borderColor: BORDER.LIGHT }}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <div className="font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                                    {student.fullName}
                                                                 </div>
-                                                                {formData.studentId === student.id && (
+                                                                <div className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                                    {student.studentCode} - Lớp {student.currentClassName}
+                                                                </div>
+                                                            </div>
+                                                            {formData.studentId === student.id && (
                                                                 <FiCheck className="h-4 w-4" style={{ color: PRIMARY[500] }} />
-                                                                )}
+                                                            )}
                                                         </div>
-                                                        </div>
-                                                    ))
-                                                )}
-                                            </div>
+                                                    </div>
+                                                ))
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                            {errors.studentId && (
-                            <p className="mt-2 text-sm" style={{ color: ERROR[500] }}>{errors.studentId}</p>
+                                </div>
                             )}
+                        </div>
+                        {errors.studentId && (
+                            <p className="mt-2 text-sm" style={{ color: ERROR[500] }}>{errors.studentId}</p>
+                        )}
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border p-6" style={{ borderColor: BORDER.DEFAULT }}>
@@ -357,35 +358,35 @@ const MedicationRequestCreate = () => {
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                {PRIORITY_OPTIONS.map(option => {
-                                    const isSelected = formData.priority === option.value;
-                                    return (
-                                        <label
-                                            key={option.value}
+                            {PRIORITY_OPTIONS.map(option => {
+                                const isSelected = formData.priority === option.value;
+                                return (
+                                    <label
+                                        key={option.value}
                                         className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:bg-gray-50`}
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: PRIMARY[50] }}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="priority"
-                                                value={option.value}
-                                                checked={isSelected}
-                                                onChange={(e) => { setFormData(prev => ({ ...prev, priority: e.target.value })); clearError('priority') }}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="priority"
+                                            value={option.value}
+                                            checked={isSelected}
+                                            onChange={(e) => { setFormData(prev => ({ ...prev, priority: e.target.value })); clearError('priority') }}
                                             className="sr-only"
-                                            />
+                                        />
                                         <div className="flex items-center space-x-2">
                                             <div className={`w-3 h-3 rounded-full ${isSelected ? 'ring-2 ring-offset-2' : ''}`} style={{ backgroundColor: isSelected ? PRIMARY[500] : GRAY[300] }}></div>
                                             <span className="text-sm font-medium" style={{ color: isSelected ? PRIMARY[500] : TEXT.PRIMARY }}>
                                                 {option.label}
                                             </span>
                                         </div>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                            {errors.priority && (
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        {errors.priority && (
                             <p className="mt-2 text-sm" style={{ color: ERROR[500] }}>{errors.priority}</p>
-                            )}
+                        )}
                     </div>
 
                     <div className="bg-white rounded-xl shadow-sm border overflow-hidden" style={{ borderColor: BORDER.DEFAULT }}>
@@ -451,22 +452,22 @@ const MedicationRequestCreate = () => {
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                        Tên thuốc *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={currentMedication.medicationName}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'medicationName', e.target.value)}
-                                        placeholder="Nhập tên thuốc"
+                                            Tên thuốc *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={currentMedication.medicationName}
+                                            onChange={(e) => handleMedicationChange(currentStep, 'medicationName', e.target.value)}
+                                            placeholder="Nhập tên thuốc"
                                             className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${errors[`medications.${currentStep}.medicationName`] ? 'border-red-500' : ''}`}
                                             style={{ borderColor: errors[`medications.${currentStep}.medicationName`] ? ERROR[500] : BORDER.DEFAULT }}
-                                    />
-                                    {errors[`medications.${currentStep}.medicationName`] && (
+                                        />
+                                        {errors[`medications.${currentStep}.medicationName`] && (
                                             <p className="mt-1 text-sm" style={{ color: ERROR[500] }}>{errors[`medications.${currentStep}.medicationName`]}</p>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
 
-                                <div>
+                                    <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
                                             Liều lượng/lần uống *
                                         </label>
@@ -487,48 +488,48 @@ const MedicationRequestCreate = () => {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                        Tần suất/ngày *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={currentMedication.frequencyCount}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'frequencyCount', e.target.value)}
-                                            placeholder="1"
-                                        min="1"
-                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${errors[`medications.${currentStep}.frequencyCount`] ? 'border-red-500' : ''}`}
-                                            style={{ borderColor: errors[`medications.${currentStep}.frequencyCount`] ? ERROR[500] : BORDER.DEFAULT }}
-                                    />
-                                    {errors[`medications.${currentStep}.frequencyCount`] && (
-                                            <p className="mt-1 text-sm" style={{ color: ERROR[500] }}>{errors[`medications.${currentStep}.frequencyCount`]}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                        <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                        Số lượng gửi *
-                                    </label>
-                                    <div className="flex space-x-2">
+                                            Tần suất/ngày *
+                                        </label>
                                         <input
                                             type="number"
-                                            value={currentMedication.quantitySent}
-                                            onChange={(e) => handleMedicationChange(currentStep, 'quantitySent', e.target.value)}
-                                            placeholder="Nhập số lượng"
+                                            value={currentMedication.frequencyCount}
+                                            onChange={(e) => handleMedicationChange(currentStep, 'frequencyCount', e.target.value)}
+                                            placeholder="1"
                                             min="1"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${errors[`medications.${currentStep}.frequencyCount`] ? 'border-red-500' : ''}`}
+                                            style={{ borderColor: errors[`medications.${currentStep}.frequencyCount`] ? ERROR[500] : BORDER.DEFAULT }}
+                                        />
+                                        {errors[`medications.${currentStep}.frequencyCount`] && (
+                                            <p className="mt-1 text-sm" style={{ color: ERROR[500] }}>{errors[`medications.${currentStep}.frequencyCount`]}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
+                                            Số lượng gửi *
+                                        </label>
+                                        <div className="flex space-x-2">
+                                            <input
+                                                type="number"
+                                                value={currentMedication.quantitySent}
+                                                onChange={(e) => handleMedicationChange(currentStep, 'quantitySent', e.target.value)}
+                                                placeholder="Nhập số lượng"
+                                                min="1"
                                                 className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 ${errors[`medications.${currentStep}.quantitySent`] ? 'border-red-500' : ''}`}
                                                 style={{ borderColor: errors[`medications.${currentStep}.quantitySent`] ? ERROR[500] : BORDER.DEFAULT }}
-                                        />
-                                        <select
-                                            value={currentMedication.quantityUnit}
-                                            onChange={(e) => handleMedicationChange(currentStep, 'quantityUnit', e.target.value)}
+                                            />
+                                            <select
+                                                value={currentMedication.quantityUnit}
+                                                onChange={(e) => handleMedicationChange(currentStep, 'quantityUnit', e.target.value)}
                                                 className="px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                            style={{ borderColor: BORDER.DEFAULT }}
-                                        >
-                                            {QUANTITY_UNITS.map(unit => (
-                                                <option key={unit.value} value={unit.value}>{unit.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {errors[`medications.${currentStep}.quantitySent`] && (
+                                                style={{ borderColor: BORDER.DEFAULT }}
+                                            >
+                                                {QUANTITY_UNITS.map(unit => (
+                                                    <option key={unit.value} value={unit.value}>{unit.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {errors[`medications.${currentStep}.quantitySent`] && (
                                             <p className="mt-1 text-sm" style={{ color: ERROR[500] }}>{errors[`medications.${currentStep}.quantitySent`]}</p>
                                         )}
                                     </div>
@@ -550,9 +551,9 @@ const MedicationRequestCreate = () => {
                                         </div>
                                         {errors[`medications.${currentStep}.expiryDate`] && (
                                             <p className="mt-1 text-sm" style={{ color: ERROR[500] }}>{errors[`medications.${currentStep}.expiryDate`]}</p>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
 
                                 <div>
                                     <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
@@ -560,14 +561,14 @@ const MedicationRequestCreate = () => {
                                     </label>
                                     <div className="relative">
                                         <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: GRAY[400] }} />
-                                    <input
-                                        type="date"
-                                        value={currentMedication.startDate ? currentMedication.startDate.split('T')[0] : ''}
-                                        onChange={(e) => handleMedicationChange(currentStep, 'startDate', e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
+                                        <input
+                                            type="date"
+                                            value={currentMedication.startDate ? currentMedication.startDate.split('T')[0] : ''}
+                                            onChange={(e) => handleMedicationChange(currentStep, 'startDate', e.target.value)}
+                                            min={new Date().toISOString().split('T')[0]}
                                             className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
-                                        style={{ borderColor: BORDER.DEFAULT }}
-                                    />
+                                            style={{ borderColor: BORDER.DEFAULT }}
+                                        />
                                     </div>
                                 </div>
 
@@ -647,33 +648,33 @@ const MedicationRequestCreate = () => {
 
             <div className="sticky bottom-0 left-0 right-0 bg-white border-t shadow-lg py-4" style={{ borderColor: BORDER.LIGHT }}>
                 <div className="max-w-6xl mx-auto px-6">
-                        <div className="flex justify-between items-center">
-                            <button
-                                type="button"
-                                onClick={() => navigate(-1)}
+                    <div className="flex justify-between items-center">
+                        <button
+                            type="button"
+                            onClick={() => navigate(-1)}
                             className="px-6 py-3 rounded-lg border font-medium transition-all duration-200 flex items-center hover:bg-gray-50"
                             style={{ borderColor: BORDER.DEFAULT, color: TEXT.PRIMARY }}
-                                disabled={loading}
-                            >
+                            disabled={loading}
+                        >
                             <FiChevronLeft className="mr-2 h-4 w-4" /> Quay lại
-                            </button>
-                                <button
-                                    type="button"
-                                    onClick={handleSubmit}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
                             className={`px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
-                                    style={{ backgroundColor: PRIMARY[500], color: 'white' }}
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <Loading type="spinner" size="small" color="white" className="mr-2" /> Đang gửi...
-                                        </>
-                                    ) : (
-                                        <>
+                            style={{ backgroundColor: PRIMARY[500], color: 'white' }}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loading type="spinner" size="small" color="white" className="mr-2" /> Đang gửi...
+                                </>
+                            ) : (
+                                <>
                                     <FiSave className="mr-2 h-4 w-4" /> Gửi yêu cầu
-                                        </>
-                                    )}
-                                </button>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>

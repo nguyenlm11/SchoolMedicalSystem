@@ -19,7 +19,7 @@ const RecordCard = ({ title, icon, leftValue, rightValue, date, comments, isVisi
     const formatValue = (value) => {
         if (!isValidValue(value)) return 'Không có dữ liệu';
         if (isVision && typeof value === 'number') { return `${value}/10` }
-        return value;
+        return `~${value}`;
     };
 
     return (
@@ -96,93 +96,85 @@ const VisionHearingRecords = ({ visionRecords = [], hearingRecords = [], onRecor
                     Thị lực & Thính lực
                 </h2>
             </div>
-            {!hasAnyRecords ? (
-                <div
-                    className="bg-white rounded-2xl p-6 border shadow-sm text-center"
-                    style={{ borderColor: PRIMARY[200], backgroundColor: PRIMARY[25] }}
-                >
-                    <p className="text-lg" style={{ color: TEXT.SECONDARY }}>Chưa có dữ liệu thị lực và thính lực</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thị lực</h3>
-                            <div className="flex items-center space-x-2">
-                                {sortedVisionRecords.length > 1 && (
-                                    <button
-                                        onClick={() => setIsVisionModalOpen(true)}
-                                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                                    >
-                                        <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
-                                    </button>
-                                )}
-                                {canAddRecord && (
-                                    <button
-                                        onClick={() => setIsAddVisionModalOpen(true)}
-                                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                        style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
-                                    >
-                                        <FiPlus className="h-3 w-3 mr-1" /> Cập nhật
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            {latestVisionRecord ? (
-                                <RecordCard
-                                    title="Kiểm tra thị lực"
-                                    icon={<FiEye className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
-                                    leftValue={latestVisionRecord.leftEye}
-                                    rightValue={latestVisionRecord.rightEye}
-                                    date={latestVisionRecord.checkDate}
-                                    comments={latestVisionRecord.comments}
-                                    isVision={true}
-                                />
-                            ) : <EmptyRecordMessage title="thị lực" />}
-                        </div>
-                    </div>
 
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thính lực</h3>
-                            <div className="flex items-center space-x-2">
-                                {sortedHearingRecords.length > 1 && (
-                                    <button
-                                        onClick={() => setIsHearingModalOpen(true)}
-                                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                        style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
-                                    >
-                                        <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
-                                    </button>
-                                )}
-                                {canAddRecord && (
-                                    <button
-                                        onClick={() => setIsAddHearingModalOpen(true)}
-                                        className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
-                                        style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
-                                    >
-                                        <FiPlus className="h-3 w-3 mr-1" /> Cập nhật
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            {latestHearingRecord ? (
-                                <RecordCard
-                                    title="Kiểm tra thính lực"
-                                    icon={<FiRadio className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
-                                    leftValue={latestHearingRecord.leftEar}
-                                    rightValue={latestHearingRecord.rightEar}
-                                    date={latestHearingRecord.checkDate}
-                                    comments={latestHearingRecord.comments}
-                                />
-                            ) : <EmptyRecordMessage title="thính lực" />}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thị lực</h3>
+                        <div className="flex items-center space-x-2">
+                            {sortedVisionRecords.length > 1 && (
+                                <button
+                                    onClick={() => setIsVisionModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                >
+                                    <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
+                                </button>
+                            )}
+                            {canAddRecord && (
+                                <button
+                                    onClick={() => setIsAddVisionModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                                >
+                                    <FiPlus className="h-3 w-3 mr-1" /> Cập nhật
+                                </button>
+                            )}
                         </div>
                     </div>
+                    <div className="space-y-4">
+                        {latestVisionRecord ? (
+                            <RecordCard
+                                title="Kiểm tra thị lực"
+                                icon={<FiEye className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
+                                leftValue={latestVisionRecord.leftEye}
+                                rightValue={latestVisionRecord.rightEye}
+                                date={latestVisionRecord.checkDate}
+                                comments={latestVisionRecord.comments}
+                                isVision={true}
+                            />
+                        ) : <EmptyRecordMessage title="thị lực" />}
+                    </div>
                 </div>
-            )}
+
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>Thính lực</h3>
+                        <div className="flex items-center space-x-2">
+                            {sortedHearingRecords.length > 1 && (
+                                <button
+                                    onClick={() => setIsHearingModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                >
+                                    <FiEye className="h-3 w-3 mr-1" /> Xem tất cả
+                                </button>
+                            )}
+                            {canAddRecord && (
+                                <button
+                                    onClick={() => setIsAddHearingModalOpen(true)}
+                                    className="flex items-center px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-md"
+                                    style={{ backgroundColor: PRIMARY[600], color: COMMON.WHITE, border: `1px solid ${PRIMARY[600]}` }}
+                                >
+                                    <FiPlus className="h-3 w-3 mr-1" /> Cập nhật
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        {latestHearingRecord ? (
+                            <RecordCard
+                                title="Kiểm tra thính lực"
+                                icon={<FiRadio className="h-6 w-6" style={{ color: PRIMARY[500] }} />}
+                                leftValue={latestHearingRecord.leftEar}
+                                rightValue={latestHearingRecord.rightEar}
+                                date={latestHearingRecord.checkDate}
+                                comments={latestHearingRecord.comments}
+                            />
+                        ) : <EmptyRecordMessage title="thính lực" />}
+                    </div>
+                </div>
+            </div>
 
             <ViewAllVisionModal
                 isOpen={isVisionModalOpen}
