@@ -9,7 +9,7 @@ import AlertModal from "../../components/modal/AlertModal";
 const STATUS_CONFIG = {
     vaccination: {
         Completed: { bg: PRIMARY[500], text: "Đã tiêm", icon: <FiCheckCircle className="w-4 h-4" /> },
-        NotVaccinated: { bg: GRAY[500], text: "Chưa tiêm", icon: <FiXCircle className="w-4 h-4" /> },
+        NotVaccinated: { bg: ERROR[500], text: "Không tiêm", icon: <FiXCircle className="w-4 h-4" /> },
         default: { bg: PRIMARY[300], text: "Đang chờ tiêm", icon: <FiClock className="w-4 h-4" /> }
     },
     consent: {
@@ -272,7 +272,7 @@ const StudentList = ({ students, selectedStudent, setSelectedStudent, searchTerm
                         >
                             {status === "all" ? "Tất cả" :
                                 status === "InProgress" ? "Đang tiến hành" :
-                                    status === "Completed" ? "Đã tiêm" : "Chưa tiêm"}
+                                    status === "Completed" ? "Đã tiêm" : "Không tiêm"}
                         </button>
                     ))}
                 </div>
@@ -413,6 +413,7 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
     useEffect(() => {
         if (isEditing && student && sessionId) {
             fetchVaccinationResult();
+            if (student.vaccinationStatus === "Completed") { setSelectedOption("vaccinated") }
         }
     }, [isEditing, student, sessionId]);
 
@@ -422,57 +423,34 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
             const response = await vaccineSessionApi.getVaccinationResult(sessionId, student.studentId);
             if (response.success && response.data) {
                 setFormData({
-                    symptoms: response.data.symptoms || '',
-                    noteAfterSession: response.data.noteAfterSession || '',
-                    reason: response.data.reason || ''
+                    symptoms: response.data.symptoms,
+                    noteAfterSession: response.data.noteAfterSession,
+                    reason: response.data.reason
                 });
             } else {
                 setFormData({
-                    symptoms: student.symptoms || '',
-                    noteAfterSession: student.noteAfterSession || '',
-                    reason: student.reason || ''
+                    symptoms: student.symptoms,
+                    noteAfterSession: student.noteAfterSession,
+                    reason: student.reason
                 });
             }
         } catch (error) {
             setFormData({
-                symptoms: student.symptoms || '',
-                noteAfterSession: student.noteAfterSession || '',
-                reason: student.reason || ''
+                symptoms: student.symptoms,
+                noteAfterSession: student.noteAfterSession,
+                reason: student.reason
             });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEdit = async (e) => {
-        e.preventDefault();
-        setError(null);
-        if (selectedOption === "vaccinated" && !formData.symptoms) {
-            return setError("Vui lòng nhập triệu chứng.");
-        }
-        if (selectedOption === "notVaccinated" && !formData.reason) {
-            return setError("Vui lòng nhập lý do không tiêm.");
-        }
-        setIsSubmitting(true);
+    const handleEdit = async (vaccinationData) => {
         try {
-            let data, response;
-            if (selectedOption === "vaccinated") {
-                data = { studentId: student.studentId, symptoms: formData.symptoms, noteAfterSession: formData.noteAfterSession };
-                response = await vaccineSessionApi.markStudentVaccinated(sessionId, data);
-            } else {
-                data = { studentId: student.studentId, reason: formData.reason, noteAfterSession: formData.noteAfterSession };
-                response = await vaccineSessionApi.markStudentNotVaccinated(sessionId, data);
-            }
-            if (response.success) {
-                await onEdit({ vaccinationStatus: selectedOption === "vaccinated" ? "Completed" : "NotVaccinated", ...data });
-                setIsEditing(false);
-            } else {
-                setError(response.message || "Có lỗi xảy ra.");
-            }
+            await onEdit(vaccinationData);
+            setIsEditing(false);
         } catch (error) {
-            setError(error.message || "Có lỗi xảy ra.");
-        } finally {
-            setIsSubmitting(false);
+            setError(error.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
         }
     };
 
@@ -504,7 +482,7 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
                                 backgroundColor: isCompleted ? PRIMARY[500] : GRAY[500],
                                 color: COMMON.WHITE
                             }}>
-                                {isCompleted ? "Đã tiêm chủng" : "Chưa tiêm chủng"}
+                                {isCompleted ? "Đã tiêm chủng" : "Không tiêm chủng"}
                             </span>
                         </div>
                     </div>
@@ -529,10 +507,10 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
                             )}
                         </div>
                         <h3 className="text-xl font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                            {isCompleted ? "Đã tiêm chủng" : "Chưa tiêm chủng"}
+                            {isCompleted ? "Đã tiêm chủng" : "Không tiêm chủng"}
                         </h3>
                         <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                            {isCompleted ? "Học sinh đã được tiêm chủng thành công" : "Học sinh chưa được tiêm chủng"}
+                            {isCompleted ? "Học sinh đã được tiêm chủng thành công" : "Học sinh không được tiêm chủng"}
                         </p>
                     </div>
 
@@ -543,7 +521,7 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
                         style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
                     >
                         <FiEdit className="w-4 h-4 mr-2" />
-                        Chỉnh sửa thông tin
+                        Xem và chỉnh sửa kết quả
                     </button>
                 </div>
             ) : (
@@ -577,40 +555,84 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        if (currentSelectedOption === "vaccinated" && !currentFormData.symptoms) {
-            return setError("Vui lòng nhập triệu chứng.");
+        if (currentSelectedOption === "vaccinated" && (!currentFormData.symptoms || currentFormData.symptoms.trim() === '')) {
+            return setError("Vui lòng nhập triệu chứng sau tiêm.");
         }
-        if (currentSelectedOption === "notVaccinated" && !currentFormData.reason) {
+        if (currentSelectedOption === "notVaccinated" && (!currentFormData.reason || currentFormData.reason.trim() === '')) {
             return setError("Vui lòng nhập lý do không tiêm.");
         }
+
         if (isEditing) {
-            await onSubmit(e);
-        } else {
             setLocalIsSubmitting(true);
             try {
-                const data = { studentId: student.studentId, symptoms: currentFormData.symptoms, noteAfterSession: currentFormData.noteAfterSession };
-                let response;
-                if (currentSelectedOption === "vaccinated") {
-                    response = await vaccineSessionApi.markStudentVaccinated(sessionId, data);
-                } else {
-                    response = await vaccineSessionApi.markStudentNotVaccinated(sessionId, {
-                        studentId: student.studentId,
-                        reason: currentFormData.reason,
-                        noteAfterSession: currentFormData.noteAfterSession
-                    });
-                }
+                const data = {
+                    studentId: student.studentId,
+                    isVaccinated: currentSelectedOption === "vaccinated",
+                    noteAfterSession: currentFormData.noteAfterSession || '',
+                    symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason
+                };
+
+                const response = await vaccineSessionApi.updateVaccinationResult(sessionId, data);
+
                 if (response.success) {
                     await onSubmit({
                         vaccinationStatus: currentSelectedOption === "vaccinated" ? "Completed" : "NotVaccinated",
-                        ...data
+                        studentId: student.studentId,
+                        symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason,
+                        noteAfterSession: currentFormData.noteAfterSession
                     });
-                    setLocalFormData({ symptoms: '', noteAfterSession: '', reason: '' });
-                    setLocalSelectedOption("vaccinated");
                 } else {
-                    setError(response.message || "Có lỗi xảy ra.");
+                    setError(response.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
                 }
             } catch (error) {
-                setError(error.message || "Có lỗi xảy ra.");
+                setError(error.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
+            } finally {
+                setLocalIsSubmitting(false);
+            }
+        } else {
+            setLocalIsSubmitting(true);
+            try {
+                let response;
+                if (student.vaccinationStatus === "InProgress") {
+                    if (currentSelectedOption === "vaccinated") {
+                        const data = {
+                            studentId: student.studentId,
+                            symptoms: currentFormData.symptoms,
+                            noteAfterSession: currentFormData.noteAfterSession
+                        };
+                        response = await vaccineSessionApi.markStudentVaccinated(sessionId, data);
+                    } else {
+                        const data = {
+                            studentId: student.studentId,
+                            reason: currentFormData.reason,
+                            noteAfterSession: currentFormData.noteAfterSession
+                        };
+                        response = await vaccineSessionApi.markStudentNotVaccinated(sessionId, data);
+                    }
+                } else {
+                    const data = {
+                        studentId: student.studentId,
+                        isVaccinated: currentSelectedOption === "vaccinated",
+                        noteAfterSession: currentFormData.noteAfterSession || '',
+                        symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason
+                    };
+                    response = await vaccineSessionApi.updateVaccinationResult(sessionId, data);
+                }
+
+                if (response.success) {
+                    await onSubmit({
+                        vaccinationStatus: currentSelectedOption === "vaccinated" ? "Completed" : "NotVaccinated",
+                        studentId: student.studentId,
+                        symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason,
+                        noteAfterSession: currentFormData.noteAfterSession
+                    });
+                    setLocalFormData({ symptoms: 'Không có triệu chứng', noteAfterSession: '', reason: '' });
+                    setLocalSelectedOption("vaccinated");
+                } else {
+                    setError(response.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
+                }
+            } catch (error) {
+                setError(error.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
             } finally {
                 setLocalIsSubmitting(false);
             }
@@ -685,34 +707,34 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                             <button
                                 type="button"
                                 onClick={() => handleSelectOption("vaccinated")}
-                                className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "vaccinated"
-                                    ? "text-white"
-                                    : "text-gray-700 border-gray-400"
-                                    }`}
+                                className={`py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "vaccinated" ? "text-white" : "text-gray-700 border-gray-400"}`}
                                 style={{
                                     backgroundColor: currentSelectedOption === "vaccinated" ? SUCCESS[500] : GRAY[100],
-                                    borderColor: currentSelectedOption === "vaccinated" ? SUCCESS[500] : BORDER.DEFAULT
+                                    borderColor: currentSelectedOption === "vaccinated" ? SUCCESS[500] : BORDER.DEFAULT,
+                                    flex: isEditing && student.vaccinationStatus === "Completed" ? "1" : "1"
                                 }}
                             >
                                 <FiCheckCircle className="w-4 h-4 mr-2 inline" />
                                 Đã Tiêm
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => handleSelectOption("notVaccinated")}
-                                className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "notVaccinated"
-                                    ? "text-white"
-                                    : "text-gray-700 border-gray-400"
-                                    }`}
-                                style={{
-                                    backgroundColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : GRAY[100],
-                                    borderColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : BORDER.DEFAULT
-                                }}
-                            >
-                                <FiXCircle className="w-4 h-4 mr-2 inline" />
-                                Chưa Tiêm
-                            </button>
+                            {!(isEditing && student.vaccinationStatus === "Completed") && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleSelectOption("notVaccinated")}
+                                    className={`py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "notVaccinated" ? "text-white" : "text-gray-700 border-gray-400"}`}
+                                    style={{
+                                        backgroundColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : GRAY[100],
+                                        borderColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : BORDER.DEFAULT,
+                                        flex: "1"
+                                    }}
+                                >
+                                    <FiXCircle className="w-4 h-4 mr-2 inline" /> Không Tiêm
+                                </button>
+                            )}
                         </div>
+                        <p className="text-xs mt-2" style={{ color: TEXT.SECONDARY }}>
+                            {currentSelectedOption === "vaccinated" ? "Chọn khi học sinh đã được tiêm chủng thành công" : "Chọn khi học sinh chưa được tiêm chủng (có lý do cụ thể)"}
+                        </p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -725,7 +747,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                                     name="symptoms"
                                     value={currentFormData.symptoms}
                                     onChange={handleInputChange}
-                                    placeholder="Nhập triệu chứng sau tiêm..."
+                                    placeholder="Nhập triệu chứng sau tiêm (nếu không có triệu chứng, ghi 'Không có triệu chứng')..."
                                     rows="3"
                                     className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                     style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
@@ -740,7 +762,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                                     name="reason"
                                     value={currentFormData.reason}
                                     onChange={handleInputChange}
-                                    placeholder="Nhập lý do không tiêm..."
+                                    placeholder="Nhập lý do không tiêm (ví dụ: học sinh bị ốm, phụ huynh từ chối, v.v.)..."
                                     rows="3"
                                     className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                     style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
@@ -756,7 +778,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                                 name="noteAfterSession"
                                 value={currentFormData.noteAfterSession}
                                 onChange={handleInputChange}
-                                placeholder="Ghi chú bổ sung..."
+                                placeholder="Ghi chú bổ sung về quá trình tiêm chủng..."
                                 rows="3"
                                 className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                 style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}

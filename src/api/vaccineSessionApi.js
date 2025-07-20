@@ -236,16 +236,16 @@ const vaccineSessionApi = {
         }
     },
 
-    // Cập nhật trạng thái tiêm chủng của học sinh
-    updateStudentVaccinationStatus: async (sessionId, studentId, vaccinationData) => {
+    // Cập nhật kết quả tiêm chủng (API mới)
+    updateVaccinationResult: async (sessionId, data) => {
         try {
-            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/students/${studentId}/vaccination-status`, vaccinationData);
+            const response = await apiClient.put(`/vaccination-sessions/${sessionId}/update-result`, data);
             return response.data;
         } catch (error) {
-            console.error('Error updating student vaccination status:', error);
+            console.error('Error updating vaccination result:', error);
             return {
                 success: false,
-                message: error.response?.data?.message || 'Không thể cập nhật trạng thái tiêm chủng.',
+                message: error.response?.data?.message || 'Không thể cập nhật kết quả tiêm chủng.',
                 data: null
             };
         }
