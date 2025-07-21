@@ -116,26 +116,20 @@ const Navbar = () => {
             ],
         },
         {
-            name: "vaccination",
-            label: "Tiêm chủng",
+            name: "health-events",
+            label: "Sự kiện y tế",
             subItems: [
-                {
-                    category: "Phụ huynh",
-                    links: [
-                        { to: "/parent/vaccination/schedule", label: "Lịch tiêm chủng", desc: "Xem lịch tiêm chủng" },
-                    ],
-                },
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
-                        { to: "/schoolnurse/vaccination/create", label: "Tạo buổi tiêm chủng", desc: "Tạo buổi tiêm chủng mới" },
+                        { to: "/schoolnurse/health-events", label: "Danh sách sự kiện y tế", desc: "Xem tất cả sự kiện" },
+                        { to: "/schoolnurse/health-events/create", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
                     ],
                 },
                 {
                     category: "Học sinh",
                     links: [
-                        { to: "/student/health-events", label: "Sự kiện tiêm chủng", desc: "Xem lịch tiêm chủng cá nhân" },
+                        { to: "/student/health-events", label: "Sự kiện y tế", desc: "Lịch khám sức khỏe, tiêm chủng và các hoạt động y tế khác" },
                     ],
                 },
             ],
@@ -169,20 +163,26 @@ const Navbar = () => {
             ],
         },
         {
-            name: "health-events",
-            label: "Sự kiện y tế",
+            name: "vaccination",
+            label: "Tiêm chủng",
             subItems: [
+                {
+                    category: "Phụ huynh",
+                    links: [
+                        { to: "/parent/vaccination/schedule", label: "Lịch tiêm chủng", desc: "Xem lịch tiêm chủng" },
+                    ],
+                },
                 {
                     category: "Nhân viên y tế",
                     links: [
-                        { to: "/schoolnurse/health-events", label: "Danh sách sự kiện y tế", desc: "Xem tất cả sự kiện" },
-                        { to: "/schoolnurse/health-events/create", label: "Thêm sự kiện mới", desc: "Tạo sự kiện y tế mới" },
+                        { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
+                        { to: "/schoolnurse/vaccination/create", label: "Tạo buổi tiêm chủng", desc: "Tạo buổi tiêm chủng mới" },
                     ],
                 },
                 {
                     category: "Học sinh",
                     links: [
-                        { to: "/student/health-events", label: "Sự kiện y tế", desc: "Lịch khám sức khỏe, tiêm chủng và các hoạt động y tế khác" },
+                        { to: "/student/health-events", label: "Sự kiện tiêm chủng", desc: "Xem lịch tiêm chủng cá nhân" },
                     ],
                 },
             ],
@@ -202,6 +202,7 @@ const Navbar = () => {
                     category: "Nhân viên y tế",
                     links: [
                         { to: "/schoolnurse/health-check", label: "Quản lý kiểm tra", desc: "Theo dõi lịch khám" },
+                        { to: "/schoolnurse/health-check-items", label: "Danh sách mục kiểm tra", desc: "Xem danh sách mục kiểm tra" },
                         { to: "/schoolnurse/health-check/new", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
                     ],
                 },
