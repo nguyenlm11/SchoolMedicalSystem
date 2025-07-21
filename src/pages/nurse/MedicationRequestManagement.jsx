@@ -426,25 +426,25 @@ const MedicationRequestManagement = () => {
                         <table className="w-full">
                             <thead>
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '160px' }}>
                                         MÃ YÊU CẦU
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
                                         HỌC SINH
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
                                         PHỤ HUYNH
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
                                         NGÀY GỬI
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         TRẠNG THÁI
                                     </th>
-                                    <th className="py-4 px-6 text-left text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         ĐỘ ƯU TIÊN
                                     </th>
-                                    <th className="py-4 px-6 text-center text-lg font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '80px' }}>
+                                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '80px' }}>
                                         THAO TÁC
                                     </th>
                                 </tr>
@@ -456,45 +456,45 @@ const MedicationRequestManagement = () => {
                                         className="hover:bg-opacity-50 transition-all duration-200 group"
                                         style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                     >
-                                        <td className="py-4 px-6 text-base font-medium whitespace-nowrap" style={{ width: '160px', color: TEXT.PRIMARY }}>
+                                        <td className="py-4 px-6 text-sm font-medium whitespace-nowrap" style={{ width: '160px', color: TEXT.PRIMARY }}>
                                             {request.code}
                                         </td>
-                                        <td className="py-4 px-6 text-base" style={{ width: '200px' }}>
+                                        <td className="py-4 px-6 text-sm" style={{ width: '200px' }}>
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-base" style={{ color: TEXT.PRIMARY }}>
+                                                <span className="font-semibold text-sm" style={{ color: TEXT.PRIMARY }}>
                                                     {request.studentName}
                                                 </span>
-                                                <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
                                                     {request.studentCode}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-base" style={{ width: '150px' }}>
+                                        <td className="py-4 px-6 text-sm" style={{ width: '150px' }}>
                                             <div className="flex items-center">
-                                                <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {request.parentName}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-base" style={{ width: '130px' }}>
+                                        <td className="py-4 px-6 text-sm" style={{ width: '130px' }}>
                                             <div className="flex flex-col">
-                                                <span className="text-base font-medium" style={{ color: TEXT.PRIMARY }}>
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
                                                     {new Date(request.submittedAt).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit' })}
                                                 </span>
-                                                <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
                                                     {new Date(request.submittedAt).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-base" style={{ width: '120px' }}>
+                                        <td className="py-4 px-6 text-sm" style={{ width: '120px' }}>
                                             {getStatusBadge(request.status)}
                                         </td>
-                                        <td className="py-4 px-6 text-lg font-bold" style={{ width: '120px' }}>
-                                            <span style={{ fontSize: '1.25rem', lineHeight: 1.5 }}>
+                                        <td className="py-4 px-6 text-sm font-bold" style={{ width: '120px' }}>
+                                            <span className="text-sm font-bold">
                                                 {getPriorityBadge(request.priorityDisplayName)}
                                             </span>
                                         </td>
-                                        <td className="py-4 px-6 text-center text-base" style={{ width: '80px' }}>
+                                        <td className="py-4 px-6 text-center text-sm" style={{ width: '80px' }}>
                                             <div style={{ position: 'relative', display: 'inline-block' }} data-dropdown>
                                                 <button
                                                     onClick={() => toggleDropdown(request.id)}

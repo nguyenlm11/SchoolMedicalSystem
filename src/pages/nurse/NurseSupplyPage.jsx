@@ -391,7 +391,7 @@ const NurseSupplyPage = () => {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
-                                                        <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                        <span className="font-semibold text-sm" style={{ color: TEXT.PRIMARY }}>
                                                             {item.name}
                                                         </span>
                                                     </div>
@@ -399,7 +399,7 @@ const NurseSupplyPage = () => {
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
-                                                            className="font-bold text-lg"
+                                                            className="font-bold text-sm"
                                                             style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
                                                             {item.quantity || 0}
