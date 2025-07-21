@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
+import StudentMedicationAdministerModal from '../../components/modal/StudentMedicationAdministerModal';
 
 const MedicationUsageManagement = () => {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ const MedicationUsageManagement = () => {
     const [filterStatus, setFilterStatus] = useState("Approved");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [noteModal, setNoteModal] = useState({ open: false, instructions: '', specialNotes: '' });
+    const [administerModal, setAdministerModal] = useState({ open: false, studentName: '', medicationName: '', defaultTime: '', item: null });
     const nurseId = user?.id || '';
 
     useEffect(() => {
@@ -340,7 +342,16 @@ const MedicationUsageManagement = () => {
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                 style={{ color: PRIMARY[600] }}
-                                                                onClick={() => navigate(`/schoolnurse/medication-usage/${item.id}`)}
+                                                                onClick={() => {
+                                                                    setAdministerModal({
+                                                                        open: true,
+                                                                        studentName: item.studentName,
+                                                                        medicationName: item.medicationName,
+                                                                        defaultTime: '',
+                                                                        item: item
+                                                                    });
+                                                                    setOpenActionId(null);
+                                                                }}
                                                             >
                                                                 <FiEye className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lịch sử dùng</span>
@@ -436,6 +447,16 @@ const MedicationUsageManagement = () => {
                 specialNotes={noteModal.specialNotes}
                 studentName={noteModal.studentName}
                 medicationName={noteModal.medicationName}
+            />
+            <StudentMedicationAdministerModal
+                isOpen={administerModal.open}
+                onClose={() => setAdministerModal({ ...administerModal, open: false })}
+                studentName={administerModal.studentName}
+                medicationName={administerModal.medicationName}
+                defaultTime={administerModal.defaultTime}
+                timesOfDay={administerModal.item?.timesOfDay || []}
+                medicationId={administerModal.item?.id}
+                onSuccess={fetchMedicationUsage}
             />
         </div>
     );
