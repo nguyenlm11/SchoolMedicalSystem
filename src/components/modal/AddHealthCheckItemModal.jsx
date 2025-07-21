@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiX, FiClipboard, FiPlus } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiX, FiClipboard, FiPlus, FiEdit2 } from 'react-icons/fi';
 import { PRIMARY, GRAY, TEXT, BORDER, ERROR, BACKGROUND, COMMON } from '../../constants/colors';
 import healthCheckApi from '../../api/healthCheckApi';
 import Loading from '../Loading';
@@ -21,11 +21,28 @@ const initialForm = {
     maxValue: ''
 };
 
-const AddHealthCheckItemModal = ({ isOpen, onClose, onSuccess }) => {
+const AddHealthCheckItemModal = ({ isOpen, onClose, onSuccess, item, onShowAlert }) => {
     const [form, setForm] = useState(initialForm);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formErrors, setFormErrors] = useState({});
+
+    useEffect(() => {
+        if (item && isOpen) {
+            setForm({
+                name: item.name || '',
+                categories: item.categories || '',
+                description: item.description || '',
+                unit: item.unit || '',
+                minValue: item.minValue === null ? '' : item.minValue,
+                maxValue: item.maxValue === null ? '' : item.maxValue
+            });
+            setError('');
+            setFormErrors({});
+        } else if (isOpen) {
+            resetForm();
+        }
+    }, [item, isOpen]);
 
     const resetForm = () => {
         setForm(initialForm);
@@ -56,24 +73,29 @@ const AddHealthCheckItemModal = ({ isOpen, onClose, onSuccess }) => {
             setFormErrors(errors);
             return;
         }
-        console.log(form);
         setLoading(true);
         try {
-            const payload = {
+            const data = {
                 ...form,
                 minValue: form.minValue === '' ? null : Number(form.minValue),
                 maxValue: form.maxValue === '' ? null : Number(form.maxValue)
             };
-            const res = await healthCheckApi.createHealthCheckItem(payload);
+            let res;
+            if (item) {
+                res = await healthCheckApi.updateHealthCheckItem(item.id, data);
+            } else {
+                res = await healthCheckApi.createHealthCheckItem(data);
+            }
             if (res.success) {
-                onSuccess && onSuccess();
                 resetForm();
                 onClose();
+                onSuccess && onSuccess();
+                onShowAlert && onShowAlert('success', item ? 'Cập nhật thành công!' : 'Tạo mới thành công!', 'Thành công');
             } else {
-                setError(res.message || 'Không thể tạo hạng mục kiểm tra');
+                onShowAlert && onShowAlert('error', res.message || (item ? 'Không thể cập nhật hạng mục kiểm tra' : 'Không thể tạo hạng mục kiểm tra'), 'Lỗi');
             }
         } catch (err) {
-            setError('Có lỗi xảy ra, vui lòng thử lại.');
+            onShowAlert && onShowAlert('error', 'Có lỗi xảy ra, vui lòng thử lại.', 'Lỗi');
         } finally {
             setLoading(false);
         }
@@ -99,10 +121,10 @@ const AddHealthCheckItemModal = ({ isOpen, onClose, onSuccess }) => {
                             </div>
                             <div>
                                 <h3 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                    Thêm hạng mục kiểm tra sức khỏe
+                                    {item ? 'Chỉnh sửa hạng mục kiểm tra sức khỏe' : 'Thêm hạng mục kiểm tra sức khỏe'}
                                 </h3>
                                 <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                    Nhập thông tin hạng mục kiểm tra mới
+                                    {item ? 'Cập nhật thông tin hạng mục kiểm tra' : 'Nhập thông tin hạng mục kiểm tra mới'}
                                 </p>
                             </div>
                         </div>
@@ -254,11 +276,12 @@ const AddHealthCheckItemModal = ({ isOpen, onClose, onSuccess }) => {
                             >
                                 {loading ?
                                     <>
-                                        <Loading type="spinner" size="small" color="white" /> Đang tạo...
+                                        <Loading type="spinner" size="small" color="white" /> {item ? 'Đang cập nhật...' : 'Đang tạo...'}
                                     </>
                                     :
                                     <>
-                                        <FiPlus className="h-5 w-5" /> Tạo mới
+                                        {item ? <FiEdit2 className="h-5 w-5" /> : <FiPlus className="h-5 w-5" />}
+                                        {item ? ' Cập nhật' : ' Tạo mới'}
                                     </>
                                 }
                             </button>

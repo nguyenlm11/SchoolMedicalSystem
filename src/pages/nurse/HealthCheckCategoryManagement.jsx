@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER } from '../../constants/colors';
+import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import healthCheckApi from '../../api/healthCheckApi';
 import AddHealthCheckItemModal from '../../components/modal/AddHealthCheckItemModal';
+import ConfirmModal from '../../components/modal/ConfirmModal';
+import AlertModal from '../../components/modal/AlertModal';
 
 const HealthCheckCategoryManagement = () => {
     const [loading, setLoading] = useState(false);
@@ -15,6 +17,9 @@ const HealthCheckCategoryManagement = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editItem, setEditItem] = useState(null);
+    const [deleteItem, setDeleteItem] = useState(null);
+    const [alert, setAlert] = useState({ open: false, type: 'info', message: '', title: '' });
 
     useEffect(() => {
         fetchCategories();
@@ -62,6 +67,22 @@ const HealthCheckCategoryManagement = () => {
         if (categories === 'Vital') { return 'Chỉ số sức khỏe' }
     }
 
+    const handleDeleteHealthCheckItem = async (item) => {
+        try {
+            const res = await healthCheckApi.deleteHealthCheckItem(item.id);
+            setDeleteItem(null);
+            if (res.success) {
+                fetchCategories();
+                setAlert({ open: true, type: 'success', message: 'Xóa thành công!', title: 'Thành công' });
+            } else {
+                setAlert({ open: true, type: 'error', message: res.message || 'Xóa thất bại!', title: 'Lỗi' });
+            }
+        } catch (error) {
+            setDeleteItem(null);
+            setAlert({ open: true, type: 'error', message: error.message || 'Có lỗi xảy ra khi xóa!', title: 'Lỗi' });
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
@@ -84,7 +105,7 @@ const HealthCheckCategoryManagement = () => {
                         <button
                             className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                             style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                            onClick={() => setShowAddModal(true)}
+                            onClick={() => { setShowAddModal(true); setEditItem(null); }}
                         >
                             <FiPlus className="mr-2 h-5 w-5" />
                             Thêm hạng mục
@@ -165,11 +186,21 @@ const HealthCheckCategoryManagement = () => {
                                                 {item.maxValue === null ? '-' : item.maxValue}
                                             </td>
                                             <td className="py-4 px-6 text-center text-sm whitespace-nowrap" style={{ width: '120px', maxWidth: '120px' }}>
-                                                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="Sửa">
-                                                    <FiEdit2 className="h-4 w-4 text-blue-500" />
+                                                <button
+                                                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                                                    title="Sửa"
+                                                    onClick={() => { setEditItem(item); setShowAddModal(true) }}
+                                                    style={{ color: PRIMARY[500], backgroundColor: PRIMARY[50] }}
+                                                >
+                                                    <FiEdit2 className="h-4 w-4" />
                                                 </button>
-                                                <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors ml-2" title="Xóa">
-                                                    <FiTrash2 className="h-4 w-4 text-red-500" />
+                                                <button
+                                                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors ml-2"
+                                                    title="Xóa"
+                                                    onClick={() => setDeleteItem(item)}
+                                                    style={{ color: ERROR[500], backgroundColor: ERROR[50] }}
+                                                >
+                                                    <FiTrash2 className="h-4 w-4" />
                                                 </button>
                                             </td>
                                         </tr>
@@ -245,8 +276,29 @@ const HealthCheckCategoryManagement = () => {
 
             <AddHealthCheckItemModal
                 isOpen={showAddModal}
-                onClose={() => setShowAddModal(false)}
+                onClose={() => { setShowAddModal(false); setEditItem(null); }}
                 onSuccess={fetchCategories}
+                item={editItem}
+                onShowAlert={(type, message, title) => setAlert({ open: true, type, message, title })}
+            />
+
+            <ConfirmModal
+                isOpen={!!deleteItem}
+                onClose={() => setDeleteItem(null)}
+                onConfirm={() => handleDeleteHealthCheckItem(deleteItem)}
+                title="Xác nhận xóa"
+                message={deleteItem ? `Bạn có chắc chắn muốn xóa hạng mục \"${deleteItem.name}\"?` : ''}
+                confirmText="Xóa"
+                cancelText="Hủy"
+                type="error"
+            />
+
+            <AlertModal
+                isOpen={alert.open}
+                onClose={() => setAlert({ ...alert, open: false })}
+                type={alert.type}
+                title={alert.title}
+                message={alert.message}
             />
         </div>
     );

@@ -28,6 +28,32 @@ const healthCheckApi = {
             };
         }
     },
+    // Cập nhật hạng mục kiểm tra sức khỏe
+    updateHealthCheckItem: async (id, data) => {
+        try {
+            const response = await apiClient.put(`/health-check-items/${id}`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể cập nhật hạng mục kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
+    // Xóa hạng mục kiểm tra sức khỏe
+    deleteHealthCheckItem: async (id) => {
+        try {
+            const response = await apiClient.delete(`/health-check-items/${id}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể xóa hạng mục kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 

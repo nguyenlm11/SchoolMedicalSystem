@@ -215,11 +215,11 @@ const MedicationUsageManagement = () => {
                                     { key: 'Completed', label: 'Đã hoàn thành', icon: <FiTrendingUp className="h-4 w-4" /> },
                                     { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
                                 ].map(tab => (
-                                    <button
+                                <button
                                         key={tab.key}
                                         onClick={() => handleStatusFilter(tab.key)}
                                         className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
-                                        style={{
+                                    style={{
                                             backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
                                             color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
                                             border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
@@ -227,7 +227,7 @@ const MedicationUsageManagement = () => {
                                     >
                                         {tab.icon}
                                         {tab.label}
-                                    </button>
+                                </button>
                                 ))}
                                 <button
                                     onClick={handleRefresh}
