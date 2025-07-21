@@ -157,7 +157,7 @@ const NurseMedicationPage = () => {
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
                             <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý cấp phát thuốc</h1>
-                            <p className="mt-1" style={{ color: TEXT.SECONDARY }}>
+                            <p className="mt-1 text-lg" style={{ color: TEXT.SECONDARY }}>
                                 Quản lý việc cấp phát thuốc cho học sinh
                             </p>
                         </div>
@@ -391,10 +391,10 @@ const NurseMedicationPage = () => {
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <div>
-                                                            <span className="font-semibold block" style={{ color: TEXT.PRIMARY }}>
+                                                            <span className="font-semibold text-sm block" style={{ color: TEXT.PRIMARY }}>
                                                                 {item.name || 'N/A'}
                                                             </span>
-                                                            <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                            <span className="text-xs" style={{ color: TEXT.SECONDARY }}>
                                                                 {item.form && item.formDisplayName ? `${item.formDisplayName} (${item.form})` : 'N/A'}
                                                             </span>
                                                         </div>
@@ -408,12 +408,12 @@ const NurseMedicationPage = () => {
                                                 <td className="py-4 px-6">
                                                     <div className="flex items-center">
                                                         <span
-                                                            className="font-bold text-lg"
+                                                            className="font-bold text-sm"
                                                             style={{ color: item.isLowStock ? ERROR[600] : TEXT.PRIMARY }}
                                                         >
                                                             {item.quantity || 0}
                                                         </span>
-                                                        <span className="ml-1 text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                        <span className="ml-1 text-xs" style={{ color: TEXT.SECONDARY }}>
                                                             {item.unit || 'N/A'}
                                                         </span>
                                                         {item.isLowStock && (
