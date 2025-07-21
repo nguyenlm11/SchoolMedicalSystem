@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiX, FiCheckCircle, FiAlertTriangle, FiSkipForward, FiSun, FiSunrise, FiSunset, FiMoon, FiZap } from 'react-icons/fi';
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR } from '../../constants/colors';
-import Loading, { ButtonLoading } from '../Loading';
+import { ButtonLoading } from '../Loading';
 import AlertModal from './AlertModal';
 import medicationUsageApi from '../../api/medicationUsageApi';
 
@@ -19,10 +19,12 @@ const STATUS_TABS = [
     { key: 'Skipped', label: 'Bỏ qua', icon: <FiSkipForward className="w-4 h-4 mr-1" /> },
 ];
 
-const initialForm = {
-    dosageUsed: '',
-    note: '',
-    administeredTime: '',
+const TIME_OF_DAY_RANGES = {
+    'Buổi sáng': { start: 6, end: 11 },
+    'Buổi trưa': { start: 11, end: 14 },
+    'Buổi chiều': { start: 14, end: 18 },
+    'Buổi tối': { start: 18, end: 22 },
+    'Emergency': { start: 0, end: 24 },
 };
 
 function getTimeTabs(timesOfDay = []) {
@@ -31,33 +33,13 @@ function getTimeTabs(timesOfDay = []) {
     return tabs;
 }
 
-// Định nghĩa khung giờ cho từng timesOfDay
-const TIME_OF_DAY_RANGES = {
-    'Morning': { start: 6, end: 11 },      // 6:00 - 11:00
-    'Noon': { start: 11, end: 14 },        // 11:00 - 14:00
-    'Afternoon': { start: 14, end: 18 },  // 14:00 - 18:00
-    'Evening': { start: 18, end: 22 },    // 18:00 - 22:00
+const initialForm = {
+    dosageUsed: '',
+    note: '',
+    administeredTime: '',
 };
 
-function isTimeOfDayEnabled(key) {
-    if (key === 'Emergency') return true;
-    const now = new Date();
-    const hour = now.getHours();
-    const range = TIME_OF_DAY_RANGES[key];
-    if (!range) return true;
-    return hour >= range.start && hour < range.end;
-}
-
-const StudentMedicationAdministerModal = ({
-    isOpen,
-    onClose,
-    medicationId, // <-- truyền id vào props
-    studentName,
-    medicationName,
-    defaultTime,
-    timesOfDay = [],
-    onSuccess, // callback khi thành công
-}) => {
+const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, studentName, medicationName, defaultTime, timesOfDay = [], onSuccess, }) => {
     const timeTabs = getTimeTabs(timesOfDay);
     const [activeTimeTab, setActiveTimeTab] = useState(timeTabs[0]?.key || 'Morning');
     const [activeStatusTab, setActiveStatusTab] = useState('Used');
@@ -74,9 +56,8 @@ const StudentMedicationAdministerModal = ({
     const [formErrors, setFormErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState({ open: false, type: 'info', title: '', message: '' });
-    const [isEmergency, setIsEmergency] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (isOpen) {
             setActiveTimeTab(timeTabs[0]?.key || 'Morning');
             setActiveStatusTab('Used');
@@ -92,32 +73,13 @@ const StudentMedicationAdministerModal = ({
             });
             setFormErrors({});
             setAlert({ open: false, type: 'info', title: '', message: '' });
-            setIsEmergency(false);
         }
     }, [isOpen, defaultTime, timesOfDay]);
-
-    // Khi check Khẩn cấp thì chuyển sang tab Khẩn cấp
-    React.useEffect(() => {
-        if (isEmergency && activeTimeTab !== 'Emergency') {
-            setActiveTimeTab('Emergency');
-            setActiveStatusTab('Used');
-        }
-    }, [isEmergency, activeTimeTab]);
-
-    // Ngoài ra, nếu đang ở tab bị disable thì tự động chuyển sang tab hợp lệ đầu tiên
-    React.useEffect(() => {
-        if (!isTimeOfDayEnabled(activeTimeTab)) {
-            const firstEnabled = timeTabs.find(tab => isTimeOfDayEnabled(tab.key));
-            if (firstEnabled) setActiveTimeTab(firstEnabled.key);
-        }
-        // eslint-disable-next-line
-    }, [isOpen, activeTimeTab, timeTabs]);
 
     const handleTimeTabChange = (tab) => {
         setActiveTimeTab(tab);
         setActiveStatusTab('Used');
         setFormErrors({});
-        setIsEmergency(tab === 'Emergency');
     };
 
     const handleStatusTabChange = (tab) => {
@@ -126,20 +88,17 @@ const StudentMedicationAdministerModal = ({
     };
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
         setFormState(prev => ({
             ...prev,
             [activeTimeTab]: {
                 ...prev[activeTimeTab],
                 [activeStatusTab]: {
                     ...prev[activeTimeTab][activeStatusTab],
-                    [name]: type === 'checkbox' ? checked : value,
+                    [name]: value,
                 },
             },
         }));
-        if (name === 'isEmergency') {
-            setIsEmergency(checked);
-        }
         if (formErrors[name]) {
             setFormErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -153,7 +112,15 @@ const StudentMedicationAdministerModal = ({
         } else {
             const now = new Date();
             const inputTime = new Date(form.administeredTime);
-            if (inputTime > now) {
+            const timeRange = TIME_OF_DAY_RANGES[activeTimeTab];
+            if (timeRange && activeTimeTab !== 'Emergency') {
+                const inputHour = inputTime.getHours();
+                if (inputHour < timeRange.start || inputHour >= timeRange.end) {
+                    const tabLabel = TIME_OF_DAY_LABELS[activeTimeTab]?.label || activeTimeTab;
+                    errors.administeredTime = `Thời gian cho uống phải nằm trong khung giờ ${tabLabel} (${timeRange.start}:00 - ${timeRange.end}:00).`;
+                }
+            }
+            if (!errors.administeredTime && inputTime > now) {
                 errors.administeredTime = 'Thời gian cho uống không được ở trong tương lai.';
             }
         }
@@ -180,15 +147,10 @@ const StudentMedicationAdministerModal = ({
                 isMakeupDose: activeTimeTab === 'Emergency',
                 administeredTime: form.administeredTime,
             };
-            // Gọi API trực tiếp
             const res = await medicationUsageApi.recordMedicationAdministration(medicationId, body);
             if (!res.success) throw new Error(res.message || 'Có lỗi xảy ra khi ghi nhận việc cho thuốc');
             setAlert({ open: true, type: 'success', title: 'Thành công', message: 'Khai báo uống thuốc thành công!' });
-            setTimeout(() => {
-                setAlert({ open: false });
-                onClose?.();
-                onSuccess?.();
-            }, 1200);
+            setTimeout(() => { setAlert({ open: false }); onClose(); onSuccess() }, 1200);
         } catch (err) {
             setAlert({ open: true, type: 'error', title: 'Lỗi', message: err?.message || 'Có lỗi xảy ra, vui lòng thử lại.' });
         } finally {
@@ -197,7 +159,6 @@ const StudentMedicationAdministerModal = ({
     };
 
     if (!isOpen) return null;
-
     const form = formState[activeTimeTab][activeStatusTab];
 
     return (
@@ -212,7 +173,6 @@ const StudentMedicationAdministerModal = ({
                     style={{ backgroundColor: BACKGROUND.DEFAULT, boxShadow: '0 6px 24px 0 rgba(0,0,0,0.12)' }}
                     onClick={e => e.stopPropagation()}
                 >
-                    {/* Tab dọc khung giờ */}
                     <div className="flex flex-col border-r py-6 px-2 gap-2 bg-gray-50" style={{ width: '180px' }}>
                         {timeTabs.map(tab => (
                             <button
@@ -220,17 +180,15 @@ const StudentMedicationAdministerModal = ({
                                 type="button"
                                 className={`flex items-center w-full px-3 py-2 rounded-lg font-semibold transition-all duration-200 text-sm focus:outline-none border ${activeTimeTab === tab.key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-teal-400'}`}
                                 style={activeTimeTab === tab.key ? { boxShadow: '0 2px 8px 0 rgba(0,128,128,0.08)' } : {}}
-                                onClick={() => isTimeOfDayEnabled(tab.key) && handleTimeTabChange(tab.key)}
-                                disabled={loading || !isTimeOfDayEnabled(tab.key)}
+                                onClick={() => handleTimeTabChange(tab.key)}
+                                disabled={loading}
                             >
                                 {tab.icon}
                                 <span className="ml-2" style={{ whiteSpace: 'nowrap', overflow: 'visible' }}>{tab.label}</span>
                             </button>
                         ))}
                     </div>
-                    {/* Nội dung bên phải */}
                     <div className="flex-1 flex flex-col">
-                        {/* Header */}
                         <div className="flex items-center justify-between px-14 pt-12 pb-8 border-b" style={{ borderColor: BORDER.LIGHT, background: `linear-gradient(90deg, ${PRIMARY[50]}, ${PRIMARY[100]})` }}>
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: PRIMARY[50] }}>
@@ -254,8 +212,8 @@ const StudentMedicationAdministerModal = ({
                                 <FiX className="w-4 h-4" />
                             </button>
                         </div>
-                        {/* Tab ngang status */}
-                        <div className="flex justify-center gap-6 mt-9 mb-5 px-16">
+
+                        <div className="flex justify-between gap-6 mt-9 px-16">
                             {(activeTimeTab === 'Emergency' ? [STATUS_TABS[0]] : STATUS_TABS).map(tab => (
                                 <button
                                     key={tab.key}
@@ -270,45 +228,48 @@ const StudentMedicationAdministerModal = ({
                                 </button>
                             ))}
                         </div>
-                        {/* Form */}
-                        <form onSubmit={handleSubmit} className="px-16 pb-14 pt-8 flex flex-col gap-8 flex-1">
-                            {activeStatusTab === 'Used' && (
-                                <div>
+
+                        <form onSubmit={handleSubmit} className="px-16 pb-10 pt-8 flex flex-col gap-8 flex-1">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {activeStatusTab === 'Used' && (
+                                    <div>
+                                        <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
+                                            Liều dùng thực tế <span style={{ color: ERROR[500] }}>*</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="dosageUsed"
+                                            value={form.dosageUsed}
+                                            onChange={handleChange}
+                                            disabled={loading}
+                                            className="w-full p-3.5 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50 text-sm shadow-sm"
+                                            style={{ borderColor: formErrors.dosageUsed ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
+                                            placeholder="Nhập liều dùng thực tế, VD: 1 viên..."
+                                        />
+                                        {formErrors.dosageUsed && (
+                                            <p className="text-xs mt-1" style={{ color: ERROR[500] }}>{formErrors.dosageUsed}</p>
+                                        )}
+                                    </div>
+                                )}
+                                <div className={activeStatusTab === 'Used' ? '' : 'lg:col-span-2'}>
                                     <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
-                                        Liều dùng thực tế <span style={{ color: ERROR[500] }}>*</span>
+                                        Thời gian cho uống <span style={{ color: ERROR[500] }}>*</span>
                                     </label>
                                     <input
-                                        type="text"
-                                        name="dosageUsed"
-                                        value={form.dosageUsed}
+                                        type="datetime-local"
+                                        name="administeredTime"
+                                        value={form.administeredTime}
                                         onChange={handleChange}
                                         disabled={loading}
                                         className="w-full p-3.5 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50 text-sm shadow-sm"
-                                        style={{ borderColor: formErrors.dosageUsed ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                        placeholder="Nhập liều dùng thực tế, VD: 1 viên..."
+                                        style={{ borderColor: formErrors.administeredTime ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
                                     />
-                                    {formErrors.dosageUsed && (
-                                        <p className="text-xs mt-1" style={{ color: ERROR[500] }}>{formErrors.dosageUsed}</p>
+                                    {formErrors.administeredTime && (
+                                        <p className="text-xs mt-1" style={{ color: ERROR[500] }}>{formErrors.administeredTime}</p>
                                     )}
                                 </div>
-                            )}
-                            <div>
-                                <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
-                                    Thời gian cho uống <span style={{ color: ERROR[500] }}>*</span>
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    name="administeredTime"
-                                    value={form.administeredTime}
-                                    onChange={handleChange}
-                                    disabled={loading}
-                                    className="w-full p-3.5 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50 text-sm shadow-sm"
-                                    style={{ borderColor: formErrors.administeredTime ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                />
-                                {formErrors.administeredTime && (
-                                    <p className="text-xs mt-1" style={{ color: ERROR[500] }}>{formErrors.administeredTime}</p>
-                                )}
                             </div>
+
                             <div>
                                 <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
                                     {activeStatusTab === 'Used' ? 'Ghi chú' : 'Lý do'} {activeStatusTab !== 'Used' && <span style={{ color: ERROR[500] }}>*</span>}
@@ -339,6 +300,7 @@ const StudentMedicationAdministerModal = ({
                     </div>
                 </div>
             </div >
+
             <AlertModal
                 isOpen={alert.open}
                 onClose={() => setAlert({ ...alert, open: false })}

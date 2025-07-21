@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { FiSearch, FiRefreshCw, FiEye, FiMoreVertical, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiEye, FiMoreVertical, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo, FiEdit } from "react-icons/fi";
 import { PRIMARY, WARNING, ERROR, SUCCESS, INFO, TEXT, BACKGROUND, BORDER, GRAY } from '../../constants/colors';
 import Loading from '../../components/Loading';
-import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
 import StudentMedicationAdministerModal from '../../components/modal/StudentMedicationAdministerModal';
 
+const FILTER_TABS = [
+    { key: 'Approved', label: 'Đã duyệt', icon: <FiCheckCircle className="h-4 w-4" /> },
+    { key: 'Active', label: 'Đang sử dụng', icon: <FiActivity className="h-4 w-4" /> },
+    { key: 'Completed', label: 'Đã hoàn thành', icon: <FiTrendingUp className="h-4 w-4" /> },
+    { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
+];
+
 const MedicationUsageManagement = () => {
-    const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
@@ -21,6 +26,8 @@ const MedicationUsageManagement = () => {
     const [noteModal, setNoteModal] = useState({ open: false, instructions: '', specialNotes: '' });
     const [administerModal, setAdministerModal] = useState({ open: false, studentName: '', medicationName: '', defaultTime: '', item: null });
     const nurseId = user?.id || '';
+    const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
+    const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit] || unit;
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -84,32 +91,35 @@ const MedicationUsageManagement = () => {
         setOpenActionId(openActionId === id ? null : id);
     };
 
-    const getStats = () => {
-        const approvedCount = data.filter(r => r.status === 'Approved').length;
-        const activeCount = data.filter(r => r.status === 'Active').length;
-        const completedCount = data.filter(r => r.status === 'Completed').length;
-        const expiringSoonCount = data.filter(r => r.isExpiringSoon).length;
-        const lowStockCount = data.filter(r => r.isLowStock).length;
-        return {
-            approved: approvedCount,
-            active: activeCount,
-            completed: completedCount,
-            expiringSoon: expiringSoonCount,
-            lowStock: lowStockCount,
-            total: data.length
-        };
-    };
-    const stats = getStats();
-
-    const handleStatusFilter = (status) => {
-        setFilterStatus(status);
+    const handleAdministerModal = (item) => {
+        setAdministerModal({
+            open: true,
+            studentName: item.studentName,
+            medicationName: item.medicationName,
+            defaultTime: '',
+            item: item
+        });
+        setOpenActionId(null);
     };
 
-    const getQuantityUnit = (quantityUnit) => {
-        if (quantityUnit === 'Bottle') { return 'Chai' }
-        if (quantityUnit === 'Tablet') { return 'Viên' }
-        if (quantityUnit === 'Pack') { return 'Gói' }
-    }
+    const handleNoteModal = (item) => {
+        setNoteModal({
+            open: true,
+            instructions: item.instructions,
+            specialNotes: item.specialNotes,
+            studentName: item.studentName,
+            medicationName: item.medicationName
+        });
+        setOpenActionId(null);
+    };
+
+    const stats = {
+        approved: data.filter(r => r.status === 'Approved').length,
+        active: data.filter(r => r.status === 'Active').length,
+        completed: data.filter(r => r.status === 'Completed').length,
+        expiringSoon: data.filter(r => r.isExpiringSoon).length,
+        total: data.length
+    };
 
     if (loading) {
         return (
@@ -211,25 +221,19 @@ const MedicationUsageManagement = () => {
                                 </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {[
-                                    { key: 'Approved', label: 'Đã duyệt', icon: <FiCheckCircle className="h-4 w-4" /> },
-                                    { key: 'Active', label: 'Đang sử dụng', icon: <FiActivity className="h-4 w-4" /> },
-                                    { key: 'Completed', label: 'Đã hoàn thành', icon: <FiTrendingUp className="h-4 w-4" /> },
-                                    { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
-                                ].map(tab => (
-                                <button
+                                {FILTER_TABS.map(tab => (
+                                    <button
                                         key={tab.key}
-                                        onClick={() => handleStatusFilter(tab.key)}
+                                        onClick={() => setFilterStatus(tab.key)}
                                         className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
-                                    style={{
+                                        style={{
                                             backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
                                             color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
                                             border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
                                         }}
                                     >
-                                        {tab.icon}
-                                        {tab.label}
-                                </button>
+                                        {tab.icon}{tab.label}
+                                    </button>
                                 ))}
                                 <button
                                     onClick={handleRefresh}
@@ -276,9 +280,7 @@ const MedicationUsageManagement = () => {
                                                 Không có dữ liệu sử dụng thuốc
                                             </h3>
                                             <p className="text-sm" style={{ color: TEXT.SECONDARY }}>
-                                                {searchTerm || filterStatus !== "Approved"
-                                                    ? "Không tìm thấy kết quả phù hợp với bộ lọc."
-                                                    : "Chưa có dữ liệu sử dụng thuốc nào."}
+                                                {searchTerm || filterStatus !== "Approved" ? "Không tìm thấy kết quả phù hợp với bộ lọc." : "Chưa có dữ liệu sử dụng thuốc nào."}
                                             </p>
                                         </td>
                                     </tr>
@@ -342,25 +344,16 @@ const MedicationUsageManagement = () => {
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                 style={{ color: PRIMARY[600] }}
-                                                                onClick={() => {
-                                                                    setAdministerModal({
-                                                                        open: true,
-                                                                        studentName: item.studentName,
-                                                                        medicationName: item.medicationName,
-                                                                        defaultTime: '',
-                                                                        item: item
-                                                                    });
-                                                                    setOpenActionId(null);
-                                                                }}
+                                                                onClick={() => handleAdministerModal(item)}
                                                             >
-                                                                <FiEye className="w-4 h-4 flex-shrink-0" />
-                                                                <span>Lịch sử dùng</span>
+                                                                <FiEdit className="w-4 h-4 flex-shrink-0" />
+                                                                <span>Ghi nhận KQ</span>
                                                             </button>
 
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                style={{ color: '#2563eb' }}
-                                                                onClick={() => { setNoteModal({ open: true, instructions: item.instructions, specialNotes: item.specialNotes, studentName: item.studentName, medicationName: item.medicationName }); setOpenActionId(null); }}
+                                                                style={{ color: ERROR[500] }}
+                                                                onClick={() => handleNoteModal(item)}
                                                             >
                                                                 <FiInfo className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lưu ý</span>
