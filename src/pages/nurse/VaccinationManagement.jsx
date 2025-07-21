@@ -162,20 +162,20 @@ const VaccinationManagement = () => {
         const config = statusConfig[status];
         if (!config) return null;
 
-        return (
-            <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
+                return (
+                    <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
                 style={{ backgroundColor: config.color[50], color: config.color[700] }}>
                 <config.icon className="mr-1.5 h-4 w-4" />
                 {config.label}
-            </span>
-        );
+                    </span>
+                );
     };
 
     const DashboardCard = ({ tab, stats }) => {
         const config = TAB_CONFIG.find(t => t.key === tab);
         if (!config) return null;
 
-        return (
+                return (
             <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                 style={{ background: `linear-gradient(135deg, ${config.color[500]} 0%, ${config.color[600]} 100%)`, borderColor: config.color[200] }}>
                 <div className="p-6 relative z-10">
@@ -330,12 +330,12 @@ const VaccinationManagement = () => {
                                                 {getStatusBadge(vaccination.status)}
                                             </td>
                                             <td className="py-4 px-6">
-                                                <div>
+                                                    <div>
                                                     <div className="text-sm font-medium" style={{ color: PRIMARY[600] }}>
                                                         {vaccination.confirmedCount || vaccination.approvedStudents}/{vaccination.totalStudents}
-                                                    </div>
-                                                    <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
-                                                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                                                        </div>
+                                                        <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
+                                                        <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
                                                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((vaccination.approvedStudents) / (vaccination.totalStudents)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
                                                     </div>
                                                 </div>

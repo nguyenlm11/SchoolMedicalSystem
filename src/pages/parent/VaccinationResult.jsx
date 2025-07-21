@@ -22,7 +22,7 @@ const StatusBadge = ({ children }) => (
         style={{ backgroundColor: SUCCESS[100], color: SUCCESS[700] }}>
         <FiCheckCircle className="w-4 h-4 mr-2" />
         {children}
-    </span>
+                </span>
 );
 
 const SectionCard = ({ title, children, className = "" }) => (
@@ -116,21 +116,21 @@ const VaccinationResult = () => {
                 <div className="text-center max-w-md mx-auto px-4">
                     <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: GRAY[200] }}>
                         <FiAlertCircle className="w-8 h-8" style={{ color: GRAY[500] }} />
-                    </div>
+                        </div>
                     <h3 className="text-xl font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
                         Không tìm thấy kết quả
-                    </h3>
+                        </h3>
                     <p className="text-sm mb-6" style={{ color: TEXT.SECONDARY }}>
-                        Thông tin kết quả tiêm chủng không tồn tại hoặc đã bị xóa.
-                    </p>
-                    <Link
-                        to="/parent/vaccination/schedule"
+                            Thông tin kết quả tiêm chủng không tồn tại hoặc đã bị xóa.
+                        </p>
+                        <Link
+                            to="/parent/vaccination/schedule"
                         className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200"
                         style={{ backgroundColor: PRIMARY[500], color: 'white' }}
-                    >
+                        >
                         <FiHome className="w-4 h-4 mr-2" />
                         Về trang chủ
-                    </Link>
+                        </Link>
                 </div>
             </div>
         );
@@ -182,27 +182,27 @@ const VaccinationResult = () => {
                         value={vaccinationResult.sessionName || 'Buổi tiêm chủng'}
                     />
                     <InfoCard
-                        icon={FiShield}
+                                    icon={FiShield}
                         title="Loại vaccine"
                         value={vaccinationResult.vaccinationTypeName || vaccinationResult.vaccineTypeName || 'Không xác định'}
-                    />
+                                />
                     <InfoCard
-                        icon={FiCalendar}
+                                    icon={FiCalendar}
                         title="Ngày tiêm"
-                        value={formatDate(vaccinationResult.scheduledDate)}
-                    />
+                                    value={formatDate(vaccinationResult.scheduledDate)}
+                                />
                     <InfoCard
-                        icon={FiClock}
+                                    icon={FiClock}
                         title="Giờ tiêm"
-                        value={formatHour(vaccinationResult.scheduledDate)}
-                    />
+                                    value={formatHour(vaccinationResult.scheduledDate)}
+                                />
                     <InfoCard
-                        icon={FiMapPin}
+                                    icon={FiMapPin}
                         title="Địa điểm"
-                        value={vaccinationResult.location || 'Phòng y tế trường'}
-                    />
+                                    value={vaccinationResult.location || 'Phòng y tế trường'}
+                                />
                     <InfoCard
-                        icon={FiUser}
+                                    icon={FiUser}
                         title="Người thực hiện"
                         value={vaccinationResult.administeredBy || 'Đang cập nhật'}
                         color={SUCCESS[500]}
@@ -261,7 +261,7 @@ const VaccinationResult = () => {
                             </div>
                         </div>
                     </SectionCard>
-                </div>
+                    </div>
 
                 <SectionCard title="Hướng dẫn theo dõi" className="mt-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

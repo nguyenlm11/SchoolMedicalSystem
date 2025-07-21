@@ -205,88 +205,88 @@ const VaccinationProcess = () => {
 };
 
 const StudentList = ({ students, selectedStudent, setSelectedStudent, searchTerm, setSearchTerm, selectedClass, setSelectedClass, filterStatus, setFilterStatus, uniqueClasses, StatusBadge }) => (
-    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}>
-        <div className="px-6 py-4 border-b flex items-center" style={{ background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`, borderColor: PRIMARY[200] }}>
-            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${PRIMARY[500]}20` }}>
-                <FiUsers className="h-6 w-6" style={{ color: PRIMARY[700] }} />
-            </div>
-            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
+                    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}>
+                        <div className="px-6 py-4 border-b flex items-center" style={{ background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`, borderColor: PRIMARY[200] }}>
+                            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${PRIMARY[500]}20` }}>
+                                <FiUsers className="h-6 w-6" style={{ color: PRIMARY[700] }} />
+                            </div>
+                            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
                 Danh sách học sinh ({students.length})
-            </h2>
-        </div>
+                            </h2>
+                        </div>
 
-        <div className="p-6">
-            <div className="space-y-4 mb-6">
-                <div className="relative">
-                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
-                    <input
-                        type="text"
-                        className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
-                        placeholder="Tìm kiếm học sinh..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                {uniqueClasses.length > 1 && (
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => setSelectedClass("all")}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                            style={{
-                                backgroundColor: selectedClass === "all" ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                color: selectedClass === "all" ? TEXT.INVERSE : TEXT.PRIMARY,
-                                border: `1px solid ${selectedClass === "all" ? PRIMARY[500] : BORDER.DEFAULT}`
-                            }}
-                        >
-                            Tất cả lớp
-                        </button>
-                        {uniqueClasses.map(({ id, name }) => (
-                            <button
-                                key={id}
-                                onClick={() => setSelectedClass(id)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                                style={{
-                                    backgroundColor: selectedClass === id ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                    color: selectedClass === id ? TEXT.INVERSE : TEXT.PRIMARY,
-                                    border: `1px solid ${selectedClass === id ? PRIMARY[500] : BORDER.DEFAULT}`
-                                }}
-                            >
-                                {name}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                        <div className="p-6">
+                            <div className="space-y-4 mb-6">
+                                <div className="relative">
+                                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
+                                    <input
+                                        type="text"
+                                        className="w-full pl-12 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
+                                        placeholder="Tìm kiếm học sinh..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                {uniqueClasses.length > 1 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            onClick={() => setSelectedClass("all")}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                                            style={{
+                                                backgroundColor: selectedClass === "all" ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: selectedClass === "all" ? TEXT.INVERSE : TEXT.PRIMARY,
+                                                border: `1px solid ${selectedClass === "all" ? PRIMARY[500] : BORDER.DEFAULT}`
+                                            }}
+                                        >
+                                            Tất cả lớp
+                                        </button>
+                                        {uniqueClasses.map(({ id, name }) => (
+                                            <button
+                                                key={id}
+                                                onClick={() => setSelectedClass(id)}
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                                                style={{
+                                                    backgroundColor: selectedClass === id ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                    color: selectedClass === id ? TEXT.INVERSE : TEXT.PRIMARY,
+                                                    border: `1px solid ${selectedClass === id ? PRIMARY[500] : BORDER.DEFAULT}`
+                                                }}
+                                            >
+                                                {name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
 
-                <div className="flex flex-wrap gap-2">
-                    {["all", "InProgress", "Completed", "NotVaccinated"].map(status => (
-                        <button
-                            key={status}
-                            onClick={() => setFilterStatus(status)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
-                            style={{
-                                backgroundColor: filterStatus === status ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                color: filterStatus === status ? TEXT.INVERSE : TEXT.PRIMARY,
-                                border: `1px solid ${filterStatus === status ? PRIMARY[500] : BORDER.DEFAULT}`
-                            }}
-                        >
-                            {status === "all" ? "Tất cả" :
-                                status === "InProgress" ? "Đang tiến hành" :
+                                <div className="flex flex-wrap gap-2">
+                                    {["all", "InProgress", "Completed", "NotVaccinated"].map(status => (
+                                        <button
+                                            key={status}
+                                            onClick={() => setFilterStatus(status)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200`}
+                                            style={{
+                                                backgroundColor: filterStatus === status ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: filterStatus === status ? TEXT.INVERSE : TEXT.PRIMARY,
+                                                border: `1px solid ${filterStatus === status ? PRIMARY[500] : BORDER.DEFAULT}`
+                                            }}
+                                        >
+                                            {status === "all" ? "Tất cả" :
+                                                status === "InProgress" ? "Đang tiến hành" :
                                     status === "Completed" ? "Đã tiêm" : "Không tiêm"}
-                        </button>
-                    ))}
-                </div>
-            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-            <div className="max-h-96 overflow-y-auto">
+                            <div className="max-h-96 overflow-y-auto">
                 {students.length > 0 ? (
-                    <div className="space-y-2">
+                                    <div className="space-y-2">
                         {students.map((student) => (
                             <StudentCard
-                                key={student.studentId}
+                                                key={student.studentId}
                                 student={student}
                                 isSelected={selectedStudent?.studentId === student.studentId}
-                                onClick={() => setSelectedStudent(student)}
+                                                onClick={() => setSelectedStudent(student)}
                                 StatusBadge={StatusBadge}
                             />
                         ))}
@@ -309,97 +309,97 @@ const StudentList = ({ students, selectedStudent, setSelectedStudent, searchTerm
 const StudentCard = ({ student, isSelected, onClick, StatusBadge }) => (
     <div
         onClick={onClick}
-        className={`group relative p-4 rounded-xl border cursor-pointer transition-all duration-300`}
+                                                className={`group relative p-4 rounded-xl border cursor-pointer transition-all duration-300`}
         style={{ backgroundColor: isSelected ? `${PRIMARY[50]}` : BACKGROUND.DEFAULT, borderColor: isSelected ? PRIMARY[400] : BORDER.DEFAULT }}
-    >
+                                            >
         {isSelected && (
-            <div className="absolute top-0 left-0 w-1 h-full rounded-l-xl" style={{ backgroundColor: PRIMARY[500] }} />
-        )}
-        <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0">
-                <div
+                                                    <div className="absolute top-0 left-0 w-1 h-full rounded-l-xl" style={{ backgroundColor: PRIMARY[500] }} />
+                                                )}
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="flex-shrink-0">
+                                                        <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${isSelected ? 'ring-2 ring-primary-300' : 'group-hover:ring-2 group-hover:ring-primary-200'}`}
                     style={{ backgroundColor: isSelected ? PRIMARY[200] : PRIMARY[100] }}
-                >
-                    <FiUser
+                                                        >
+                                                            <FiUser
                         className={`w-6 h-6 transition-all duration-200 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}
-                        style={{ color: PRIMARY[600] }}
-                    />
-                </div>
-            </div>
+                                                                style={{ color: PRIMARY[600] }}
+                                                            />
+                                                        </div>
+                                                    </div>
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between mb-1">
                     <h3 className={`font-semibold truncate transition-all duration-200 ${isSelected ? 'text-lg' : 'text-base'}`}
-                        style={{ color: TEXT.PRIMARY }}
-                    >
-                        {student.studentName}
-                    </h3>
-                    <div className="flex items-center space-x-2 ml-2">
-                        <StatusBadge status={student.status} type="consent" />
-                        <StatusBadge status={student.vaccinationStatus} type="vaccination" />
-                    </div>
-                </div>
+                                                                style={{ color: TEXT.PRIMARY }}
+                                                            >
+                                                                {student.studentName}
+                                                            </h3>
+                                                            <div className="flex items-center space-x-2 ml-2">
+                                                                <StatusBadge status={student.status} type="consent" />
+                                                                <StatusBadge status={student.vaccinationStatus} type="vaccination" />
+                                                            </div>
+                                                        </div>
 
-                <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center space-x-1">
-                        <FiUsers className="w-4 h-4" style={{ color: GRAY[400] }} />
-                        <span style={{ color: TEXT.SECONDARY }}>
-                            Lớp {student.className}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                                        <div className="flex items-center space-x-4 text-sm">
+                                                            <div className="flex items-center space-x-1">
+                                                                <FiUsers className="w-4 h-4" style={{ color: GRAY[400] }} />
+                                                                <span style={{ color: TEXT.SECONDARY }}>
+                                                                    Lớp {student.className}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-        {student.vaccinationStatus === "InProgress" && (
-            <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                    <span style={{ color: TEXT.SECONDARY }}>Trạng thái tiêm</span>
-                    <span style={{ color: PRIMARY[600] }}>Đang chờ tiêm</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div className="h-1.5 rounded-full transition-all duration-500" style={{ backgroundColor: PRIMARY[500], width: '60%' }} />
-                </div>
-            </div>
-        )}
-    </div>
+                                                {student.vaccinationStatus === "InProgress" && (
+                                                    <div className="mt-3">
+                                                        <div className="flex items-center justify-between text-xs mb-1">
+                                                            <span style={{ color: TEXT.SECONDARY }}>Trạng thái tiêm</span>
+                                                            <span style={{ color: PRIMARY[600] }}>Đang chờ tiêm</span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                                            <div className="h-1.5 rounded-full transition-all duration-500" style={{ backgroundColor: PRIMARY[500], width: '60%' }} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
 );
 
 const VaccinationPanel = ({ selectedStudent, sessionId, onEdit }) => (
-    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}>
-        <div className="px-6 py-4 border-b flex items-center" style={{ background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`, borderColor: PRIMARY[200] }}>
-            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${PRIMARY[500]}20` }}>
-                <FiActivity className="h-6 w-6" style={{ color: PRIMARY[700] }} />
-            </div>
-            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
-                Thông tin tiêm chủng
-            </h2>
-        </div>
+                    <div className="bg-white rounded-2xl shadow-lg border overflow-hidden" style={{ borderColor: BORDER.DEFAULT, boxShadow: `0 4px 6px -1px ${SHADOW.LIGHT}, 0 2px 4px -1px ${SHADOW.DEFAULT}` }}>
+                        <div className="px-6 py-4 border-b flex items-center" style={{ background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${PRIMARY[100]} 100%)`, borderColor: PRIMARY[200] }}>
+                            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: `${PRIMARY[500]}20` }}>
+                                <FiActivity className="h-6 w-6" style={{ color: PRIMARY[700] }} />
+                            </div>
+                            <h2 className="text-xl font-semibold" style={{ color: PRIMARY[700] }}>
+                                Thông tin tiêm chủng
+                            </h2>
+                        </div>
 
-        <div className="p-6">
-            {selectedStudent ? (
-                (selectedStudent.vaccinationStatus === "Completed" || selectedStudent.vaccinationStatus === "NotVaccinated") ? (
+                        <div className="p-6">
+                            {selectedStudent ? (
+                                (selectedStudent.vaccinationStatus === "Completed" || selectedStudent.vaccinationStatus === "NotVaccinated") ? (
                     <VaccinationResult student={selectedStudent} sessionId={sessionId} onEdit={onEdit} />
-                ) : (
+                                ) : (
                     <VaccinationForm student={selectedStudent} onSubmit={onEdit} sessionId={sessionId} />
-                )
-            ) : (
-                <div className="text-center py-12">
-                    <div className="h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: PRIMARY[100] }}>
-                        <FiUser className="h-10 w-10" style={{ color: PRIMARY[500] }} />
-                    </div>
-                    <p className="text-lg font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
-                        Chọn học sinh để tiêm chủng
-                    </p>
-                    <p style={{ color: TEXT.SECONDARY }}>
-                        Vui lòng chọn một học sinh từ danh sách bên trái
-                    </p>
-                </div>
-            )}
+                                )
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: PRIMARY[100] }}>
+                                        <FiUser className="h-10 w-10" style={{ color: PRIMARY[500] }} />
+                                    </div>
+                                    <p className="text-lg font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>
+                                        Chọn học sinh để tiêm chủng
+                                    </p>
+                                    <p style={{ color: TEXT.SECONDARY }}>
+                                        Vui lòng chọn một học sinh từ danh sách bên trái
+                                    </p>
+                                </div>
+                            )}
+                        </div>
         </div>
-    </div>
-);
+    );
 
 const VaccinationResult = ({ student, sessionId, onEdit }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -514,15 +514,15 @@ const VaccinationResult = ({ student, sessionId, onEdit }) => {
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsEditing(true)}
-                        className="w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md flex items-center justify-center"
-                        style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
-                    >
-                        <FiEdit className="w-4 h-4 mr-2" />
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            className="w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md flex items-center justify-center"
+                            style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
+                        >
+                            <FiEdit className="w-4 h-4 mr-2" />
                         Xem và chỉnh sửa kết quả
-                    </button>
+                        </button>
                 </div>
             ) : (
                 <VaccinationForm
@@ -564,9 +564,9 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
 
         if (isEditing) {
             setLocalIsSubmitting(true);
-            try {
-                const data = {
-                    studentId: student.studentId,
+        try {
+            const data = {
+                studentId: student.studentId,
                     isVaccinated: currentSelectedOption === "vaccinated",
                     noteAfterSession: currentFormData.noteAfterSession || '',
                     symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason
@@ -592,7 +592,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
         } else {
             setLocalIsSubmitting(true);
             try {
-                let response;
+            let response;
                 if (student.vaccinationStatus === "InProgress") {
                     if (currentSelectedOption === "vaccinated") {
                         const data = {
@@ -600,8 +600,8 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                             symptoms: currentFormData.symptoms,
                             noteAfterSession: currentFormData.noteAfterSession
                         };
-                        response = await vaccineSessionApi.markStudentVaccinated(sessionId, data);
-                    } else {
+                response = await vaccineSessionApi.markStudentVaccinated(sessionId, data);
+            } else {
                         const data = {
                             studentId: student.studentId,
                             reason: currentFormData.reason,
@@ -611,7 +611,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                     }
                 } else {
                     const data = {
-                        studentId: student.studentId,
+                    studentId: student.studentId,
                         isVaccinated: currentSelectedOption === "vaccinated",
                         noteAfterSession: currentFormData.noteAfterSession || '',
                         symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason
@@ -619,8 +619,8 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                     response = await vaccineSessionApi.updateVaccinationResult(sessionId, data);
                 }
 
-                if (response.success) {
-                    await onSubmit({
+            if (response.success) {
+                await onSubmit({
                         vaccinationStatus: currentSelectedOption === "vaccinated" ? "Completed" : "NotVaccinated",
                         studentId: student.studentId,
                         symptoms: currentSelectedOption === "vaccinated" ? currentFormData.symptoms : currentFormData.reason,
@@ -628,12 +628,12 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                     });
                     setLocalFormData({ symptoms: 'Không có triệu chứng', noteAfterSession: '', reason: '' });
                     setLocalSelectedOption("vaccinated");
-                } else {
+            } else {
                     setError(response.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
-                }
-            } catch (error) {
+            }
+        } catch (error) {
                 setError(error.message || "Có lỗi xảy ra khi cập nhật kết quả tiêm chủng.");
-            } finally {
+        } finally {
                 setLocalIsSubmitting(false);
             }
         }
@@ -651,7 +651,7 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
 
     const handleSelectOption = (option) => {
         if (isEditing) {
-            setSelectedOption(option);
+        setSelectedOption(option);
         } else {
             setLocalSelectedOption(option);
             setLocalFormData({ symptoms: '', noteAfterSession: '', reason: '' });
@@ -662,21 +662,21 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
     return (
         <div className="space-y-6">
             {!isEditing && (
-                <div className="p-4 rounded-xl border" style={{ backgroundColor: PRIMARY[50], borderColor: PRIMARY[200] }}>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: PRIMARY[100] }}>
-                            <FiUser className="w-6 h-6" style={{ color: PRIMARY[600] }} />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-semibold" style={{ color: PRIMARY[700] }}>
-                                {student.studentName}
-                            </h3>
+            <div className="p-4 rounded-xl border" style={{ backgroundColor: PRIMARY[50], borderColor: PRIMARY[200] }}>
+                <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: PRIMARY[100] }}>
+                        <FiUser className="w-6 h-6" style={{ color: PRIMARY[600] }} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold" style={{ color: PRIMARY[700] }}>
+                            {student.studentName}
+                        </h3>
                             <p className="text-sm" style={{ color: PRIMARY[600] }}>
-                                Lớp {student.className}
-                            </p>
-                        </div>
+                            Lớp {student.className}
+                        </p>
                     </div>
                 </div>
+            </div>
             )}
             {error && (
                 <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-xl">
@@ -699,75 +699,75 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
 
             {(!isEditing || !loading) && (
                 <>
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium mb-4" style={{ color: TEXT.SECONDARY }}>
-                            Chọn trạng thái tiêm
-                        </label>
-                        <div className="flex gap-4">
-                            <button
-                                type="button"
-                                onClick={() => handleSelectOption("vaccinated")}
+            <div className="mb-6">
+                <label className="block text-sm font-medium mb-4" style={{ color: TEXT.SECONDARY }}>
+                    Chọn trạng thái tiêm
+                </label>
+                <div className="flex gap-4">
+                    <button
+                        type="button"
+                        onClick={() => handleSelectOption("vaccinated")}
                                 className={`py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "vaccinated" ? "text-white" : "text-gray-700 border-gray-400"}`}
-                                style={{
+                        style={{
                                     backgroundColor: currentSelectedOption === "vaccinated" ? SUCCESS[500] : GRAY[100],
                                     borderColor: currentSelectedOption === "vaccinated" ? SUCCESS[500] : BORDER.DEFAULT,
                                     flex: isEditing && student.vaccinationStatus === "Completed" ? "1" : "1"
-                                }}
-                            >
-                                <FiCheckCircle className="w-4 h-4 mr-2 inline" />
-                                Đã Tiêm
-                            </button>
+                        }}
+                    >
+                        <FiCheckCircle className="w-4 h-4 mr-2 inline" />
+                        Đã Tiêm
+                    </button>
                             {!(isEditing && student.vaccinationStatus === "Completed") && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleSelectOption("notVaccinated")}
+                    <button
+                        type="button"
+                        onClick={() => handleSelectOption("notVaccinated")}
                                     className={`py-3 rounded-xl text-sm font-medium transition-all text-center border-2 ${currentSelectedOption === "notVaccinated" ? "text-white" : "text-gray-700 border-gray-400"}`}
-                                    style={{
+                        style={{
                                         backgroundColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : GRAY[100],
                                         borderColor: currentSelectedOption === "notVaccinated" ? ERROR[500] : BORDER.DEFAULT,
                                         flex: "1"
-                                    }}
-                                >
+                        }}
+                    >
                                     <FiXCircle className="w-4 h-4 mr-2 inline" /> Không Tiêm
-                                </button>
+                    </button>
                             )}
-                        </div>
+                </div>
                         <p className="text-xs mt-2" style={{ color: TEXT.SECONDARY }}>
                             {currentSelectedOption === "vaccinated" ? "Chọn khi học sinh đã được tiêm chủng thành công" : "Chọn khi học sinh chưa được tiêm chủng (có lý do cụ thể)"}
                         </p>
-                    </div>
+            </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
                         {currentSelectedOption === "vaccinated" ? (
-                            <div>
-                                <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
-                                    Triệu chứng sau tiêm *
-                                </label>
-                                <textarea
-                                    name="symptoms"
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
+                                Triệu chứng sau tiêm *
+                            </label>
+                            <textarea
+                                name="symptoms"
                                     value={currentFormData.symptoms}
-                                    onChange={handleInputChange}
+                                onChange={handleInputChange}
                                     placeholder="Nhập triệu chứng sau tiêm (nếu không có triệu chứng, ghi 'Không có triệu chứng')..."
-                                    rows="3"
-                                    className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
-                                />
-                            </div>
-                        ) : (
-                            <div>
-                                <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
-                                    Lý do không tiêm *
-                                </label>
-                                <textarea
-                                    name="reason"
+                                rows="3"
+                                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
+                            />
+                        </div>
+                ) : (
+                        <div>
+                            <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
+                                Lý do không tiêm *
+                            </label>
+                            <textarea
+                                name="reason"
                                     value={currentFormData.reason}
-                                    onChange={handleInputChange}
+                                onChange={handleInputChange}
                                     placeholder="Nhập lý do không tiêm (ví dụ: học sinh bị ốm, phụ huynh từ chối, v.v.)..."
-                                    rows="3"
-                                    className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
-                                    style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
-                                />
-                            </div>
+                                rows="3"
+                                className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
+                            />
+                        </div>
                         )}
 
                         <div>
@@ -810,30 +810,30 @@ const VaccinationForm = ({ student, sessionId, onSubmit, isEditing = false, sele
                                         ) : (
                                             <>
                                                 <FiCheck className="w-4 h-4 mr-2" /> Lưu thay đổi
-                                            </>
-                                        )}
+                    </>
+                )}
                                     </button>
                                 </div>
                             ) : (
-                                <button
-                                    type="submit"
+                    <button
+                        type="submit"
                                     disabled={currentIsSubmitting}
-                                    className="w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                                    style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
-                                >
+                        className="w-full px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE }}
+                    >
                                     {currentIsSubmitting ? (
-                                        <>
+                            <>
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Đang lưu...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FiCheck className="w-4 h-4 mr-2" /> Xác nhận
-                                        </>
-                                    )}
-                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <FiCheck className="w-4 h-4 mr-2" /> Xác nhận
+                            </>
+                        )}
+                    </button>
                             )}
-                        </div>
-                    </form>
+                </div>
+            </form>
                 </>
             )}
         </div>
