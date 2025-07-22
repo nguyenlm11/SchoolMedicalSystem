@@ -67,6 +67,19 @@ const healthCheckApi = {
             };
         }
     },
+    // Lấy danh sách kế hoạch kiểm tra sức khỏe
+    getHealthCheckPlans: async (params = {}) => {
+        try {
+            const response = await apiClient.get('/health-checks', { params });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách kế hoạch kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 
