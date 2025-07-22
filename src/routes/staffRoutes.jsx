@@ -20,6 +20,7 @@ import ChangePassword from "../pages/auth/ChangePassword";
 import MedicationUsageManagement from "../pages/nurse/MedicationUsageManagement";
 import HealthCheckCategoryManagement from "../pages/nurse/HealthCheckCategoryManagement";
 import HealthCheckPlanCreate from "../pages/nurse/HealthCheckPlanCreate";
+import HealthCheckManagement from "../pages/nurse/HealthCheckManagement";
 import VaccineTypes from "../pages/nurse/VaccineTypes";
 
 const PlaceholderPage = ({ title }) => (
@@ -48,6 +49,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/vaccine-types" element={<VaccineTypes />} />
 
     {/* Health Check Routes */}
+    <Route path="/schoolnurse/health-check" element={<HealthCheckManagement />} />
     <Route path="/schoolnurse/health-check/create" element={<HealthCheckPlanCreate />} />
     <Route path="/schoolnurse/health-check-items" element={<HealthCheckCategoryManagement />} />
 

@@ -5,8 +5,7 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, WARNING, INFO, ERROR 
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
-import vaccineSessionApi from "../../api/vaccineSessionApi";
-import vaccineApi from "../../api/vaccineApi";
+import healthCheckApi from "../../api/healthCheckApi";
 
 const TAB_CONFIG = [
     { key: "planning", label: "Lên kế hoạch", icon: FiClock, color: WARNING, status: "PendingApproval" },
@@ -17,10 +16,10 @@ const TAB_CONFIG = [
     { key: "assigned", label: "Được phân công", icon: FiUser, color: INFO, status: null }
 ];
 
-const VaccinationManagement = () => {
+const HealthCheckManagement = () => {
     const [activeTab, setActiveTab] = useState("planning");
     const [allData, setAllData] = useState([]);
-    const [vaccinationList, setVaccinationList] = useState([]);
+    const [healthCheckList, setHealthCheckList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -29,7 +28,6 @@ const VaccinationManagement = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [stats, setStats] = useState({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, declined: 0 });
-    const user = JSON.parse(localStorage.getItem("user"));
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
@@ -53,19 +51,19 @@ const VaccinationManagement = () => {
         if (!selectedItemId) return;
         try {
             setDeleteLoading(true);
-            const response = await vaccineApi.deleteVaccinationSession(selectedItemId);
+            const response = await healthCheckApi.deleteHealthCheckPlan(selectedItemId);
             if (response.success) {
-                showAlert("success", "Thành công", "Đã xóa buổi tiêm chủng thành công!");
+                showAlert("success", "Thành công", "Đã xóa kế hoạch kiểm tra sức khỏe thành công!");
                 setShowConfirmModal(false);
-                if (vaccinationList.length === 1 && currentPage > 1) {
+                if (healthCheckList.length === 1 && currentPage > 1) {
                     setCurrentPage(currentPage - 1);
                 }
-                await fetchVaccinationSessions();
+                await fetchHealthCheckPlans();
             } else {
-                showAlert("error", "Lỗi", response.message || "Không thể xóa buổi tiêm chủng. Vui lòng thử lại.");
+                showAlert("error", "Lỗi", response.message || "Không thể xóa kế hoạch kiểm tra sức khỏe. Vui lòng thử lại.");
             }
         } catch (error) {
-            showAlert("error", "Lỗi", "Có lỗi xảy ra khi xóa buổi tiêm chủng. Vui lòng thử lại.");
+            showAlert("error", "Lỗi", "Có lỗi xảy ra khi xóa kế hoạch kiểm tra sức khỏe. Vui lòng thử lại.");
         } finally {
             setDeleteLoading(false);
             setSelectedItemId(null);
@@ -90,19 +88,16 @@ const VaccinationManagement = () => {
     }, [activeTab, currentPage, allData]);
 
     useEffect(() => {
-        fetchVaccinationSessions();
+        fetchHealthCheckPlans();
     }, [debouncedSearchTerm, activeTab]);
 
-    const fetchVaccinationSessions = async () => {
+    const fetchHealthCheckPlans = async () => {
         try {
-            const params = { pageIndex: 1, pageSize: 1000, orderBy: "startTime" };
+            const params = { pageIndex: 1, pageSize: 1000, orderBy: "scheduledDate" };
             if (debouncedSearchTerm) {
                 params.searchTerm = debouncedSearchTerm;
             }
-            if (activeTab === 'assigned' && user?.id) {
-                params.nurseId = user.id;
-            }
-            const response = await vaccineSessionApi.getVaccineSessions(params);
+            const response = await healthCheckApi.getHealthCheckPlans(params);
             if (response.success) {
                 setAllData(response.data);
                 calculateStats(response.data);
@@ -129,7 +124,11 @@ const VaccinationManagement = () => {
     };
 
     const resetStats = () => {
-        setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, assigned: 0 });
+        const initialStats = {};
+        TAB_CONFIG.forEach(tab => {
+            initialStats[tab.key] = 0;
+        });
+        setStats(initialStats);
     };
 
     const filterAndPaginateData = () => {
@@ -138,11 +137,10 @@ const VaccinationManagement = () => {
         if (currentTab && currentTab.status) {
             filteredData = allData.filter(item => item.status === currentTab.status);
         }
-        // Nếu cần filter assigned thì xử lý riêng ở đây
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedData = filteredData.slice(startIndex, endIndex);
-        setVaccinationList(paginatedData);
+        setHealthCheckList(paginatedData);
         setTotalCount(filteredData.length);
         setTotalPages(Math.ceil(filteredData.length / pageSize));
     };
@@ -151,14 +149,13 @@ const VaccinationManagement = () => {
     const getStatusBadge = (status) => {
         const statusConfig = {
             "PendingApproval": { label: "Lên kế hoạch", color: WARNING, icon: FiClock },
-            "WaitingForParentConsent": { label: "Chờ phụ huynh", color: PRIMARY, icon: FiAlertTriangle },
+            "WaitingForParentConsent": { label: "Chờ phụ huynh", color: PRIMARY, icon: FiCalendar },
             "Scheduled": { label: "Đã lên lịch", color: INFO, icon: FiCalendar },
             "Completed": { label: "Đã hoàn thành", color: SUCCESS, icon: FiCheckCircle },
             "Declined": { label: "Đã bị từ chối", color: ERROR, icon: FiAlertTriangle }
         };
         const config = statusConfig[status];
         if (!config) return null;
-
         return (
             <span className="px-3 py-1 inline-flex items-center text-sm font-medium rounded-lg"
                 style={{ backgroundColor: config.color[50], color: config.color[700] }}>
@@ -171,7 +168,6 @@ const VaccinationManagement = () => {
     const DashboardCard = ({ tab, stats }) => {
         const config = TAB_CONFIG.find(t => t.key === tab);
         if (!config) return null;
-
         return (
             <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                 style={{ background: `linear-gradient(135deg, ${config.color[500]} 0%, ${config.color[600]} 100%)`, borderColor: config.color[200] }}>
@@ -193,7 +189,7 @@ const VaccinationManagement = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách tiêm chủng..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải danh sách kế hoạch kiểm tra sức khỏe..." />
             </div>
         );
     }
@@ -204,18 +200,18 @@ const VaccinationManagement = () => {
                 <div className="mb-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý tiêm chủng</h1>
+                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý kiểm tra sức khỏe</h1>
                             <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Quản lý kế hoạch và lịch tiêm chủng của học sinh
+                                Quản lý kế hoạch và lịch kiểm tra sức khỏe của học sinh
                             </p>
                         </div>
                         <Link
-                            to="/schoolnurse/vaccination/create"
+                            to="/schoolnurse/health-check/create"
                             className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                             style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                         >
                             <FiPlus className="mr-2 h-5 w-5" />
-                            Tạo buổi tiêm chủng
+                            Tạo kế hoạch kiểm tra
                         </Link>
                     </div>
                 </div>
@@ -234,7 +230,7 @@ const VaccinationManagement = () => {
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo tên buổi tiêm chủng..."
+                                        placeholder="Tìm kiếm theo tiêu đề kế hoạch..."
                                         className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
                                         value={searchTerm}
@@ -278,9 +274,9 @@ const VaccinationManagement = () => {
                             <thead>
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
                                     {[
-                                        "Tiêm chủng",
-                                        "Lớp",
-                                        "Ngày tiêm",
+                                        "Kế hoạch",
+                                        "Địa điểm",
+                                        "Ngày kiểm tra",
                                         "Trạng thái",
                                         "Tham gia",
                                         "Thao tác"
@@ -292,63 +288,57 @@ const VaccinationManagement = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                                {vaccinationList.length > 0 ? (
-                                    vaccinationList.map((vaccination, index) => (
-                                        <tr key={vaccination.id} className="hover:bg-opacity-50 transition-all duration-200 group"
+                                {healthCheckList.length > 0 ? (
+                                    healthCheckList.map((plan, index) => (
+                                        <tr key={plan.id} className="hover:bg-opacity-50 transition-all duration-200 group"
                                             style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}>
                                             <td className="py-4 px-6">
                                                 <div className="flex flex-col">
-                                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{vaccination.sessionName || "Buổi tiêm chủng"}</span>
-                                                    <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>{vaccination.vaccineTypeName || "Không xác định"}</span>
+                                                    <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{plan.title || "Kế hoạch kiểm tra"}</span>
+                                                    <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>{plan.description || "Không xác định"}</span>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {(vaccination.classes || []).map((cls, idx) => (
-                                                        <span key={idx} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                                                            {cls.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
+                                                <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>{plan.location || "Không xác định"}</span>
                                             </td>
                                             <td className="py-4 px-6">
                                                 <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                    {new Date(vaccination.startTime).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                    {plan.scheduledDate ? new Date(plan.scheduledDate).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-"}
                                                 </span>
-                                                {vaccination.startTime && vaccination.endTime && (
+                                                {plan.startTime && plan.endTime && (
                                                     <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
-                                                        {new Date(vaccination.startTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(plan.startTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                                         -
-                                                        {new Date(vaccination.endTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                                                        {new Date(plan.endTime).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
                                                 )}
                                             </td>
                                             <td className="py-4 px-6">
-                                                {getStatusBadge(vaccination.status)}
+                                                {getStatusBadge(plan.status)}
                                             </td>
                                             <td className="py-4 px-6">
                                                 <div>
                                                     <div className="text-sm font-medium" style={{ color: PRIMARY[600] }}>
-                                                        {vaccination.confirmedCount || vaccination.approvedStudents}/{vaccination.totalStudents}
+                                                        {plan.approvedStudents}/{plan.totalStudents}
                                                     </div>
                                                     <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
                                                     <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                                                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((vaccination.approvedStudents) / (vaccination.totalStudents)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
+                                                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((plan.approvedStudents) / (plan.totalStudents || 1)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
                                                 <div className="flex items-center space-x-3">
-                                                    <Link to={`/schoolnurse/vaccination/${vaccination.id}`} className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
+                                                    <Link to={`/schoolnurse/health-check/${plan.id}`} className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
                                                         <FiEye className="h-4 w-4" />
                                                     </Link>
                                                     <button
-                                                        onClick={() => confirmDelete(vaccination.id, vaccination.sessionName)}
+                                                        onClick={() => confirmDelete(plan.id, plan.title)}
                                                         className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                                         disabled={deleteLoading}
-                                                        title="Xóa buổi tiêm chủng"
+                                                        title="Xóa kế hoạch kiểm tra"
                                                     >
-                                                        {deleteLoading && selectedItemId === vaccination.id ? (
+                                                        {deleteLoading && selectedItemId === plan.id ? (
                                                             <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
                                                         ) : (
                                                             <FiTrash2 className="h-4 w-4" />
@@ -363,15 +353,15 @@ const VaccinationManagement = () => {
                                         <td colSpan="6" className="text-center py-12">
                                             <div className="flex flex-col items-center justify-center">
                                                 <FiCalendar className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
-                                                <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>Không có buổi tiêm chủng nào</h3>
+                                                <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>Không có kế hoạch kiểm tra nào</h3>
                                                 <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
-                                                    {searchTerm ? "Không tìm thấy kết quả phù hợp với từ khóa tìm kiếm." : "Chưa có buổi tiêm chủng nào được tạo."}
+                                                    {searchTerm ? "Không tìm thấy kết quả phù hợp với từ khóa tìm kiếm." : "Chưa có kế hoạch kiểm tra nào được tạo."}
                                                 </p>
                                                 {!searchTerm && (
-                                                    <Link to="/schoolnurse/vaccination/create" className="inline-flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                                                    <Link to="/schoolnurse/health-check/create" className="inline-flex items-center px-4 py-2 rounded-lg transition-all duration-200 hover:opacity-80"
                                                         style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}>
                                                         <FiPlus className="mr-2 h-4 w-4" />
-                                                        Tạo buổi tiêm chủng đầu tiên
+                                                        Tạo kế hoạch đầu tiên
                                                     </Link>
                                                 )}
                                             </div>
@@ -395,7 +385,7 @@ const VaccinationManagement = () => {
                                 </span>{" "}
                                 trong tổng số{" "}
                                 <span className="font-bold" style={{ color: PRIMARY[600] }}>{totalCount}</span>{" "}
-                                buổi tiêm chủng
+                                kế hoạch kiểm tra
                             </div>
 
                             <div className="flex items-center space-x-2">
@@ -454,7 +444,7 @@ const VaccinationManagement = () => {
                 onClose={() => { if (!deleteLoading) { setShowConfirmModal(false); setSelectedItemId(null); setSelectedItemName("") } }}
                 onConfirm={handleDelete}
                 title="Xác nhận xóa"
-                message={`Bạn có chắc chắn muốn xóa buổi tiêm chủng ${selectedItemName}?`}
+                message={`Bạn có chắc chắn muốn xóa kế hoạch kiểm tra ${selectedItemName}?`}
                 confirmText="Xóa"
                 cancelText="Hủy"
                 type="error"
@@ -472,4 +462,4 @@ const VaccinationManagement = () => {
     );
 };
 
-export default VaccinationManagement;
+export default HealthCheckManagement;
