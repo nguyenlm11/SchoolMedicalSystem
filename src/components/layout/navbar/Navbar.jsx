@@ -177,6 +177,7 @@ const Navbar = () => {
                     links: [
                         { to: "/schoolnurse/vaccination", label: "Quản lý tiêm chủng", desc: "Theo dõi lịch tiêm chủng" },
                         { to: "/schoolnurse/vaccination/create", label: "Tạo buổi tiêm chủng", desc: "Tạo buổi tiêm chủng mới" },
+                        { to: "/schoolnurse/vaccine-types", label: "Danh sách loại vaccine", desc: "Xem tất cả các loại vaccine" },
                     ],
                 },
                 {
