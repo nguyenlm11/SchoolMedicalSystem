@@ -478,9 +478,9 @@ const HealthCheckRow = ({ plan, index, getStatusBadge, renderActionMenu }) => (
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
             <div className="flex flex-wrap gap-1">
-                {(plan.classNurseAssignments || []).map((cls) => (
-                    <span key={cls.classId} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                        {cls.className}
+                {(plan.classNames || []).map((name, idx) => (
+                    <span key={idx} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                        {name}
                     </span>
                 ))}
             </div>

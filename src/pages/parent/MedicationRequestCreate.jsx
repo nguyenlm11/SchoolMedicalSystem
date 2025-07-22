@@ -18,7 +18,7 @@ const TIMES_OF_DAY = [
 const QUANTITY_UNITS = [
     { value: 'Tablet', label: 'Viên' },
     { value: 'Bottle', label: 'Chai' },
-    { value: 'Package', label: 'Gói' }
+    { value: 'Pack', label: 'Gói' }
 ];
 
 const PRIORITY_OPTIONS = [

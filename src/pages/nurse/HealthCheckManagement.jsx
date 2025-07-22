@@ -274,6 +274,7 @@ const HealthCheckManagement = () => {
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
                                     {[
                                         "Kế hoạch",
+                                        "Lớp",
                                         "Địa điểm",
                                         "Ngày kiểm tra",
                                         "Trạng thái",
@@ -295,6 +296,15 @@ const HealthCheckManagement = () => {
                                                 <div className="flex flex-col">
                                                     <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{plan.title || "Kế hoạch kiểm tra"}</span>
                                                     <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>{plan.description || "Không xác định"}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-6">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(plan.classNames || []).map((name, idx) => (
+                                                        <span key={idx} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                                                            {name}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
