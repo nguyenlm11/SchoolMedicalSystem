@@ -33,17 +33,25 @@ function getTimeTabs(timesOfDay = []) {
     return tabs;
 }
 
-const initialForm = {
-    dosageUsed: '',
-    note: '',
-    administeredTime: '',
+const initialForm = { dosageUsed: '', note: '', administeredTime: '' };
+
+const getVNDateString = (date = new Date()) => {
+    const tzOffset = 7 * 60;
+    const local = new Date(date.getTime() + (tzOffset - date.getTimezoneOffset()) * 60000);
+    return local.toISOString().slice(0, 10);
 };
 
 const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, studentName, medicationName, defaultTime, timesOfDay = [], onSuccess, }) => {
     const timeTabs = getTimeTabs(timesOfDay);
     const [activeTimeTab, setActiveTimeTab] = useState(timeTabs[0]?.key || 'Morning');
     const [activeStatusTab, setActiveStatusTab] = useState('Used');
-    const [formState, setFormState] = useState(() => {
+    const [formErrors, setFormErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [alert, setAlert] = useState({ open: false, type: 'info', title: '', message: '' });
+    const [disabledTabs, setDisabledTabs] = useState({});
+    const [formState, setFormState] = useState({});
+
+    const initializeFormState = () => {
         const obj = {};
         timeTabs.forEach(time => {
             obj[time.key] = {};
@@ -52,86 +60,43 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
             });
         });
         return obj;
-    });
-    const [formErrors, setFormErrors] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState({ open: false, type: 'info', title: '', message: '' });
-    const [disabledTabs, setDisabledTabs] = useState({});
+    };
 
-    // Helper: lấy ngày yyyy-MM-dd từ defaultTime hoặc hôm nay
-    function getUsageDate() {
-        if (defaultTime) {
-            return new Date(defaultTime).toISOString().slice(0, 10);
-        }
-        const now = new Date();
-        return now.toISOString().slice(0, 10);
-    }
-
-    // Fetch usage history khi mở modal
     useEffect(() => {
         async function fetchUsageHistory() {
             if (!isOpen || !medicationId) return;
-            const usageDate = getUsageDate();
-            const res = await medicationUsageApi.getMedicationUsageHistory({
-                medicationId,
-                pageIndex: 1,
-                pageSize: 1000,
-                fromDate: usageDate,
-                toDate: usageDate
-            });
-            if (res && res.success && Array.isArray(res.data)) {
-                // Tìm các administeredPeriod đã có Used/Skipped/Missed
+            const usageDate = defaultTime ? getVNDateString(new Date(defaultTime)) : getVNDateString();
+            const res = await medicationUsageApi.getMedicationUsageHistory({ medicationId, pageIndex: 1, pageSize: 1000, fromDate: usageDate, toDate: usageDate });
+            if (res?.success && Array.isArray(res.data)) {
                 const periodsDone = {};
                 res.data.forEach(item => {
-                    if (['Used', 'Skipped', 'Missed'].includes(item.status) && item.administeredPeriod) {
+                    if (item.administeredPeriod) {
                         periodsDone[item.administeredPeriod] = true;
                     }
                 });
-                // Disable các tab buổi đã khai báo
+
                 const disabled = {};
                 timeTabs.forEach(tab => {
                     if (tab.key !== 'Emergency' && periodsDone[tab.key]) {
                         disabled[tab.key] = true;
                     }
                 });
-                // Nếu tất cả các buổi (trừ Emergency) đã disable thì disable hết (trừ Emergency)
-                const allDisabled = timeTabs.filter(t => t.key !== 'Emergency').every(t => disabled[t.key]);
-                if (allDisabled) {
-                    timeTabs.forEach(tab => {
-                        if (tab.key !== 'Emergency') disabled[tab.key] = true;
-                    });
-                }
                 setDisabledTabs(disabled);
-                // Luôn chọn lại tab buổi đầu tiên chưa disable (trừ Emergency) cho mỗi thuốc
                 const firstEnabled = timeTabs.find(t => !disabled[t.key] && t.key !== 'Emergency');
                 setActiveTimeTab(firstEnabled?.key || 'Emergency');
-            } else {
-                setDisabledTabs({});
-            }
+            } else { setDisabledTabs({}) }
         }
         fetchUsageHistory();
-        // eslint-disable-next-line
     }, [isOpen, medicationId, defaultTime, timesOfDay]);
 
-    // Reset lại state khi mở modal hoặc timesOfDay thay đổi
     useEffect(() => {
         if (isOpen) {
-            // Luôn chọn tab buổi đầu tiên chưa disable (trừ Emergency)
-            let firstTab = timeTabs.find(t => t.key !== 'Emergency');
+            const firstTab = timeTabs.find(t => t.key !== 'Emergency');
+            setFormState(initializeFormState());
             setActiveStatusTab('Used');
-            setFormState(() => {
-                const obj = {};
-                timeTabs.forEach(time => {
-                    obj[time.key] = {};
-                    STATUS_TABS.forEach(status => {
-                        obj[time.key][status.key] = { ...initialForm, administeredTime: defaultTime || '' };
-                    });
-                });
-                return obj;
-            });
+            setActiveTimeTab(firstTab?.key || 'Emergency');
             setFormErrors({});
             setAlert({ open: false, type: 'info', title: '', message: '' });
-            setActiveTimeTab(firstTab?.key || 'Emergency');
         }
     }, [isOpen, defaultTime, timesOfDay]);
 
@@ -153,7 +118,7 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
             [activeTimeTab]: {
                 ...prev[activeTimeTab],
                 [activeStatusTab]: {
-                    ...prev[activeTimeTab][activeStatusTab],
+                    ...prev[activeTimeTab]?.[activeStatusTab],
                     [name]: value,
                 },
             },
@@ -164,29 +129,31 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
     };
 
     const validate = () => {
-        const form = formState[activeTimeTab][activeStatusTab];
+        const form = formState[activeTimeTab]?.[activeStatusTab] || initialForm;
         const errors = {};
         if (!form.administeredTime) {
             errors.administeredTime = 'Vui lòng chọn thời gian.';
         } else {
-            const now = new Date();
-            const inputTime = new Date(form.administeredTime);
+            const today = getVNDateString();
+            const inputDateTime = new Date(`${today}T${form.administeredTime}:00`);
+            const nowVN = new Date();
+            if (inputDateTime > nowVN) {
+                errors.administeredTime = 'Không thể ghi nhận thời gian ở tương lai.';
+            }
+
             const timeRange = TIME_OF_DAY_RANGES[activeTimeTab];
             if (timeRange && activeTimeTab !== 'Emergency') {
-                const inputHour = inputTime.getHours();
+                const inputHour = inputDateTime.getHours();
                 if (inputHour < timeRange.start || inputHour >= timeRange.end) {
                     const tabLabel = TIME_OF_DAY_LABELS[activeTimeTab]?.label || activeTimeTab;
                     errors.administeredTime = `Thời gian cho uống phải nằm trong khung giờ ${tabLabel} (${timeRange.start}:00 - ${timeRange.end}:00).`;
                 }
             }
-            if (!errors.administeredTime && inputTime > now) {
-                errors.administeredTime = 'Thời gian cho uống không được ở trong tương lai.';
-            }
         }
-        if (activeStatusTab === 'Used' && !form.dosageUsed.trim()) {
+        if (activeStatusTab === 'Used' && !form.dosageUsed?.trim()) {
             errors.dosageUsed = 'Vui lòng nhập liều dùng.';
         }
-        if ((activeStatusTab === 'Missed' || activeStatusTab === 'Skipped') && !form.note.trim()) {
+        if ((activeStatusTab === 'Missed' || activeStatusTab === 'Skipped') && !form.note?.trim()) {
             errors.note = 'Vui lòng nhập lý do.';
         }
         setFormErrors(errors);
@@ -198,13 +165,15 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
         if (!validate()) return;
         setLoading(true);
         try {
-            const form = formState[activeTimeTab][activeStatusTab];
+            const form = formState[activeTimeTab]?.[activeStatusTab] || initialForm;
+            const today = getVNDateString();
+            const administeredTime = `${today}T${form.administeredTime}:00`;
             const body = {
                 status: activeStatusTab,
                 dosageUsed: form.dosageUsed,
                 note: form.note,
                 isMakeupDose: activeTimeTab === 'Emergency',
-                administeredTime: form.administeredTime,
+                administeredTime,
             };
             const res = await medicationUsageApi.recordMedicationAdministration(medicationId, body);
             if (!res.success) throw new Error(res.message || 'Có lỗi xảy ra khi ghi nhận việc cho thuốc');
@@ -216,10 +185,8 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
             setLoading(false);
         }
     };
-
     if (!isOpen) return null;
-    // Khi truy cập form, nếu không tồn tại thì trả về initialForm mặc định
-    const form = (formState[activeTimeTab] && formState[activeTimeTab][activeStatusTab]) ? formState[activeTimeTab][activeStatusTab] : initialForm;
+    const form = formState[activeTimeTab]?.[activeStatusTab] || initialForm;
 
     return (
         <>
@@ -297,7 +264,7 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
                                 {activeStatusTab === 'Used' && (
                                     <div>
                                         <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
-                                            Liều dùng thực tế <span style={{ color: ERROR[500] }}>*</span>
+                                            Liều dùng *
                                         </label>
                                         <input
                                             type="text"
@@ -316,10 +283,10 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
                                 )}
                                 <div className={activeStatusTab === 'Used' ? '' : 'lg:col-span-2'}>
                                     <label className="block text-sm font-semibold mb-1" style={{ color: TEXT.PRIMARY }}>
-                                        Thời gian cho uống <span style={{ color: ERROR[500] }}>*</span>
+                                        Thời gian *
                                     </label>
                                     <input
-                                        type="datetime-local"
+                                        type="time"
                                         name="administeredTime"
                                         value={form.administeredTime}
                                         onChange={handleChange}
@@ -351,6 +318,7 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
                                     <p className="text-xs mt-1" style={{ color: ERROR[500] }}>{formErrors.note}</p>
                                 )}
                             </div>
+
                             <button
                                 type="submit"
                                 disabled={loading}
