@@ -56,10 +56,68 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
     const [formErrors, setFormErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState({ open: false, type: 'info', title: '', message: '' });
+    const [disabledTabs, setDisabledTabs] = useState({});
 
+    // Helper: lấy ngày yyyy-MM-dd từ defaultTime hoặc hôm nay
+    function getUsageDate() {
+        if (defaultTime) {
+            return new Date(defaultTime).toISOString().slice(0, 10);
+        }
+        const now = new Date();
+        return now.toISOString().slice(0, 10);
+    }
+
+    // Fetch usage history khi mở modal
+    useEffect(() => {
+        async function fetchUsageHistory() {
+            if (!isOpen || !medicationId) return;
+            const usageDate = getUsageDate();
+            const res = await medicationUsageApi.getMedicationUsageHistory({
+                medicationId,
+                pageIndex: 1,
+                pageSize: 1000,
+                fromDate: usageDate,
+                toDate: usageDate
+            });
+            if (res && res.success && Array.isArray(res.data)) {
+                // Tìm các administeredPeriod đã có Used/Skipped/Missed
+                const periodsDone = {};
+                res.data.forEach(item => {
+                    if (['Used', 'Skipped', 'Missed'].includes(item.status) && item.administeredPeriod) {
+                        periodsDone[item.administeredPeriod] = true;
+                    }
+                });
+                // Disable các tab buổi đã khai báo
+                const disabled = {};
+                timeTabs.forEach(tab => {
+                    if (tab.key !== 'Emergency' && periodsDone[tab.key]) {
+                        disabled[tab.key] = true;
+                    }
+                });
+                // Nếu tất cả các buổi (trừ Emergency) đã disable thì disable hết (trừ Emergency)
+                const allDisabled = timeTabs.filter(t => t.key !== 'Emergency').every(t => disabled[t.key]);
+                if (allDisabled) {
+                    timeTabs.forEach(tab => {
+                        if (tab.key !== 'Emergency') disabled[tab.key] = true;
+                    });
+                }
+                setDisabledTabs(disabled);
+                // Luôn chọn lại tab buổi đầu tiên chưa disable (trừ Emergency) cho mỗi thuốc
+                const firstEnabled = timeTabs.find(t => !disabled[t.key] && t.key !== 'Emergency');
+                setActiveTimeTab(firstEnabled?.key || 'Emergency');
+            } else {
+                setDisabledTabs({});
+            }
+        }
+        fetchUsageHistory();
+        // eslint-disable-next-line
+    }, [isOpen, medicationId, defaultTime, timesOfDay]);
+
+    // Reset lại state khi mở modal hoặc timesOfDay thay đổi
     useEffect(() => {
         if (isOpen) {
-            setActiveTimeTab(timeTabs[0]?.key || 'Morning');
+            // Luôn chọn tab buổi đầu tiên chưa disable (trừ Emergency)
+            let firstTab = timeTabs.find(t => t.key !== 'Emergency');
             setActiveStatusTab('Used');
             setFormState(() => {
                 const obj = {};
@@ -73,6 +131,7 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
             });
             setFormErrors({});
             setAlert({ open: false, type: 'info', title: '', message: '' });
+            setActiveTimeTab(firstTab?.key || 'Emergency');
         }
     }, [isOpen, defaultTime, timesOfDay]);
 
@@ -159,7 +218,8 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
     };
 
     if (!isOpen) return null;
-    const form = formState[activeTimeTab][activeStatusTab];
+    // Khi truy cập form, nếu không tồn tại thì trả về initialForm mặc định
+    const form = (formState[activeTimeTab] && formState[activeTimeTab][activeStatusTab]) ? formState[activeTimeTab][activeStatusTab] : initialForm;
 
     return (
         <>
@@ -174,19 +234,22 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="flex flex-col border-r py-6 px-2 gap-2 bg-gray-50" style={{ width: '180px' }}>
-                        {timeTabs.map(tab => (
-                            <button
-                                key={tab.key}
-                                type="button"
-                                className={`flex items-center w-full px-3 py-2 rounded-lg font-semibold transition-all duration-200 text-sm focus:outline-none border ${activeTimeTab === tab.key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-teal-400'}`}
-                                style={activeTimeTab === tab.key ? { boxShadow: '0 2px 8px 0 rgba(0,128,128,0.08)' } : {}}
-                                onClick={() => handleTimeTabChange(tab.key)}
-                                disabled={loading}
-                            >
-                                {tab.icon}
-                                <span className="ml-2" style={{ whiteSpace: 'nowrap', overflow: 'visible' }}>{tab.label}</span>
-                            </button>
-                        ))}
+                        {timeTabs.map(tab => {
+                            const isDisabled = loading || (tab.key !== 'Emergency' && disabledTabs[tab.key]);
+                            return (
+                                <button
+                                    key={tab.key}
+                                    type="button"
+                                    className={`flex items-center w-full px-3 py-2 rounded-lg font-semibold transition-all duration-200 text-sm focus:outline-none border ${activeTimeTab === tab.key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-700 border-gray-200'} ${isDisabled ? 'opacity-50 cursor-not-allowed hover:bg-gray-100 hover:border-teal-400' : ''}`}
+                                    style={activeTimeTab === tab.key ? { boxShadow: '0 2px 8px 0 rgba(0,128,128,0.08)' } : {}}
+                                    onClick={() => !isDisabled && handleTimeTabChange(tab.key)}
+                                    disabled={isDisabled}
+                                >
+                                    {tab.icon}
+                                    <span className="ml-2" style={{ whiteSpace: 'nowrap', overflow: 'visible' }}>{tab.label}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                     <div className="flex-1 flex flex-col">
                         <div className="flex items-center justify-between px-14 pt-12 pb-8 border-b" style={{ borderColor: BORDER.LIGHT, background: `linear-gradient(90deg, ${PRIMARY[50]}, ${PRIMARY[100]})` }}>

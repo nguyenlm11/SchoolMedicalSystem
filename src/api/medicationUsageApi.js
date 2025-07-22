@@ -286,6 +286,57 @@ const medicationUsageApi = {
                 errors: []
             };
         }
+    },
+
+    // Lấy lịch sử dùng thuốc theo medicationId
+    getMedicationUsageHistory: async (params = {}) => {
+        try {
+            const {
+                medicationId = '',
+                pageIndex = 1,
+                pageSize = 1000,
+                fromDate = '',
+                toDate = '',
+                status = '' // Used, Skipped, Missed
+            } = params;
+
+            if (!medicationId) {
+                return {
+                    success: false,
+                    message: "Thiếu medicationId",
+                    data: [],
+                    totalCount: 0,
+                    pageSize,
+                    currentPage: pageIndex,
+                    totalPages: 0,
+                    errors: []
+                };
+            }
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+            if (fromDate) queryParams.append('fromDate', fromDate);
+            if (toDate) queryParams.append('toDate', toDate);
+            if (status) queryParams.append('status', status);
+
+            const response = await apiClient.get(`/student-medications/medications/${medicationId}/usage-history?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể lấy lịch sử dùng thuốc",
+                data: [],
+                totalCount: 0,
+                pageSize: 10,
+                currentPage: 1,
+                totalPages: 0,
+                errors: []
+            };
+        }
     }
 };
 

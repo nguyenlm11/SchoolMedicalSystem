@@ -6,6 +6,7 @@ import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
 import StudentMedicationAdministerModal from '../../components/modal/StudentMedicationAdministerModal';
+import { useNavigate } from 'react-router-dom';
 
 const FILTER_TABS = [
     { key: 'Approved', label: 'Đã duyệt', icon: <FiCheckCircle className="h-4 w-4" /> },
@@ -28,6 +29,7 @@ const MedicationUsageManagement = () => {
     const nurseId = user?.id || '';
     const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
     const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit] || unit;
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -348,6 +350,15 @@ const MedicationUsageManagement = () => {
                                                             >
                                                                 <FiEdit className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Ghi nhận KQ</span>
+                                                            </button>
+
+                                                            <button
+                                                                className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                style={{ color: PRIMARY[600] }}
+                                                                onClick={() => navigate(`/schoolnurse/medication-usage-history/${item.id}`)}
+                                                            >
+                                                                <FiEye className="w-4 h-4 flex-shrink-0" />
+                                                                <span>Lịch sử uống</span>
                                                             </button>
 
                                                             <button
