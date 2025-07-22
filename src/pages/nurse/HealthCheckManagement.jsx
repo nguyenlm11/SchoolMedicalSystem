@@ -97,6 +97,9 @@ const HealthCheckManagement = () => {
             if (debouncedSearchTerm) {
                 params.searchTerm = debouncedSearchTerm;
             }
+            if (activeTab === 'assigned' && user?.id) {
+                params.nurseId = user.id;
+            }
             const response = await healthCheckApi.getHealthCheckPlans(params);
             if (response.success) {
                 setAllData(response.data);
@@ -124,11 +127,7 @@ const HealthCheckManagement = () => {
     };
 
     const resetStats = () => {
-        const initialStats = {};
-        TAB_CONFIG.forEach(tab => {
-            initialStats[tab.key] = 0;
-        });
-        setStats(initialStats);
+        setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, declined: 0 });
     };
 
     const filterAndPaginateData = () => {

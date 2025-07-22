@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { FiHome, FiUsers, FiUserCheck, FiTablet, FiPackage, FiLogOut, FiMenu, FiX, FiBell, FiUser } from "react-icons/fi";
+import { FiHome, FiUsers, FiUserCheck, FiTablet, FiPackage, FiLogOut, FiMenu, FiX, FiBell, FiUser, FiClipboard, FiShield, FiActivity } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SHADOW } from "../../constants/colors";
 import { useAuth } from "../../utils/AuthContext";
 import UnauthorizedPage from "../../pages/auth/UnauthorizedPage";
@@ -54,8 +54,13 @@ const ManagerLayout = () => {
         },
         {
             path: "/manager/vaccination-list-management",
-            name: "Danh sách tiêm chủng",
-            icon: <FiPackage className="w-5 h-5" />,
+            name: "Tiêm chủng",
+            icon: <FiShield className="w-5 h-5" />,
+        },
+        {
+            path: "/manager/health-check-list-management",
+            name: "Khám sức khỏe",
+            icon: <FiActivity className="w-5 h-5" />,
         },
         {
             path: "/manager/medicine-inventory",
