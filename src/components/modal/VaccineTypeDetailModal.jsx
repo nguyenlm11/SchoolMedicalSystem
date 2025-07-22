@@ -76,9 +76,6 @@ const VaccineTypeDetailModal = ({
         </button>
         <div className="p-8 pb-4">
           <div className="flex items-center mb-6">
-            {isView && <FiEye className="w-6 h-6 text-blue-500 mr-2" />}
-            {isEdit && <FiEdit2 className="w-6 h-6 text-yellow-500 mr-2" />}
-            {isCreate && <FiPlus className="w-6 h-6 text-green-500 mr-2" />}
             <h2 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
               {isView ? 'Chi tiết loại vaccine' : isEdit ? 'Chỉnh sửa loại vaccine' : 'Thêm loại vaccine mới'}
             </h2>
@@ -146,7 +143,8 @@ const VaccineTypeDetailModal = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center transition-all duration-200 ${isCreate ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600'} ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center transition-all duration-200 ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                style={{ backgroundColor: PRIMARY[500], color: 'white', borderColor: PRIMARY[600], boxShadow: `0 1px 2px ${PRIMARY[900]}20` }}
               >
                 {isLoading ? (
                   <>
