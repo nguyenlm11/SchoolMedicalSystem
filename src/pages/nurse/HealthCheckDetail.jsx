@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiCalendar, FiClipboard, FiCheckCircle, FiEdit, FiBookmark, FiMapPin, FiXOctagon, FiAlertTriangle, FiUserCheck, FiUserPlus, FiShield } from "react-icons/fi";
-import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND, BORDER, COMMON } from "../../constants/colors";
+import { FiArrowLeft, FiCalendar, FiClipboard, FiCheckCircle, FiEdit, FiBookmark, FiXOctagon, FiAlertTriangle, FiUserCheck, FiUserPlus, FiShield } from "react-icons/fi";
+import { PRIMARY, GRAY, ERROR, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import healthCheckApi from '../../api/healthCheckApi';
 import Loading from "../../components/Loading";
+import AssignHealthCheckNurseModal from "../../components/modal/AssignHealthCheckNurseModal";
 
 const HealthCheckDetail = () => {
     const { id } = useParams();
@@ -11,6 +12,7 @@ const HealthCheckDetail = () => {
     const [loading, setLoading] = useState(true);
     const [healthCheck, setHealthCheck] = useState(null);
     const [error, setError] = useState(null);
+    const [showAssignModal, setShowAssignModal] = useState(false);
 
     useEffect(() => {
         fetchHealthCheckDetails();
@@ -216,6 +218,58 @@ const HealthCheckDetail = () => {
                         )}
                     </div>
                 </div>
+
+                {/* PHẦN MỚI: Hạng mục kiểm tra sức khỏe */}
+                <div className="bg-white rounded-xl shadow-sm border mb-6" style={{ borderColor: BORDER.DEFAULT }}>
+                    <div className="p-6">
+                        <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                Hạng mục kiểm tra sức khỏe
+                            </h3>
+                            <button
+                                className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all duration-200"
+                                style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700], border: `1px solid ${PRIMARY[200]}` }}
+                                onClick={() => setShowAssignModal(true)}
+                            >
+                                <FiUserPlus className="h-4 w-4" />
+                                Phân công y tá
+                            </button>
+                        </div>
+                        {healthCheck.healthCheckItems && healthCheck.healthCheckItems.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {healthCheck.healthCheckItems.map((item) => {
+                                    const assignment = (healthCheck.itemNurseAssignments || []).find(a => a.healthCheckItemId === item.id);
+                                    return (
+                                        <div key={item.id} className="p-4 border rounded-lg flex flex-col space-y-2" style={{ borderColor: BORDER.DEFAULT, backgroundColor: GRAY[50] }}>
+                                            <div className="flex items-center space-x-2">
+                                                <FiClipboard className="h-4 w-4" style={{ color: PRIMARY[600] }} />
+                                                <span className="font-medium" style={{ color: TEXT.PRIMARY }}>{item.name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <FiUserCheck className="h-4 w-4" style={{ color: PRIMARY[600] }} />
+                                                <span className="text-sm" style={{ color: TEXT.SECONDARY }}>
+                                                    Y tá phụ trách: {assignment?.nurseName || "Chưa phân công"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center text-gray-500 py-8">
+                                <FiClipboard className="mx-auto h-8 w-8 mb-2" />
+                                Chưa có hạng mục kiểm tra sức khỏe
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <AssignHealthCheckNurseModal
+                    isOpen={showAssignModal}
+                    onClose={() => setShowAssignModal(false)}
+                    planId={id}
+                    onNurseAssigned={() => { setShowAssignModal(false); fetchHealthCheckDetails(); }}
+                />
 
                 <div className="bg-white rounded-xl shadow-sm border" style={{ borderColor: BORDER.DEFAULT }}>
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
