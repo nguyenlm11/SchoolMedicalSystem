@@ -25,6 +25,7 @@ import HealthCheckManagement from "../pages/nurse/HealthCheckManagement";
 import HealthCheckDetail from "../pages/nurse/HealthCheckDetail";
 
 import VaccineTypes from "../pages/nurse/VaccineTypes";
+import MedicationUsageHistory from "../pages/nurse/MedicationUsageHistory";
 
 
 const PlaceholderPage = ({ title }) => (
@@ -41,6 +42,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/medication-requests" element={<MedicationRequestManagement />} />
     <Route path="/schoolnurse/medication-requests/:id" element={<MedicationRequestDetail />} />
     <Route path="/schoolnurse/medication-usage" element={<MedicationUsageManagement />} />
+    <Route path="/schoolnurse/medication-usage-history/:id" element={<MedicationUsageHistory />} />
     <Route path="/schoolnurse/medical-items/:id" element={<MedicalItemDetail />} />
     <Route path="/schoolnurse/supply" element={<NurseSupplyPage />} />
 
