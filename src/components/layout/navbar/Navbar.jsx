@@ -203,7 +203,7 @@ const Navbar = () => {
                     links: [
                         { to: "/schoolnurse/health-check", label: "Quản lý kiểm tra", desc: "Theo dõi lịch khám" },
                         { to: "/schoolnurse/health-check-items", label: "Danh sách mục kiểm tra", desc: "Xem danh sách mục kiểm tra" },
-                        { to: "/schoolnurse/health-check/new", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
+                        { to: "/schoolnurse/health-check/create", label: "Lên lịch kiểm tra mới", desc: "Tạo lịch khám mới" },
                     ],
                 },
                 {

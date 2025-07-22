@@ -54,6 +54,19 @@ const healthCheckApi = {
             };
         }
     },
+    // Tạo mới kế hoạch kiểm tra sức khỏe
+    createHealthCheckPlan: async (data) => {
+        try {
+            const response = await apiClient.post('/health-checks', data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể tạo kế hoạch kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 
