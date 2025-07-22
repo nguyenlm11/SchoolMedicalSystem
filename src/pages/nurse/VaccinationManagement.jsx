@@ -129,7 +129,7 @@ const VaccinationManagement = () => {
     };
 
     const resetStats = () => {
-        setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, assigned: 0 });
+        setStats({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, declined: 0 });
     };
 
     const filterAndPaginateData = () => {
@@ -138,7 +138,6 @@ const VaccinationManagement = () => {
         if (currentTab && currentTab.status) {
             filteredData = allData.filter(item => item.status === currentTab.status);
         }
-        // Nếu cần filter assigned thì xử lý riêng ở đây
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedData = filteredData.slice(startIndex, endIndex);

@@ -80,6 +80,73 @@ const healthCheckApi = {
             };
         }
     },
+    // Lấy chi tiết kế hoạch kiểm tra sức khỏe
+    getHealthCheckPlanDetails: async (id) => {
+        try {
+            const response = await apiClient.get(`/health-checks/${id}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy chi tiết kế hoạch kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
+    // Duyệt kế hoạch kiểm tra sức khỏe
+    approveHealthCheckPlan: async (id) => {
+        try {
+            const response = await apiClient.put(`/health-checks/${id}/approve`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể duyệt kế hoạch khám sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
+    // Từ chối kế hoạch kiểm tra sức khỏe
+    declineHealthCheckPlan: async (id, reason) => {
+        try {
+            const response = await apiClient.put(`/health-checks/${id}/decline`, null, {
+                params: { reason }
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể từ chối kế hoạch khám sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
+    // Chốt danh sách kế hoạch kiểm tra sức khỏe
+    finalizeHealthCheckPlan: async (id) => {
+        try {
+            const response = await apiClient.put(`/health-checks/${id}/finalize`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể chốt danh sách kế hoạch khám sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
+    // Hoàn thành kế hoạch kiểm tra sức khỏe
+    completeHealthCheckPlan: async (id) => {
+        try {
+            const response = await apiClient.put(`/health-checks/${id}/complete`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể hoàn thành kế hoạch khám sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 

@@ -6,10 +6,10 @@ import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
 import ConfirmModal from "../../components/modal/ConfirmModal";
 import ConfirmActionModal from "../../components/modal/ConfirmActionModal";
-import vaccineSessionApi from '../../api/vaccineSessionApi';
+import healthCheckApi from '../../api/healthCheckApi';
 
-const VaccinationListManagement = () => {
-    const [vaccinationList, setVaccinationList] = useState([]);
+const HealthCheckListManagement = () => {
+    const [healthCheckList, setHealthCheckList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filters, setFilters] = useState({ status: '' });
@@ -22,8 +22,8 @@ const VaccinationListManagement = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [selectedHealthCheck, setSelectedHealthCheck] = useState(null);
     const [showConfirmActionModal, setShowConfirmActionModal] = useState(false);
-    const [selectedVaccination, setSelectedVaccination] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -48,13 +48,14 @@ const VaccinationListManagement = () => {
     }, [filters.status]);
 
     useEffect(() => {
-        fetchVaccinationSessions();
+        fetchHealthCheckPlans();
     }, [currentPage, pageSize, searchTerm, filters.status]);
 
-    const fetchVaccinationSessions = async () => {
+    const fetchHealthCheckPlans = async () => {
         try {
-            const data = await vaccineSessionApi.getVaccineSessions({ pageIndex: currentPage, pageSize: 10, searchTerm });
-            setVaccinationList(data.data);
+            setLoading(true);
+            const data = await healthCheckApi.getHealthCheckPlans({ pageIndex: currentPage, pageSize: 10, searchTerm });
+            setHealthCheckList(data.data);
             setTotalCount(data.totalCount);
             setTotalPages(data.totalPages);
             setLoading(false);
@@ -86,10 +87,10 @@ const VaccinationListManagement = () => {
     };
 
     const getStats = () => {
-        const upcomingCount = vaccinationList.filter((v) => v.status === "PendingApproval" || v.status === "WaitingForParentConsent").length;
-        const completedCount = vaccinationList.filter((v) => v.status === "Scheduled").length;
-        const totalStudentsCount = vaccinationList.reduce((sum, v) => sum + (v.totalStudents || 0), 0);
-        return { upcoming: upcomingCount, completed: completedCount, totalStudents: totalStudentsCount };
+        const upcomingCount = healthCheckList.filter((v) => v.status === "PendingApproval" || v.status === "WaitingForParentConsent").length;
+        const completedCount = healthCheckList.filter((v) => v.status === "Scheduled").length;
+        const totalClassesCount = healthCheckList.reduce((sum, v) => sum + (v.classIds?.length || 0), 0);
+        return { upcoming: upcomingCount, completed: completedCount, totalClasses: totalClassesCount };
     };
 
     const handleFilterChange = (filterType, value) => {
@@ -110,7 +111,7 @@ const VaccinationListManagement = () => {
     const closeModal = () => {
         setShowConfirmModal(false);
         setShowConfirmActionModal(false);
-        setSelectedVaccination(null);
+        setSelectedHealthCheck(null);
     };
 
     const handleApiAction = async (apiCall, successMessage) => {
@@ -118,7 +119,7 @@ const VaccinationListManagement = () => {
             setLoading(true);
             const result = await apiCall();
             if (result.success) {
-                await fetchVaccinationSessions();
+                await fetchHealthCheckPlans();
                 showAlert("success", successMessage);
             } else {
                 showAlert("error", result.message || "Không thể thực hiện thao tác.");
@@ -129,19 +130,18 @@ const VaccinationListManagement = () => {
             setLoading(false);
         }
     };
-
-    const handleApprove = (sessionId) =>
-        handleApiAction(() => vaccineSessionApi.approveVaccineSession(sessionId), "Đã duyệt kế hoạch tiêm chủng thành công!");
+    const handleApprove = (planId) =>
+        handleApiAction(() => healthCheckApi.approveHealthCheckPlan(planId), "Đã duyệt kế hoạch khám sức khỏe thành công!");
     const handleReject = (reason) => {
         closeModal();
-        handleApiAction(() => vaccineSessionApi.declineVaccineSession(selectedVaccination.id, reason), "Đã từ chối kế hoạch tiêm chủng thành công!");
+        handleApiAction(() => healthCheckApi.declineHealthCheckPlan(selectedHealthCheck.id, reason), "Đã từ chối kế hoạch khám sức khỏe thành công!");
     };
-    const handleFinalize = (sessionId) =>
-        handleApiAction(() => vaccineSessionApi.finalizeVaccineSession(sessionId), "Đã chốt danh sách thành công!");
-    const handleComplete = (sessionId) =>
-        handleApiAction(() => vaccineSessionApi.completeVaccineSession(sessionId), "Đã hoàn thành tiêm chủng thành công!");
-    const openActionModal = (vaccination, action) => {
-        setSelectedVaccination(vaccination);
+    const handleFinalize = (planId) =>
+        handleApiAction(() => healthCheckApi.finalizeHealthCheckPlan(planId), "Đã chốt danh sách thành công!");
+    const handleComplete = (planId) =>
+        handleApiAction(() => healthCheckApi.completeHealthCheckPlan(planId), "Đã hoàn thành khám sức khỏe thành công!");
+    const openActionModal = (plan, action) => {
+        setSelectedHealthCheck(plan);
         setOpenActionId(null);
         if (action === 'reject') {
             setShowConfirmActionModal(true);
@@ -149,24 +149,21 @@ const VaccinationListManagement = () => {
             setShowConfirmModal(true);
         }
     };
-
-    const renderActionMenu = (vaccination) => {
-        const { status } = vaccination;
+    const renderActionMenu = (plan) => {
+        const { status } = plan;
         const isPending = status === "PendingApproval";
         const isWaiting = status === "WaitingForParentConsent";
         const isScheduled = status === "Scheduled";
-
         return (
             <div className="relative">
                 <button
-                    onClick={() => setOpenActionId(openActionId === vaccination.id ? null : vaccination.id)}
+                    onClick={() => setOpenActionId(openActionId === plan.id ? null : plan.id)}
                     className="p-1.5 sm:p-2 rounded-lg transition-all duration-200 hover:bg-opacity-90 hover:shadow-md"
                     style={{ backgroundColor: GRAY[100], color: TEXT.PRIMARY }}
                 >
                     <FiMoreVertical className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
-
-                {openActionId === vaccination.id && (
+                {openActionId === plan.id && (
                     <div
                         ref={dropdownRef}
                         className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
@@ -178,83 +175,72 @@ const VaccinationListManagement = () => {
                                     icon={FiCheck}
                                     text="Duyệt kế hoạch"
                                     color={SUCCESS[600]}
-                                    onClick={() => openActionModal(vaccination, 'approve')}
+                                    onClick={() => openActionModal(plan, 'approve')}
                                 />
                                 <ActionButton
                                     icon={FiX}
                                     text="Từ chối"
                                     color={ERROR[600]}
-                                    onClick={() => openActionModal(vaccination, 'reject')}
+                                    onClick={() => openActionModal(plan, 'reject')}
                                 />
                             </>
                         )}
-
                         {isWaiting && (
                             <ActionButton
                                 icon={FiCheckCircle}
                                 text="Chốt danh sách"
                                 color={PRIMARY[600]}
-                                onClick={() => openActionModal(vaccination, 'finalize')}
+                                onClick={() => openActionModal(plan, 'finalize')}
                             />
                         )}
-
                         {isScheduled && (
                             <ActionButton
                                 icon={FiCheckCircle}
                                 text="Hoàn thành"
                                 color={SUCCESS[600]}
-                                onClick={() => openActionModal(vaccination, 'complete')}
+                                onClick={() => openActionModal(plan, 'complete')}
                             />
                         )}
-
                         <ActionButton
                             icon={FiEye}
                             text="Xem chi tiết"
                             color={PRIMARY[600]}
                             onClick={() => setOpenActionId(null)}
                             isLink={true}
-                            linkTo={`/manager/vaccination/${vaccination.id}`}
+                            linkTo={`/manager/health-check/${plan.id}`}
                         />
                     </div>
                 )}
             </div>
         );
     };
-
-    const getConfirmModalProps = () => {
-        const { status } = selectedVaccination || {};
-        const modalConfig = {
-            PendingApproval: {
-                title: "Xác nhận duyệt kế hoạch",
-                message: "Bạn có chắc chắn muốn duyệt kế hoạch tiêm chủng này?",
-                confirmText: "Duyệt",
-                action: () => { closeModal(); handleApprove(selectedVaccination?.id) }
-            },
-            WaitingForParentConsent: {
-                title: "Xác nhận chốt danh sách",
-                message: "Bạn có chắc chắn muốn chốt danh sách cho buổi tiêm chủng này?",
-                confirmText: "Chốt danh sách",
-                action: () => { closeModal(); handleFinalize(selectedVaccination?.id) }
-            },
-            Scheduled: {
-                title: "Xác nhận hoàn thành",
-                message: "Bạn có chắc chắn muốn đánh dấu buổi tiêm chủng này là đã hoàn thành?",
-                confirmText: "Hoàn thành",
-                action: () => { closeModal(); handleComplete(selectedVaccination?.id) }
-            }
-        };
-        return modalConfig[status] || { title: "Xác nhận", message: "Bạn có chắc chắn?", confirmText: "Xác nhận", action: () => { } };
+    const ActionButton = ({ icon: Icon, text, color, onClick, isLink = false, linkTo = "" }) => {
+        const buttonContent = (
+            <>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span>{text}</span>
+            </>
+        );
+        const buttonClass = "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150";
+        return isLink ? (
+            <button className={buttonClass} style={{ color }} onClick={onClick}>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Link to={linkTo}>{text}</Link>
+            </button>
+        ) : (
+            <button onClick={onClick} className={buttonClass} style={{ color }}>
+                {buttonContent}
+            </button>
+        );
     };
 
-    const filteredVaccinations = vaccinationList.filter(vaccination => {
-        const matchesSearch = vaccination.sessionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            vaccination.vaccineTypeName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = !filters.status || vaccination.status === filters.status;
+    const filteredHealthChecks = healthCheckList.filter(plan => {
+        const matchesSearch = (plan.title || "").toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = !filters.status || plan.status === filters.status;
         return matchesSearch && matchesStatus;
     });
 
     const stats = getStats();
-    const confirmModalProps = getConfirmModalProps();
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -262,8 +248,8 @@ const VaccinationListManagement = () => {
                 <div className="mb-8">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý tiêm chủng</h1>
-                            <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>Quản lý kế hoạch và lịch tiêm chủng của học sinh</p>
+                            <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>Quản lý khám sức khỏe</h1>
+                            <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>Quản lý kế hoạch và lịch khám sức khỏe của học sinh</p>
                         </div>
                     </div>
                 </div>
@@ -271,7 +257,7 @@ const VaccinationListManagement = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <StatsCard title="Kế hoạch sắp tới" value={stats.upcoming} bgColor="#00897B" icon={FiCalendar} />
                     <StatsCard title="Đã chốt danh sách" value={stats.completed} bgColor="#4CAF50" icon={FiCheckCircle} />
-                    <StatsCard title="Tổng học sinh" value={stats.totalStudents} bgColor="#FFA726" icon={FiUsers} />
+                    <StatsCard title="Tổng lớp" value={stats.totalClasses} bgColor="#FFA726" icon={FiUsers} />
                 </div>
 
                 <div className="rounded-2xl shadow-xl border backdrop-blur-sm mb-6" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
@@ -285,11 +271,11 @@ const VaccinationListManagement = () => {
 
                 {loading ? (
                     <div className="flex justify-center items-center h-64">
-                        <Loading type="medical" size="large" color={PRIMARY[500]} text="Đang tải danh sách tiêm chủng..." />
+                        <Loading type="medical" size="large" color={PRIMARY[500]} text="Đang tải danh sách kế hoạch..." />
                     </div>
                 ) : (
-                    <VaccinationTable
-                        filteredVaccinations={filteredVaccinations}
+                    <HealthCheckTable
+                        filteredHealthChecks={filteredHealthChecks}
                         getStatusBadge={getStatusBadge}
                         renderActionMenu={renderActionMenu}
                         resetFilters={resetFilters}
@@ -302,31 +288,65 @@ const VaccinationListManagement = () => {
                 )}
             </div>
 
-            <ConfirmModal
-                isOpen={showConfirmModal}
-                onClose={closeModal}
-                onConfirm={confirmModalProps.action}
-                title={confirmModalProps.title}
-                message={confirmModalProps.message}
-                confirmText={confirmModalProps.confirmText}
-                type="approve"
-            />
-
-            <ConfirmActionModal
-                isOpen={showConfirmActionModal}
-                onClose={closeModal}
-                onConfirm={handleReject}
-                title="Từ chối kế hoạch"
-                message="Vui lòng nhập lý do từ chối kế hoạch tiêm chủng này"
-                confirmText="Từ chối"
-                type="decline"
-            />
-
             <AlertModal
                 isOpen={alertConfig.show}
                 type={alertConfig.type}
                 message={alertConfig.message}
                 onClose={() => setAlertConfig(prev => ({ ...prev, show: false }))}
+            />
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                onClose={closeModal}
+                onConfirm={() => {
+                    const { status } = selectedHealthCheck || {};
+                    if (status === "PendingApproval") {
+                        closeModal();
+                        handleApprove(selectedHealthCheck?.id);
+                    } else if (status === "WaitingForParentConsent") {
+                        closeModal();
+                        handleFinalize(selectedHealthCheck?.id);
+                    } else if (status === "Scheduled") {
+                        closeModal();
+                        handleComplete(selectedHealthCheck?.id);
+                    }
+                }}
+                title={
+                    selectedHealthCheck?.status === "PendingApproval"
+                        ? "Xác nhận duyệt kế hoạch"
+                        : selectedHealthCheck?.status === "WaitingForParentConsent"
+                            ? "Xác nhận chốt danh sách"
+                            : selectedHealthCheck?.status === "Scheduled"
+                                ? "Xác nhận hoàn thành"
+                                : "Xác nhận"
+                }
+                message={
+                    selectedHealthCheck?.status === "PendingApproval"
+                        ? "Bạn có chắc chắn muốn duyệt kế hoạch khám sức khỏe này?"
+                        : selectedHealthCheck?.status === "WaitingForParentConsent"
+                            ? "Bạn có chắc chắn muốn chốt danh sách cho kế hoạch này?"
+                            : selectedHealthCheck?.status === "Scheduled"
+                                ? "Bạn có chắc chắn muốn đánh dấu kế hoạch này là đã hoàn thành?"
+                                : "Bạn có chắc chắn?"
+                }
+                confirmText={
+                    selectedHealthCheck?.status === "PendingApproval"
+                        ? "Duyệt"
+                        : selectedHealthCheck?.status === "WaitingForParentConsent"
+                            ? "Chốt danh sách"
+                            : selectedHealthCheck?.status === "Scheduled"
+                                ? "Hoàn thành"
+                                : "Xác nhận"
+                }
+                type="approve"
+            />
+            <ConfirmActionModal
+                isOpen={showConfirmActionModal}
+                onClose={closeModal}
+                onConfirm={handleReject}
+                title="Từ chối kế hoạch"
+                message="Vui lòng nhập lý do từ chối kế hoạch khám sức khỏe này"
+                confirmText="Từ chối"
+                type="decline"
             />
         </div>
     );
@@ -352,7 +372,7 @@ const SearchInput = ({ searchTerm, setSearchTerm, debouncedSearchTerm }) => (
             <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
             <input
                 type="text"
-                placeholder="Tìm kiếm kế hoạch tiêm chủng..."
+                placeholder="Tìm kiếm kế hoạch khám sức khỏe..."
                 className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
                 style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY, focusRingColor: `${PRIMARY[500]}` }}
                 value={searchTerm}
@@ -392,42 +412,20 @@ const FilterControls = ({ filters, handleFilterChange, resetFilters }) => (
     </div>
 );
 
-const ActionButton = ({ icon: Icon, text, color, onClick, isLink = false, linkTo = "" }) => {
-    const buttonContent = (
-        <>
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            <span>{text}</span>
-        </>
-    );
-
-    const buttonClass = "w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150";
-
-    return isLink ? (
-        <button className={buttonClass} style={{ color }} onClick={onClick}>
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            <Link to={linkTo}>{text}</Link>
-        </button>
-    ) : (
-        <button onClick={onClick} className={buttonClass} style={{ color }}>
-            {buttonContent}
-        </button>
-    );
-};
-
-const VaccinationTable = ({ filteredVaccinations, getStatusBadge, renderActionMenu, resetFilters, totalPages, currentPage, pageSize, totalCount, paginate }) => (
+const HealthCheckTable = ({ filteredHealthChecks, getStatusBadge, renderActionMenu, resetFilters, totalPages, currentPage, pageSize, totalCount, paginate }) => (
     <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
         <div className="overflow-visible">
             <table className="w-full">
                 <thead>
                     <tr style={{ backgroundColor: PRIMARY[50] }}>
                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: '250px' }}>
-                            Tiêm chủng
+                            Kế hoạch
                         </th>
                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: '150px' }}>
                             Lớp
                         </th>
                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: '150px' }}>
-                            Ngày tiêm
+                            Ngày khám
                         </th>
                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: '150px' }}>
                             Trạng thái
@@ -441,11 +439,11 @@ const VaccinationTable = ({ filteredVaccinations, getStatusBadge, renderActionMe
                     </tr>
                 </thead>
                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
-                    {filteredVaccinations.length > 0 ? (
-                        filteredVaccinations.map((vaccination, index) => (
-                            <VaccinationRow
-                                key={`${vaccination.id}-${index}`}
-                                vaccination={vaccination}
+                    {filteredHealthChecks.length > 0 ? (
+                        filteredHealthChecks.map((plan, index) => (
+                            <HealthCheckRow
+                                key={`${plan.id}-${index}`}
+                                plan={plan}
                                 index={index}
                                 getStatusBadge={getStatusBadge}
                                 renderActionMenu={renderActionMenu}
@@ -470,45 +468,46 @@ const VaccinationTable = ({ filteredVaccinations, getStatusBadge, renderActionMe
     </div>
 );
 
-const VaccinationRow = ({ vaccination, index, getStatusBadge, renderActionMenu }) => (
+const HealthCheckRow = ({ plan, index, getStatusBadge, renderActionMenu }) => (
     <tr className="hover:bg-opacity-50 transition-all duration-200 group" style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}>
         <td className="py-4 px-6" style={{ width: '250px' }}>
             <div className="flex flex-col">
-                <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{vaccination.sessionName}</span>
-                <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>{vaccination.vaccineTypeName}</span>
+                <span className="font-semibold" style={{ color: TEXT.PRIMARY }}>{plan.title}</span>
+                <span className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>{plan.responsibleOrganizationName}</span>
             </div>
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
             <div className="flex flex-wrap gap-1">
-                {vaccination.classes.map((classe) => (
-                    <span key={classe.id} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
-                        {classe.name}
+                {(plan.classNurseAssignments || []).map((cls) => (
+                    <span key={cls.classId} className="px-2 py-1 text-xs font-medium rounded-lg" style={{ backgroundColor: PRIMARY[50], color: PRIMARY[700] }}>
+                        {cls.className}
                     </span>
                 ))}
             </div>
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
             <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                {new Date(vaccination.startTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                {plan.startTime ? new Date(plan.startTime).toLocaleDateString("vi-VN", { year: 'numeric', month: '2-digit', day: '2-digit' }) : "-"}
             </span>
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
-            {getStatusBadge(vaccination.status)}
+            {getStatusBadge(plan.status)}
         </td>
         <td className="py-4 px-6" style={{ width: '150px' }}>
-
             <div>
                 <div className="text-sm font-medium" style={{ color: PRIMARY[600] }}>
-                    {vaccination.approvedStudents}/{vaccination.totalStudents}
+                    {plan.approvedStudents}/{plan.totalStudents}
                 </div>
-                <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>Đã xác nhận</div>
+                <div className="text-xs mt-1" style={{ color: TEXT.SECONDARY }}>
+                    Đã xác nhận
+                </div>
                 <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((vaccination.approvedStudents) / (vaccination.totalStudents)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(((plan.approvedStudents) / (plan.totalStudents || 1)) * 100, 100)}%`, backgroundColor: PRIMARY[500] }}></div>
                 </div>
             </div>
         </td>
         <td className="py-4 px-6 text-center overflow-visible" style={{ width: '100px' }}>
-            {renderActionMenu(vaccination)}
+            {renderActionMenu(plan)}
         </td>
     </tr>
 );
@@ -520,7 +519,7 @@ const EmptyState = ({ resetFilters }) => (
                 <div className="h-20 w-20 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: GRAY[100] }}>
                     <FiCalendar className="h-10 w-10" style={{ color: GRAY[400] }} />
                 </div>
-                <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>Không có kế hoạch tiêm chủng nào</p>
+                <p className="text-xl font-semibold mb-2" style={{ color: TEXT.SECONDARY }}>Không có kế hoạch khám sức khỏe nào</p>
                 <p className="mb-4" style={{ color: TEXT.SECONDARY }}>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
                 <button
                     onClick={resetFilters}
@@ -608,4 +607,4 @@ const Pagination = ({ currentPage, totalPages, pageSize, totalCount, paginate })
     </div>
 );
 
-export default VaccinationListManagement;
+export default HealthCheckListManagement;

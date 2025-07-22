@@ -15,6 +15,8 @@ import StudentHealthProfile from "../pages/student/StudentHealthProfile";
 import ChangePassword from "../pages/auth/ChangePassword";
 import ParentProfile from "../pages/parent/ParentProfile";
 import StudentProfile from "../pages/student/StudentProfile";
+import HealthCheckListManagement from "../pages/manager/HealthCheckListManagement";
+import HealthCheckDetail from "../pages/nurse/HealthCheckDetail";
 
 const PlaceholderPage = ({ title }) => (
   <div className="h-full px-4 sm:px-6 lg:px-8 py-6">
@@ -39,6 +41,8 @@ const managerRoutes = (
     <Route path="/manager/medical-items/:id" element={<MedicalItemDetail />} />
     <Route path="/manager/vaccination-list-management" element={<VaccinationListManagement />} />
     <Route path="/manager/vaccination/:id" element={<VaccinationDetail />} />
+    <Route path="/manager/health-check-list-management" element={<HealthCheckListManagement />} />
+    <Route path="/manager/health-check/:id" element={<HealthCheckDetail />} />
   </Route>
 );
 
