@@ -21,7 +21,11 @@ import MedicationUsageManagement from "../pages/nurse/MedicationUsageManagement"
 import HealthCheckCategoryManagement from "../pages/nurse/HealthCheckCategoryManagement";
 import HealthCheckPlanCreate from "../pages/nurse/HealthCheckPlanCreate";
 import HealthCheckManagement from "../pages/nurse/HealthCheckManagement";
+
 import HealthCheckDetail from "../pages/nurse/HealthCheckDetail";
+
+import VaccineTypes from "../pages/nurse/VaccineTypes";
+
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -46,6 +50,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/vaccination/:id/process" element={<VaccinationProcess />} />
     <Route path="/schoolnurse/vaccination/:id/process/:classId" element={<VaccinationProcess />} />
     <Route path="/schoolnurse/vaccination/create" element={<VaccinationPlanCreate />} />
+    <Route path="/schoolnurse/vaccine-types" element={<VaccineTypes />} />
 
     {/* Health Check Routes */}
     <Route path="/schoolnurse/health-check" element={<HealthCheckManagement />} />
