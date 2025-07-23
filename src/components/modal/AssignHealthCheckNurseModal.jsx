@@ -44,11 +44,13 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
         const res = await healthCheckApi.getHealthCheckPlanDetails(planId);
         if (!res.success) throw new Error(res.message);
         const items = res.data.healthCheckItems || [];
-        const assignedItemIds = (res.data.itemNurseAssignments || [])
-            .filter(assignment => assignment.nurseId !== null)
-            .map(assignment => assignment.healthCheckItemId);
+        const assignedItemIds = nurseList.flatMap(assignment =>
+            assignment.assignedHealthCheckItemIds || []
+        );
+
         const available = items.filter(item => !assignedItemIds.includes(item.id));
         setAvailableItems(available);
+
         if (preselectedItemId && available.find(item => item.id === preselectedItemId)) {
             setAssignments([{ id: 1, nurseId: "", itemIds: [preselectedItemId] }]);
         } else if (available.length > 0) {
@@ -126,10 +128,9 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                     nurseId: assignment.nurseId,
                 }))
             );
-            const res = await healthCheckApi.assignNurseToHealthCheckPlan({
-                planId,
-                assignments: allAssignments,
-            });
+
+            const res = await healthCheckApi.assignNurseToHealthCheckPlan({ planId, assignments: allAssignments });
+
             if (res.success) {
                 setAlertType("success");
                 setAlertMsg(res.message || "Phân công thành công!");
@@ -186,7 +187,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                Phân công nhân viên y tế cho hạng mục
+                                Phân công nhân viên y tế
                             </h3>
                             <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
                                 Chọn nhân viên y tế cho các hạng mục chưa được phân công
@@ -207,10 +208,10 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                         <Loading type="medical" size="large" color="primary" text="Đang tải..." />
                     </div>
                 ) : (
-                    <React.Fragment>
+                    <>
                         <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                             {error && (
-                                <div className="mb-4 p-3 rounded-lg border" style={{ backgroundColor: ERROR[50], borderColor: ERROR[200] }}>
+                                <div className="mb-4 p-3 rounded-lg border" style={{ backgroundColor: `${ERROR[50]}`, borderColor: ERROR[200] }}>
                                     <p className="text-sm" style={{ color: ERROR[700] }}>{error}</p>
                                 </div>
                             )}
@@ -223,7 +224,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                                         <p className="text-sm">Không có hạng mục nào cần phân công thêm</p>
                                     </div>
                                 ) : (
-                                    <React.Fragment>
+                                    <>
                                         <div className="space-y-3">
                                             {assignments.map((assignment, index) => (
                                                 <div key={assignment.id} className="p-4 rounded-lg border" style={{ borderColor: BORDER.DEFAULT }}>
@@ -309,7 +310,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                                                 Thêm
                                             </button>
                                         </div>
-                                    </React.Fragment>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -326,18 +327,18 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, preselectedItemI
                                 </button>
                             </div>
                         </div>
-                    </React.Fragment>
+                    </>
                 )}
-
-                <AlertModal
-                    isOpen={alertOpen}
-                    onClose={handleAlertOk}
-                    title="Thông báo"
-                    message={alertMsg}
-                    type={alertType}
-                    okText="OK"
-                />
             </div>
+
+            <AlertModal
+                isOpen={alertOpen}
+                onClose={handleAlertOk}
+                title="Thông báo"
+                message={alertMsg}
+                type={alertType}
+                okText="OK"
+            />
         </div>
     );
 };
