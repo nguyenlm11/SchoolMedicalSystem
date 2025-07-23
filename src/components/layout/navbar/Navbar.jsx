@@ -195,8 +195,7 @@ const Navbar = () => {
                 {
                     category: "Phụ huynh",
                     links: [
-                        { to: "/parent/health-check", label: "Xác nhận kiểm tra", desc: "Xác nhận lịch khám" },
-                        { to: "/parent/health-check/results", label: "Xem kết quả kiểm tra", desc: "Kết quả khám sức khỏe" },
+                        { to: "/parent/health-check", label: "Lịch kiểm tra sức khỏe", desc: "Xem lịch kiểm tra sức khỏe" },
                     ],
                 },
                 {
