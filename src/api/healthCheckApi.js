@@ -177,6 +177,32 @@ const healthCheckApi = {
             };
         }
     },
+    // Lấy danh sách kế hoạch kiểm tra sức khỏe của học sinh (dành cho phụ huynh)
+    getStudentHealthCheckPlans: async (studentId, params = {}) => {
+        try {
+            if (!studentId) {
+                return {
+                    success: false,
+                    message: 'Student ID là bắt buộc',
+                    data: [],
+                    errors: ['Student ID không được để trống']
+                };
+            }
+            const queryParams = new URLSearchParams();
+            if (params.pageIndex) queryParams.append('pageIndex', params.pageIndex);
+            if (params.pageSize) queryParams.append('pageSize', params.pageSize);
+            // Add more params if needed
+            const response = await apiClient.get(`/health-checks/student/${studentId}?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách kế hoạch kiểm tra sức khỏe của học sinh',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 
