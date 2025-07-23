@@ -10,6 +10,7 @@ import ReassignHealthCheckNurseModal from "../../components/modal/ReassignHealth
 const HealthCheckDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user"));
     const [loading, setLoading] = useState(true);
     const [healthCheck, setHealthCheck] = useState(null);
     const [error, setError] = useState(null);
@@ -335,7 +336,7 @@ const HealthCheckDetail = () => {
                             <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
                                 Hạng mục kiểm tra sức khỏe
                             </h3>
-                            {(() => {
+                            {user?.role === 'manager' && (() => {
                                 const items = healthCheck.healthCheckItems || [];
                                 const assignments = healthCheck.itemNurseAssignments || [];
                                 const unassigned = items.filter(item => {
