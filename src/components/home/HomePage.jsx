@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { FiHeart, FiUsers, FiShield, FiActivity, FiFileText, FiCalendar, FiCheckCircle, FiUserCheck, FiClipboard, FiPieChart, FiBook, FiStar, FiArrowRight, FiPhone, FiMail, FiMapPin, FiClock, FiUser, FiEye, FiAward, FiTarget, FiBookOpen } from 'react-icons/fi';
 import { PRIMARY, BACKGROUND, TEXT } from '../../constants/colors';
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/AuthContext";
 import Loading from '../Loading';
 import { Helmet } from 'react-helmet';
@@ -11,7 +10,6 @@ import 'aos/dist/aos.css';
 
 const HomePage = () => {
   const { user, isAuthenticated, hasRole } = useAuth();
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [redirectPath, setRedirectPath] = useState(null);
 
@@ -85,6 +83,9 @@ const HomePage = () => {
     } else if (hasRole('student')) {
       dashboardPath = '/student/health-profile';
       buttonText = 'Xem Hồ Sơ Y tế';
+    } else {
+      dashboardPath = '/blog';
+      buttonText = 'Đến Blog';
     }
 
     return (
