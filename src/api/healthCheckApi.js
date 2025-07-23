@@ -182,7 +182,16 @@ const healthCheckApi = {
     getClassStudentList: async (planId) => {
         try {
             const response = await apiClient.get(`/health-checks/${planId}/students`);
-
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách lớp và học sinh',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
     // Lấy danh sách kế hoạch kiểm tra sức khỏe của học sinh (dành cho phụ huynh)
     getStudentHealthCheckPlans: async (studentId, params = {}) => {
         try {
@@ -199,14 +208,10 @@ const healthCheckApi = {
             if (params.pageSize) queryParams.append('pageSize', params.pageSize);
             // Add more params if needed
             const response = await apiClient.get(`/health-checks/student/${studentId}?${queryParams.toString()}`);
-
             return response.data;
         } catch (error) {
             return {
                 success: false,
-
-                message: error.response?.data?.message || 'Không thể lấy danh sách lớp và học sinh',
-
                 message: error.response?.data?.message || 'Không thể lấy danh sách kế hoạch kiểm tra sức khỏe của học sinh',
                 data: [],
                 errors: [error.message]
@@ -217,6 +222,15 @@ const healthCheckApi = {
     reassignNurseToHealthCheckPlan: async (planId, assignments) => {
         try {
             const response = await apiClient.put(`/health-checks/${planId}/reassign-nurse`, { assignments });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể tái phân công nhân viên y tế',
+                errors: [error.message]
+            };
+        }
+    },
     // Phụ huynh xác nhận đồng ý hoặc từ chối khám sức khỏe cho học sinh
     submitParentApproval: async (healthCheckId, studentId, status) => {
         try {
@@ -235,7 +249,6 @@ const healthCheckApi = {
         } catch (error) {
             return {
                 success: false,
-                message: error.response?.data?.message || 'Không thể tái phân công nhân viên y tế',
                 message: error.response?.data?.message || 'Không thể gửi xác nhận phụ huynh cho buổi khám sức khỏe',
                 errors: [error.message]
             };
