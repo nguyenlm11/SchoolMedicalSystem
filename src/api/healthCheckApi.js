@@ -147,6 +147,36 @@ const healthCheckApi = {
             };
         }
     },
+    // Lấy danh sách phân công nurse cho health check plan
+    getNurseAssignments: async (planId) => {
+        try {
+            const response = await apiClient.get(`/health-checks/${planId}/nurse-assignments`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách phân công nhân viên y tế',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
+    // Phân công nurse cho health check plan
+    assignNurseToHealthCheckPlan: async (data) => {
+        try {
+            const response = await apiClient.post('/health-checks/assign-nurse', {
+                healthCheckId: data.planId,
+                assignments: data.assignments
+            });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể phân công nhân viên y tế',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 
