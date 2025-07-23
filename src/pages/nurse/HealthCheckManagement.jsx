@@ -28,6 +28,7 @@ const HealthCheckManagement = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [stats, setStats] = useState({ planning: 0, upcoming: 0, scheduled: 0, completed: 0, declined: 0 });
+    const user = JSON.parse(localStorage.getItem("user"));
 
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showAlertModal, setShowAlertModal] = useState(false);
@@ -359,8 +360,8 @@ const HealthCheckManagement = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="text-center py-12">
-                                            <div className="flex flex-col items-center justify-center">
+                                        <td colSpan="7" className="py-12 align-middle">
+                                            <div className="flex flex-col justify-center items-center h-full w-full">
                                                 <FiCalendar className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
                                                 <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>Không có kế hoạch kiểm tra nào</h3>
                                                 <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>

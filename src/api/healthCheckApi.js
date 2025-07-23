@@ -177,6 +177,33 @@ const healthCheckApi = {
             };
         }
     },
+    // Lấy danh sách học sinh và trạng thái đồng ý theo kế hoạch kiểm tra sức khỏe
+    getClassStudentList: async (planId) => {
+        try {
+            const response = await apiClient.get(`/health-checks/${planId}/students`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy danh sách lớp và học sinh',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
+    // Tái phân công nurse cho health check plan
+    reassignNurseToHealthCheckPlan: async (planId, assignments) => {
+        try {
+            const response = await apiClient.put(`/health-checks/${planId}/reassign-nurse`, { assignments });
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể tái phân công nhân viên y tế',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 
