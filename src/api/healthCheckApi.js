@@ -203,6 +203,29 @@ const healthCheckApi = {
             };
         }
     },
+    // Phụ huynh xác nhận đồng ý hoặc từ chối khám sức khỏe cho học sinh
+    submitParentApproval: async (healthCheckId, studentId, status) => {
+        try {
+            if (!healthCheckId || !studentId || !status) {
+                return {
+                    success: false,
+                    message: 'Thiếu tham số healthCheckId, studentId hoặc status',
+                    errors: ['Thiếu tham số healthCheckId, studentId hoặc status']
+                };
+            }
+            const response = await apiClient.put(
+                `/health-checks/${healthCheckId}/parent-approval?studentId=${studentId}`,
+                { status }
+            );
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể gửi xác nhận phụ huynh cho buổi khám sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
 };
 
 export default healthCheckApi; 

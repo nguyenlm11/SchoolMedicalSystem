@@ -102,18 +102,35 @@ const HealthCheckDetail = () => {
     // No real consent API, just simulate
     const handleConfirmSubmission = async () => {
         setIsSubmitting(true);
-        setTimeout(() => {
-            setConsentStatus(consentGiven ? "Confirmed" : "Declined");
-            setAlertMessage(
-                consentGiven
-                    ? `Phiếu đồng ý khám sức khỏe cho ${student?.fullName} đã được gửi thành công.`
-                    : `Phiếu từ chối khám sức khỏe cho ${student?.fullName} đã được ghi nhận.`
+        try {
+            const status = consentGiven ? "Confirmed" : "Declined";
+            const submitResponse = await healthCheckApi.submitParentApproval(
+                healthCheck.id,
+                studentIdFromState,
+                status
             );
-            setAlertType("success");
+            if (submitResponse.success) {
+                setConsentStatus(status);
+                setAlertMessage(
+                    consentGiven
+                        ? `Phiếu đồng ý khám sức khỏe cho ${student?.fullName} đã được gửi thành công.`
+                        : `Phiếu từ chối khám sức khỏe cho ${student?.fullName} đã được ghi nhận.`
+                );
+                setAlertType("success");
+                setShowAlertModal(true);
+                setShowConfirmModal(false);
+            } else {
+                setAlertMessage(submitResponse.message || "Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại.");
+                setAlertType("error");
+                setShowAlertModal(true);
+            }
+        } catch (error) {
+            setAlertMessage("Có lỗi xảy ra khi gửi phiếu. Vui lòng thử lại.");
+            setAlertType("error");
             setShowAlertModal(true);
-            setShowConfirmModal(false);
+        } finally {
             setIsSubmitting(false);
-        }, 1200);
+        }
     };
 
     if (loading) {
