@@ -336,6 +336,25 @@ const HealthCheckDetail = () => {
                             <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
                                 Hạng mục kiểm tra sức khỏe
                             </h3>
+
+                            {user?.role === 'schoolnurse' && (() => {
+                                const assignments = healthCheck.itemNurseAssignments || [];
+                                const assignedItems = assignments.filter(a => a.nurseId === user.id);
+                                if (assignedItems.length > 0) {
+                                    return (
+                                        <button
+                                            className="px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all duration-200"
+                                            style={{ backgroundColor: PRIMARY[500], color: COMMON.WHITE, border: `1px solid ${PRIMARY[500]}` }}
+                                            onClick={() => { navigate(`/schoolnurse/health-check/${id}/process`) }}
+                                        >
+                                            <FiCheckCircle className="h-4 w-4" />
+                                            Tiến hành khám
+                                        </button>
+                                    );
+                                }
+                                return null;
+                            })()}
+
                             {user?.role === 'manager' && (() => {
                                 const items = healthCheck.healthCheckItems || [];
                                 const assignments = healthCheck.itemNurseAssignments || [];

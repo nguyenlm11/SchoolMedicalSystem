@@ -21,11 +21,10 @@ import MedicationUsageManagement from "../pages/nurse/MedicationUsageManagement"
 import HealthCheckCategoryManagement from "../pages/nurse/HealthCheckCategoryManagement";
 import HealthCheckPlanCreate from "../pages/nurse/HealthCheckPlanCreate";
 import HealthCheckManagement from "../pages/nurse/HealthCheckManagement";
-
 import HealthCheckDetail from "../pages/nurse/HealthCheckDetail";
-
 import VaccineTypes from "../pages/nurse/VaccineTypes";
 import MedicationUsageHistory from "../pages/nurse/MedicationUsageHistory";
+import HealthCheckProcess from "../pages/nurse/HealthCheckProcess";
 
 
 const PlaceholderPage = ({ title }) => (
@@ -59,6 +58,7 @@ const staffRoutes = (
     <Route path="/schoolnurse/health-check/:id" element={<HealthCheckDetail />} />
     <Route path="/schoolnurse/health-check/create" element={<HealthCheckPlanCreate />} />
     <Route path="/schoolnurse/health-check-items" element={<HealthCheckCategoryManagement />} />
+    <Route path="/schoolnurse/health-check/:id/process" element={<HealthCheckProcess />} />
 
     {/* Health Event Routes */}
     <Route path="/schoolnurse/health-events/create" element={<HealthEventCreate />} />
