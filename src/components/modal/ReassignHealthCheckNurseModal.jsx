@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { FiX, FiUserPlus, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiX, FiUserCheck, FiPlus, FiTrash2 } from "react-icons/fi";
 import healthCheckApi from "../../api/healthCheckApi";
 import { PRIMARY, GRAY, TEXT, ERROR, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../Loading";
-import AlertModal from "../modal/AlertModal";
+import AlertModal from "./AlertModal";
 
-const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned }) => {
+const ReassignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseReassigned }) => {
     const [loading, setLoading] = useState(false);
     const [nurseList, setNurseList] = useState([]);
+    const [assignedItems, setAssignedItems] = useState([]);
     const [error, setError] = useState(null);
     const [alertOpen, setAlertOpen] = useState(false);
     const [alertType, setAlertType] = useState("info");
     const [alertMsg, setAlertMsg] = useState("");
     const [assignments, setAssignments] = useState([]);
-    const [availableItems, setAvailableItems] = useState([]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -25,7 +25,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
     const fetchData = async () => {
         setLoading(true);
         try {
-            await Promise.all([fetchNurseList(), fetchPlanItems()]);
+            await Promise.all([fetchNurseList(), fetchPlanDetails()]);
         } catch (err) {
             setError(err.message || "Không thể tải dữ liệu.");
         } finally {
@@ -39,17 +39,12 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
         setNurseList(res.data || []);
     };
 
-    const fetchPlanItems = async () => {
+    const fetchPlanDetails = async () => {
         const res = await healthCheckApi.getHealthCheckPlanDetails(planId);
         if (!res.success) throw new Error(res.message);
-        const items = res.data.healthCheckItems || [];
-        const itemNurseAssignments = res.data.itemNurseAssignments || [];
-        const available = items.filter(item => {
-            const assignment = itemNurseAssignments.find(a => a.healthCheckItemId === item.id);
-            return !assignment || assignment.nurseId === null;
-        });
-        setAvailableItems(available);
-        if (available.length > 0) {
+        const itemAssignments = res.data.itemNurseAssignments?.filter(a => a.nurseId) || [];
+        setAssignedItems(itemAssignments);
+        if (itemAssignments.length > 0) {
             setAssignments([{ id: 1, nurseId: "", itemIds: [] }]);
         }
     };
@@ -92,7 +87,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
         const usedItemIds = assignments
             .filter(a => a.id !== currentAssignmentId)
             .flatMap(a => a.itemIds);
-        return availableItems.filter(item => !usedItemIds.includes(item.id));
+        return assignedItems.filter(item => !usedItemIds.includes(item.healthCheckItemId));
     };
 
     const validateAssignments = () => {
@@ -109,10 +104,10 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
         return true;
     };
 
-    const handleAssignNurse = async () => {
+    const handleReassignNurse = async () => {
         setError(null);
         if (assignments.length === 0) {
-            setError("Không có phân công nào để thực hiện.");
+            setError("Không có tái phân công nào để thực hiện.");
             return;
         }
         if (!validateAssignments()) return;
@@ -124,21 +119,28 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                     nurseId: assignment.nurseId,
                 }))
             );
-            const res = await healthCheckApi.assignNurseToHealthCheckPlan({ planId, assignments: allAssignments });
+            const res = await healthCheckApi.reassignNurseToHealthCheckPlan(planId, allAssignments);
             if (res.success) {
                 setAlertType("success");
-                setAlertMsg(res.message || "Phân công thành công!");
+                setAlertMsg(res.message || "Tái phân công thành công!");
                 setAlertOpen(true);
-                await fetchData();
-                if (onNurseAssigned) {
-                    onNurseAssigned();
+                if (onNurseReassigned) {
+                    const assignmentData = assignments.map(assignment => {
+                        const nurse = nurseList.find(n => n.nurseId === assignment.nurseId);
+                        return {
+                            nurseId: assignment.nurseId,
+                            nurseName: nurse?.nurseName || "Unknown",
+                            itemIds: assignment.itemIds
+                        };
+                    });
+                    onNurseReassigned(assignmentData);
                 }
             } else {
                 throw new Error(res.message);
             }
         } catch (err) {
             setAlertType("error");
-            setAlertMsg(err.message || "Có lỗi xảy ra khi phân công.");
+            setAlertMsg(err.message || "Có lỗi xảy ra khi tái phân công.");
             setAlertOpen(true);
         } finally {
             setLoading(false);
@@ -147,9 +149,13 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
 
     const handleAlertOk = () => {
         setAlertOpen(false);
+        if (alertType === "success") {
+            onClose();
+        }
     };
 
     if (!isOpen) return null;
+
     const hasAvailableItems = getAvailableItemsForAssignment().length > 0;
 
     return (
@@ -166,14 +172,14 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                 <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
                     <div className="flex items-center space-x-3">
                         <div className="p-2 rounded-lg" style={{ backgroundColor: PRIMARY[50] }}>
-                            <FiUserPlus className="h-5 w-5" style={{ color: PRIMARY[600] }} />
+                            <FiUserCheck className="h-5 w-5" style={{ color: PRIMARY[600] }} />
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                Phân công nhân viên y tế
+                                Tái phân công nhân viên y tế
                             </h3>
                             <p className="text-sm mt-1" style={{ color: TEXT.SECONDARY }}>
-                                Chọn nhân viên y tế cho các hạng mục chưa được phân công
+                                Thay đổi phân công nhân viên y tế cho các hạng mục đã được phân công
                             </p>
                         </div>
                     </div>
@@ -194,17 +200,17 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                     <>
                         <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                             {error && (
-                                <div className="mb-4 p-3 rounded-lg border" style={{ backgroundColor: `${ERROR[50]}`, borderColor: ERROR[200] }}>
+                                <div className="mb-4 p-3 rounded-lg border" style={{ backgroundColor: ERROR[50], borderColor: ERROR[200] }}>
                                     <p className="text-sm" style={{ color: ERROR[700] }}>{error}</p>
                                 </div>
                             )}
 
                             <div className="space-y-4">
-                                {assignments.length === 0 && availableItems.length === 0 ? (
+                                {assignments.length === 0 && assignedItems.length === 0 ? (
                                     <div className="text-center py-8" style={{ color: GRAY[500] }}>
-                                        <FiUserPlus className="w-12 h-12 mx-auto mb-4" style={{ color: GRAY[400] }} />
+                                        <FiUserCheck className="w-12 h-12 mx-auto mb-4" style={{ color: GRAY[400] }} />
                                         <p className="text-lg font-medium mb-2">Tất cả các hạng mục đã được phân công</p>
-                                        <p className="text-sm">Không có hạng mục nào cần phân công thêm</p>
+                                        <p className="text-sm">Không có hạng mục nào cần tái phân công thêm</p>
                                     </div>
                                 ) : (
                                     <>
@@ -217,7 +223,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                                                                 {index + 1}
                                                             </span>
                                                             <span className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
-                                                                Phân công {index + 1}
+                                                                Tái phân công {index + 1}
                                                             </span>
                                                         </div>
                                                         <button
@@ -232,7 +238,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         <div>
                                                             <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                                Nhân viên y tế
+                                                                Nhân viên y tế mới
                                                             </label>
                                                             <select
                                                                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 text-sm"
@@ -251,7 +257,7 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
 
                                                         <div>
                                                             <label className="block text-sm font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
-                                                                Hạng mục được phân công ({assignment.itemIds.length})
+                                                                Hạng mục được tái phân công ({assignment.itemIds.length})
                                                             </label>
                                                             <div className="max-h-32 overflow-y-auto border rounded-lg p-2" style={{ borderColor: BORDER.DEFAULT }}>
                                                                 {getAvailableItemsForAssignment(assignment.id).length === 0 ? (
@@ -259,14 +265,19 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                                                                 ) : (
                                                                     <div className="grid grid-cols-1 gap-1">
                                                                         {getAvailableItemsForAssignment(assignment.id).map((item) => (
-                                                                            <label key={item.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-gray-50">
+                                                                            <label key={item.healthCheckItemId} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-gray-50">
                                                                                 <input
                                                                                     type="checkbox"
-                                                                                    checked={assignment.itemIds.includes(item.id)}
-                                                                                    onChange={() => toggleItemInAssignment(assignment.id, item.id)}
+                                                                                    checked={assignment.itemIds.includes(item.healthCheckItemId)}
+                                                                                    onChange={() => toggleItemInAssignment(assignment.id, item.healthCheckItemId)}
                                                                                     className="rounded"
                                                                                 />
-                                                                                <span style={{ color: TEXT.PRIMARY }}>{item.name}</span>
+                                                                                <div>
+                                                                                    <span style={{ color: TEXT.PRIMARY }}>{item.healthCheckItemName}</span>
+                                                                                    <span className="text-xs ml-2" style={{ color: TEXT.SECONDARY }}>
+                                                                                        (Hiện tại: {item.nurseName})
+                                                                                    </span>
+                                                                                </div>
                                                                             </label>
                                                                         ))}
                                                                     </div>
@@ -278,21 +289,18 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                                             ))}
                                         </div>
 
-                                        <div className="flex justify-center pt-2">
-                                            <button
-                                                onClick={addAssignmentRow}
-                                                disabled={!hasAvailableItems}
-                                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{
-                                                    backgroundColor: hasAvailableItems ? PRIMARY[50] : GRAY[100],
-                                                    color: hasAvailableItems ? PRIMARY[600] : GRAY[500],
-                                                    border: `1px solid ${hasAvailableItems ? PRIMARY[200] : GRAY[300]}`
-                                                }}
-                                            >
-                                                <FiPlus className="w-4 h-4" />
-                                                Thêm
-                                            </button>
-                                        </div>
+                                        {hasAvailableItems && (
+                                            <div className="flex justify-center pt-2">
+                                                <button
+                                                    onClick={addAssignmentRow}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                                                    style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600], border: `1px solid ${PRIMARY[200]}` }}
+                                                >
+                                                    <FiPlus className="w-4 h-4" />
+                                                    Thêm
+                                                </button>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -301,12 +309,12 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
                         <div className="p-6 pt-0">
                             <div className="pt-4 border-t" style={{ borderColor: BORDER.LIGHT }}>
                                 <button
-                                    onClick={handleAssignNurse}
-                                    disabled={assignments.length === 0 || availableItems.length === 0}
+                                    onClick={handleReassignNurse}
+                                    disabled={assignments.length === 0 || assignedItems.length === 0}
                                     className="w-full py-3 px-6 text-base font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                 >
-                                    Phân công nhân viên y tế
+                                    Tái phân công nhân viên y tế
                                 </button>
                             </div>
                         </div>
@@ -326,4 +334,4 @@ const AssignHealthCheckNurseModal = ({ isOpen, onClose, planId, onNurseAssigned 
     );
 };
 
-export default AssignHealthCheckNurseModal; 
+export default ReassignHealthCheckNurseModal; 
