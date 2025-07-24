@@ -32,7 +32,7 @@ const MedicationUsageManagement = () => {
     const navigate = useNavigate();
 
     const formatDate = (dateString) => {
-        if (!dateString) return 'Không có';
+        if (!dateString) return 'Khi cần';
         const date = new Date(dateString);
         return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
@@ -268,6 +268,9 @@ const MedicationUsageManagement = () => {
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
                                         LIỀU LƯỢNG
                                     </th>
+                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '130px' }}>
+                                        NGÀY BẮT ĐẦU
+                                    </th>
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '120px' }}>
                                         SỐ LƯỢNG
                                     </th>
@@ -318,6 +321,11 @@ const MedicationUsageManagement = () => {
                                                     <span className="font-semibold text-sm" style={{ color: TEXT.PRIMARY }}>{item.frequencyCount} lần/ngày</span>
                                                     <span className="text-xs" style={{ color: TEXT.SECONDARY }}>{item.dosage}/lần</span>
                                                 </div>
+                                            </td>
+                                            <td className="py-4 px-6 align-top" style={{ width: '130px' }}>
+                                                <span className="font-medium text-sm" style={{ color: TEXT.PRIMARY }}>
+                                                    {formatDate(item.startDate)}
+                                                </span>
                                             </td>
                                             <td className="py-4 px-6 align-top" style={{ width: '120px' }}>
                                                 <div className="flex flex-col gap-1">
@@ -460,6 +468,7 @@ const MedicationUsageManagement = () => {
                 studentName={noteModal.studentName}
                 medicationName={noteModal.medicationName}
             />
+
             <StudentMedicationAdministerModal
                 isOpen={administerModal.open}
                 onClose={() => setAdministerModal({ ...administerModal, open: false })}
