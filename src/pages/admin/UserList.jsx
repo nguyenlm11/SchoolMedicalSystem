@@ -71,7 +71,7 @@ const UserList = () => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
             setCurrentPage(1);
-        }, 500);
+        }, 750);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
@@ -263,9 +263,19 @@ const UserList = () => {
                 const link = document.createElement('a');
                 link.href = url;
                 // Lấy tên file từ Content-Disposition header
-                const contentDisposition = response.headers['content-disposition'];
-                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
-                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : '';
+                let fileName = 'staff_list.xlsx';
+                if (type === 'manager') {
+                    fileName = 'manager_list.xlsx';
+                } else {
+                    fileName = 'nurse_list.xlsx';
+                }
+                if (response.headers && response.headers['content-disposition']) {
+                    const contentDisposition = response.headers['content-disposition'];
+                    const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                    if (filenameMatch) {
+                        fileName = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
                 link.setAttribute('download', fileName);
                 document.body.appendChild(link);
                 link.click();
@@ -666,7 +676,7 @@ const UserList = () => {
                         </div>
                     </div>
 
-                    {totalPages > 1 && (
+                    {totalPages > 0 && (
                         <div
                             className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t bg-gray-50/50"
                             style={{ borderColor: BORDER.DEFAULT, borderRadius: '0 0 0.75rem 0.75rem' }}

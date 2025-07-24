@@ -139,8 +139,6 @@ const HealthEventCreate = () => {
         }
     };
 
-
-
     useEffect(() => {
         if (formData.userId) {
             fetchMedicalConditions(formData.userId);
@@ -687,7 +685,7 @@ const HealthEventCreate = () => {
                                         <div className="relative">
                                             <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                             <input
-    
+
                                                 type="text"
                                                 value={studentSearch}
                                                 onChange={handleStudentSearchChange}
@@ -703,10 +701,20 @@ const HealthEventCreate = () => {
                                             />
                                             <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                                                 {formData.userId && (
-                                                    <div className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                                                        style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
-                                                        Đã chọn
-                                                    </div>
+                                                    <>
+                                                        <div className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                                                            style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}>
+                                                            Đã chọn
+                                                        </div>
+
+                                                        <button
+                                                            className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                                                            style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}
+                                                            onClick={() => navigate(`/schoolnurse/student-health-profile/${formData.userId}`)}
+                                                        >
+                                                            Xem hồ sơ
+                                                        </button>
+                                                    </>
                                                 )}
                                                 {studentsLoading ? (
                                                     <Loading type="spinner" size="small" color="primary" />

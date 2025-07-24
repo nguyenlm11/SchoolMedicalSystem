@@ -1,21 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  FiSearch,
-  FiAlertTriangle,
-  FiCheckCircle,
-  FiActivity,
-  FiRefreshCw,
-  FiEye,
-  FiTrendingUp,
-  FiPhone,
-  FiCalendar,
-  FiChevronLeft,
-  FiChevronRight
-} from "react-icons/fi";
+import { FiAlertTriangle, FiCheckCircle, FiActivity, FiRefreshCw, FiEye, FiTrendingUp, FiPhone, FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useNavigate, useParams } from "react-router-dom";
 import healthEventApi from "../../api/healtheventApi";
+import { useAuth } from "../../utils/AuthContext";
 
 const eventTypeOptions = [
   { value: "all", label: "Tất cả loại" },
@@ -53,30 +42,6 @@ const StatCard = ({ title, value, icon: Icon, gradient, borderColor }) => (
   </div>
 );
 
-const ErrorMessage = ({ error, onClose }) => (
-  <div className="mb-8">
-    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center">
-      <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-red-100">
-        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div className="ml-4">
-        <h3 className="text-sm font-medium text-red-800">Đã có lỗi xảy ra</h3>
-        <p className="mt-1 text-sm text-red-700">{error}</p>
-      </div>
-      <button
-        onClick={onClose}
-        className="ml-auto bg-red-50 rounded-full p-1 hover:bg-red-100"
-      >
-        <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  </div>
-);
-
 const EmptyState = ({ searchActive }) => (
   <div className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
     <FiActivity className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
@@ -84,9 +49,7 @@ const EmptyState = ({ searchActive }) => (
       Không có sự kiện y tế nào
     </h3>
     <p className="text-sm mb-4" style={{ color: TEXT.SECONDARY }}>
-      {searchActive
-        ? "Không tìm thấy kết quả phù hợp với bộ lọc."
-        : "Chưa có sự kiện y tế nào được ghi nhận."}
+      {searchActive ? "Không tìm thấy kết quả phù hợp với bộ lọc." : "Chưa có sự kiện y tế nào được ghi nhận."}
     </p>
   </div>
 );
@@ -94,24 +57,19 @@ const EmptyState = ({ searchActive }) => (
 const StudentHealthEvents = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
+  const studentId = user.id || id;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState("all");
   const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
   const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
 
   const fetchData = async () => {
-    if (!id) {
-      setError("Không tìm thấy thông tin học sinh");
-      setLoading(false);
-      return;
-    }
+    if (!studentId) { return }
 
     try {
-      setLoading(true);
-      setError(null);
-      const response = await healthEventApi.getStudentHealthEvents(id, {
+      const response = await healthEventApi.getStudentHealthEvents(studentId, {
         pageIndex: pagination.pageIndex,
         pageSize: pagination.pageSize,
         fromDate: dateRange.fromDate,
@@ -128,12 +86,9 @@ const StudentHealthEvents = () => {
           totalPages: response.totalPages
         });
       } else {
-        setError(response.message || "Không thể tải danh sách sự kiện y tế");
         setEvents([]);
       }
     } catch (error) {
-      console.error("Error fetching data", error);
-      setError("Đã xảy ra lỗi khi tải danh sách sự kiện y tế");
       setEvents([]);
     } finally {
       setLoading(false);
@@ -142,7 +97,7 @@ const StudentHealthEvents = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id, filterType]);
+  }, [studentId, filterType]);
 
   const handleFilter = () => {
     if (dateRange.fromDate && dateRange.toDate) {
@@ -201,8 +156,6 @@ const StudentHealthEvents = () => {
           </div>
         </div>
 
-        {error && <ErrorMessage error={error} onClose={() => setError(null)} />}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <StatCard
             title="Khẩn cấp"
@@ -228,7 +181,6 @@ const StudentHealthEvents = () => {
         </div>
 
         <div className="rounded-2xl shadow-xl border backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
-          {/* Search and Filter Section */}
           <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
             <div className="flex justify-end">
               <div className="flex items-center gap-2">
@@ -292,7 +244,6 @@ const StudentHealthEvents = () => {
             </div>
           </div>
 
-          {/* Table Section */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -382,7 +333,6 @@ const StudentHealthEvents = () => {
             </table>
           </div>
 
-          {/* Pagination Section */}
           {pagination.totalCount > 0 && (
             <div className="flex items-center justify-between p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
               <div className="text-sm" style={{ color: TEXT.SECONDARY }}>

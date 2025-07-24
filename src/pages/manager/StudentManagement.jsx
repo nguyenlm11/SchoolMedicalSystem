@@ -63,7 +63,6 @@ const StudentManagement = () => {
     };
 
     const fetchStudents = async () => {
-        // setLoading(true);
         try {
             const params = {
                 pageIndex: 1,
@@ -332,9 +331,14 @@ const StudentManagement = () => {
                 const link = document.createElement('a');
                 link.href = url;
                 // Lấy tên file từ Content-Disposition header
-                const contentDisposition = response.headers['content-disposition'];
-                const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
-                const fileName = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : 'students.xlsx';
+                let fileName = 'student_list.xlsx';
+                if (response.headers && response.headers['content-disposition']) {
+                    const contentDisposition = response.headers['content-disposition'];
+                    const filenameMatch = contentDisposition.match(/filename=(.*?)(;|$)/);
+                    if (filenameMatch) {
+                        fileName = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
                 link.setAttribute('download', fileName);
                 document.body.appendChild(link);
                 link.click();
