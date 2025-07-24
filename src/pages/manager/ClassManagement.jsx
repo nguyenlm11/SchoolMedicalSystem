@@ -33,7 +33,7 @@ const ClassManagement = () => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
             setPaginationState(prev => ({ ...prev, currentPage: 1 }));
-        }, 500);
+        }, 750);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
@@ -47,9 +47,7 @@ const ClassManagement = () => {
     }, [filterGrade, academicYear, debouncedSearchTerm, sortColumn, paginationState.currentPage]);
     const [grade, setGrade] = useState([]);
 
-    // Fetch lớp học từ API
     const fetchClasses = async () => {
-        setLoading(true);
         try {
             const orderBy = sortColumn;
             const params = {

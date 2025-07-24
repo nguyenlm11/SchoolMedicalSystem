@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiMapPin, FiHeart, FiTrendingUp, FiPhone, FiTrash2, FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
+import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiActivity, FiRefreshCw, FiEye, FiMoreVertical, FiTrendingUp, FiTrash2, FiCalendar, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useNavigate } from "react-router-dom";
 import healthEventApi from "../../api/healtheventApi";
@@ -34,7 +34,6 @@ const HealthEventManagement = () => {
     }, []);
 
     const fetchHealthEvents = async (params = {}) => {
-        setLoading(true);
         try {
             const apiParams = {
                 pageIndex: params.pageIndex || pagination.pageIndex,
@@ -449,7 +448,6 @@ const HealthEventManagement = () => {
                                                 </span>
                                                 {event.parentNotice && (
                                                     <div className="flex items-center mt-1 text-xs" style={{ color: SUCCESS[600] }}>
-                                                        <FiPhone className="mr-1 h-3 w-3" />
                                                         {event.parentNotice}
                                                     </div>
                                                 )}

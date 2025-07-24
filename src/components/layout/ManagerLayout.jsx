@@ -209,13 +209,6 @@ const ManagerLayout = () => {
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        <button
-                            className="p-2 rounded-full transition-all duration-200 hidden sm:block"
-                            style={{ backgroundColor: 'transparent', color: GRAY[500] }}
-                        >
-                            <FiBell className="w-6 h-6" />
-                        </button>
-
                         <div className="flex items-center space-x-3">
                             <div className="hidden sm:block text-right">
                                 <div className="text-sm font-medium" style={{ color: TEXT.PRIMARY }}>
@@ -231,7 +224,7 @@ const ManagerLayout = () => {
                                 onClick={() => navigate('/manager/profile')}
                             >
                                 <span className="font-medium text-sm lg:text-base" style={{ color: TEXT.INVERSE }}>
-                                    {user?.avatar ? (
+                                    {user?.avatar && user?.avatar !== 'https://yourdomain.com/images/default.jpg' ? (
                                         <img src={user.avatar} alt="avatar" className="w-full h-full rounded-full" />
                                     ) : (
                                         <FiUser className="w-5 h-5" />
