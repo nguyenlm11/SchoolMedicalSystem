@@ -48,60 +48,6 @@ const medicationUsageApi = {
             };
         }
     },
-
-    // Lấy danh sách thuốc cho student (loại trừ trạng thái Chờ duyệt)
-    getStudentMedicationUsage: async (params = {}) => {
-        try {
-            const {
-                pageIndex = 1,
-                pageSize = 10,
-                studentId = '',
-                searchTerm = ''
-            } = params;
-
-            const queryParams = new URLSearchParams();
-            queryParams.append('pageIndex', pageIndex);
-            queryParams.append('pageSize', pageSize);
-
-            if (studentId) {
-                queryParams.append('studentId', studentId);
-            }
-            if (searchTerm) {
-                queryParams.append('searchTerm', searchTerm);
-            }
-
-            const response = await apiClient.get(`/student-medications/by-nurse-or-student?${queryParams.toString()}`);
-
-            if (response.data && response.data.success) {
-                // Filter loại trừ trạng thái "Chờ duyệt" cho student
-                const filteredData = (response.data.data || []).filter(item => item.status !== 'PendingApproval');
-
-                return {
-                    ...response.data,
-                    data: filteredData,
-                    totalCount: filteredData.length,
-                    totalPages: Math.ceil(filteredData.length / pageSize)
-                };
-            }
-
-            return response.data;
-        } catch (error) {
-            if (error.response && error.response.data) {
-                return error.response.data;
-            }
-            return {
-                success: false,
-                message: "Không thể lấy danh sách sử dụng thuốc",
-                data: [],
-                totalCount: 0,
-                pageSize: 10,
-                currentPage: 1,
-                totalPages: 0,
-                errors: []
-            };
-        }
-    },
-
     // Lấy chi tiết sử dụng thuốc theo ID
     getMedicationUsageById: async (id) => {
         try {
