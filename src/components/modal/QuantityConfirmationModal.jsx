@@ -5,6 +5,14 @@ import { PRIMARY, GRAY, TEXT, BACKGROUND, INFO, SHADOW } from '../../constants/c
 const QuantityConfirmationModal = ({ isOpen, onClose, medications = [], receivedQuantities = {}, onQuantityChange, onConfirm }) => {
     if (!isOpen) return null;
 
+    const QUANTITY_UNIT_CONFIG = {
+        'Tablet': 'Viên',
+        'Pack': 'Gói',
+        'Bottle': 'Chai'
+    };
+
+    const getQuantityUnitText = (unit) => { return QUANTITY_UNIT_CONFIG[unit] || unit };
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -75,7 +83,7 @@ const QuantityConfirmationModal = ({ isOpen, onClose, medications = [], received
                                                 Số lượng đã gửi
                                             </h4>
                                             <div className="text-lg font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                {medication.quantitySent} {medication.quantityUnit || 'viên'}
+                                                {medication.quantitySent} {getQuantityUnitText(medication.quantityUnit)}
                                             </div>
                                         </div>
                                     </div>
@@ -96,7 +104,7 @@ const QuantityConfirmationModal = ({ isOpen, onClose, medications = [], received
                                                     placeholder="0"
                                                 />
                                                 <span className="ml-2 text-sm font-medium" style={{ color: TEXT.SECONDARY }}>
-                                                    {medication.quantityUnit || 'viên'}
+                                                    {getQuantityUnitText(medication.quantityUnit)}
                                                 </span>
                                             </div>
                                         </div>
