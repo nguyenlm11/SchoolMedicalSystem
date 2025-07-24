@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FiSearch, FiRefreshCw, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo, FiEye, FiMoreVertical } from "react-icons/fi";
+import { FiSearch, FiUser, FiRefreshCw, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo, FiEye, FiMoreVertical } from "react-icons/fi";
 import { PRIMARY, WARNING, ERROR, SUCCESS, INFO, TEXT, BACKGROUND, BORDER, GRAY } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
+import userApi from '../../api/userApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const FILTER_TABS = [
     { key: 'Approved', label: 'Đã duyệt', icon: <FiCheckCircle className="h-4 w-4" /> },
@@ -14,20 +15,112 @@ const FILTER_TABS = [
     { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
 ];
 
-const MedicationUsageSchedule = () => {
-    const { user } = useAuth();
+const STUDENT_TAB_CONFIG = [
+    { key: 'all', label: 'Tất cả học sinh', icon: FiUser },
+    // Sẽ được populate động từ danh sách học sinh
+];
+
+const StudentMedicationUsageHistory = (props) => {
+    const { user: authUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
+    const [allStudentsData, setAllStudentsData] = useState([]); // Dữ liệu TẤT CẢ học sinh con
     const [searchTerm, setSearchTerm] = useState("");
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
     const [filterStatus, setFilterStatus] = useState("Approved");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [noteModal, setNoteModal] = useState({ open: false, instructions: '', specialNotes: '' });
-    const studentId = user?.id || '';
+    const [openActionId, setOpenActionId] = useState(null);
+    const [students, setStudents] = useState([]);
+    const [selectedStudentId, setSelectedStudentId] = useState("");
+    const [activeStudentTab, setActiveStudentTab] = useState("all");
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Fallback để lấy user từ localStorage như VaccinationManagement.jsx
+    const user = authUser || JSON.parse(localStorage.getItem("user"));
+
+
+
+    // Lấy studentId từ props, query param hoặc state
+    useEffect(() => {
+        // Ưu tiên props
+        let sid = props.studentId;
+        if (!sid) {
+            // Thử lấy từ query param
+            sid = searchParams.get('studentId');
+        }
+        if (sid) {
+            setSelectedStudentId(sid);
+        }
+    }, [props.studentId, searchParams]);
+
+    // Lấy danh sách các con của parent - giống HealthCheckSchedule.jsx
+    useEffect(() => {
+        fetchStudents();
+    }, [user]);
+
+    const fetchStudents = async () => {
+        if (!user || !user.id) {
+            setLoading(false);
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100 });
+
+            if (response && response.success) {
+                setStudents(response.data || []);
+                // Tự động chọn học sinh đầu tiên nếu có
+                if (response.data && response.data.length > 0) {
+                    setSelectedStudentId(response.data[0].id);
+                    setActiveStudentTab(response.data[0].id);
+                }
+                // Fetch dữ liệu TẤT CẢ học sinh con để tính stats
+                await fetchAllStudentsData(response.data || []);
+            } else {
+                setError(response?.message || "Không thể tải danh sách học sinh");
+                setStudents([]);
+            }
+        } catch (error) {
+            console.error('Error fetching parent students:', error);
+            setError("Có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại.");
+            setStudents([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch dữ liệu TẤT CẢ học sinh con để tính stats
+    const fetchAllStudentsData = async (studentsList) => {
+        try {
+            const allData = [];
+            for (const student of studentsList) {
+                const params = {
+                    pageIndex: 1,
+                    pageSize: 1000,
+                    studentId: student.id,
+                    status: filterStatus
+                };
+                if (debouncedSearchTerm) {
+                    params.searchTerm = debouncedSearchTerm;
+                }
+
+                const response = await medicationUsageApi.getMedicationUsage(params);
+                if (response.success && response.data) {
+                    allData.push(...response.data);
+                }
+            }
+            setAllStudentsData(allData);
+        } catch (error) {
+            console.error('Error fetching all students data:', error);
+            setAllStudentsData([]);
+        }
+    };
+
     const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
     const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit] || unit;
-    const navigate = useNavigate();
-    const [openActionId, setOpenActionId] = useState(null);
 
     const formatDate = (dateString) => {
         if (!dateString) return 'Khi cần';
@@ -37,24 +130,82 @@ const MedicationUsageSchedule = () => {
 
     const fetchMedicationUsage = async () => {
         try {
-            const params = { pageIndex: pagination.pageIndex, pageSize: pagination.pageSize, studentId: studentId, status: filterStatus };
-            if (debouncedSearchTerm) {
-                params.searchTerm = debouncedSearchTerm;
-            }
-            const response = await medicationUsageApi.getMedicationUsage(params);
-            if (response.success) {
-                setData(response.data || []);
-                setPagination({
-                    pageIndex: response.currentPage || pagination.pageIndex,
-                    pageSize: response.pageSize || pagination.pageSize,
-                    totalCount: response.totalCount || 0,
-                    totalPages: response.totalPages || 0
+            // Nếu chọn "Tất cả học sinh", gọi API cho từng học sinh và merge kết quả
+            if (activeStudentTab === "all") {
+                if (students.length === 0) {
+                    setData([]);
+                    setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
+                    return;
+                }
+
+                // Gọi API cho tất cả học sinh
+                const allData = [];
+                let totalCount = 0;
+
+                for (const student of students) {
+                    const params = {
+                        pageIndex: 1,
+                        pageSize: 1000,
+                        studentId: student.id,
+                        status: filterStatus
+                    };
+                    if (debouncedSearchTerm) {
+                        params.searchTerm = debouncedSearchTerm;
+                    }
+
+                    const response = await medicationUsageApi.getMedicationUsage(params);
+                    if (response.success && response.data) {
+                        allData.push(...response.data);
+                        totalCount += response.totalCount || 0;
+                    }
+                }
+
+                // Filter và paginate data
+                const filteredData = allData.filter(item => {
+                    if (filterStatus !== "all") {
+                        return item.status === filterStatus;
+                    }
+                    return true;
                 });
+
+                const startIndex = (pagination.pageIndex - 1) * pagination.pageSize;
+                const endIndex = startIndex + pagination.pageSize;
+                const paginatedData = filteredData.slice(startIndex, endIndex);
+
+                setData(paginatedData);
+                setPagination(prev => ({
+                    ...prev,
+                    totalCount: filteredData.length,
+                    totalPages: Math.ceil(filteredData.length / pagination.pageSize)
+                }));
             } else {
-                setData([]);
-                setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
+                // Nếu chọn học sinh cụ thể, sử dụng logic giống MedicationUsageSchedule.jsx
+                const params = {
+                    pageIndex: pagination.pageIndex,
+                    pageSize: pagination.pageSize,
+                    studentId: selectedStudentId,
+                    status: filterStatus
+                };
+                if (debouncedSearchTerm) {
+                    params.searchTerm = debouncedSearchTerm;
+                }
+
+                const response = await medicationUsageApi.getMedicationUsage(params);
+                if (response.success) {
+                    setData(response.data || []);
+                    setPagination({
+                        pageIndex: response.currentPage || pagination.pageIndex,
+                        pageSize: response.pageSize || pagination.pageSize,
+                        totalCount: response.totalCount || 0,
+                        totalPages: response.totalPages || 0
+                    });
+                } else {
+                    setData([]);
+                    setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
+                }
             }
         } catch (error) {
+            console.error('Error fetching medication usage:', error);
             setData([]);
             setPagination(prev => ({ ...prev, totalCount: 0, totalPages: 0 }));
         } finally {
@@ -64,7 +215,14 @@ const MedicationUsageSchedule = () => {
 
     useEffect(() => {
         fetchMedicationUsage();
-    }, [pagination.pageIndex, pagination.pageSize, studentId, filterStatus, debouncedSearchTerm]);
+    }, [pagination.pageIndex, pagination.pageSize, selectedStudentId, activeStudentTab, students, filterStatus, debouncedSearchTerm]);
+
+    // Cập nhật stats khi filter thay đổi
+    useEffect(() => {
+        if (students.length > 0) {
+            fetchAllStudentsData(students);
+        }
+    }, [filterStatus, debouncedSearchTerm, students]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -106,12 +264,13 @@ const MedicationUsageSchedule = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Stats từ TẤT CẢ học sinh con
     const stats = {
-        approved: data.filter(r => r.status === 'Approved').length,
-        active: data.filter(r => r.status === 'Active').length,
-        completed: data.filter(r => r.status === 'Completed').length,
-        expiringSoon: data.filter(r => r.isExpiringSoon).length,
-        total: data.length
+        approved: allStudentsData.filter(r => r.status === 'Approved').length,
+        active: allStudentsData.filter(r => r.status === 'Active').length,
+        completed: allStudentsData.filter(r => r.status === 'Completed').length,
+        expiringSoon: allStudentsData.filter(r => r.isExpiringSoon).length,
+        total: allStudentsData.length
     };
 
     if (loading) {
@@ -129,15 +288,16 @@ const MedicationUsageSchedule = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Lịch sử uống thuốc của tôi
+                                Lịch sử uống thuốc của học sinh
                             </h1>
                             <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Theo dõi và quản lý việc sử dụng thuốc của bạn tại trường
+                                Theo dõi và quản lý việc sử dụng thuốc của con bạn tại trường
                             </p>
                         </div>
                     </div>
                 </div>
 
+                {/* Stats cards - Luôn luôn xuất hiện */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="relative overflow-hidden rounded-2xl shadow-lg border transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1"
                         style={{ background: `linear-gradient(135deg, ${SUCCESS[500]} 0%, ${SUCCESS[600]} 100%)`, borderColor: SUCCESS[200] }}>
@@ -197,40 +357,73 @@ const MedicationUsageSchedule = () => {
                     </div>
                 </div>
 
+                {/* Block duy nhất chứa filter + search + status + bảng */}
                 <div className="rounded-2xl shadow-xl border backdrop-blur-sm mb-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
+                    {/* Filter + Search + Status */}
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+                        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
+                            {/* Student Filter Dropdown - Giống hệt ảnh */}
+                            <div className="flex-shrink-0">
+                                <select
+                                    className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 font-medium"
+                                    style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
+                                    value={selectedStudentId}
+                                    onChange={e => {
+                                        const value = e.target.value;
+                                        setActiveStudentTab(value);
+                                        setSelectedStudentId(value);
+                                        setPagination(prev => ({ ...prev, pageIndex: 1 }));
+                                    }}
+                                >
+                                    {students.map(student => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.studentCode || `Student${student.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Search Bar */}
                             <div className="flex-1">
                                 <div className="relative">
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
                                         placeholder="Tìm kiếm theo tên thuốc, phụ huynh..."
-                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        className="w-full pl-12 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {FILTER_TABS.map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => setFilterStatus(tab.key)}
-                                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
-                                        style={{
-                                            backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                            color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
-                                            border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
-                                        }}
-                                    >
-                                        {tab.icon}{tab.label}
-                                    </button>
-                                ))}
+
+                            {/* Status Filter Tabs */}
+                            <div className="flex-shrink-0">
+                                <div className="flex flex-wrap gap-2">
+                                    {FILTER_TABS.map(tab => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setFilterStatus(tab.key)}
+                                            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1 text-sm ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                            style={{
+                                                backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
+                                                border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                            }}
+                                        >
+                                            {tab.icon}{tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Refresh Button */}
+                            <div className="flex-shrink-0">
+                                <label className="block mb-2 font-medium text-sm" style={{ color: TEXT.PRIMARY }}>&nbsp;</label>
                                 <button
                                     onClick={handleRefresh}
-                                    className="px-3 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                                    className="px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                     title="Làm mới"
                                 >
@@ -240,6 +433,16 @@ const MedicationUsageSchedule = () => {
                         </div>
                     </div>
 
+                    {/* Thông báo trạng thái */}
+                    {(students.length === 0 || error) && (
+                        <div className="p-6 border-t" style={{ borderColor: BORDER.LIGHT }}>
+                            <div className="text-center text-sm font-medium" style={{ color: ERROR[600] }}>
+                                {error || "Bạn chưa có học sinh nào được liên kết với tài khoản này."}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bảng dữ liệu */}
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
@@ -338,7 +541,7 @@ const MedicationUsageSchedule = () => {
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                 style={{ color: PRIMARY[600] }}
-                                                                onClick={() => navigate(`/student/medication-history/${item.id}`)}
+                                                                onClick={() => navigate(`/parent/medication-history/${item.id}`)}
                                                             >
                                                                 <FiEye className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lịch sử uống</span>
@@ -438,4 +641,4 @@ const MedicationUsageSchedule = () => {
     );
 };
 
-export default MedicationUsageSchedule;
+export default StudentMedicationUsageHistory;

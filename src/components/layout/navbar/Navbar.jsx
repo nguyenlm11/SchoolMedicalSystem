@@ -143,6 +143,7 @@ const Navbar = () => {
                     links: [
                         { to: "/parent/medication/request", label: "Gửi thuốc", desc: "Yêu cầu thuốc cho con em" },
                         { to: "/parent/medication/history", label: "Lịch sử gửi thuốc", desc: "Xem lịch sử đã gửi" },
+                        { to: "/parent/medication/usage-history", label: "Lịch sử uống thuốc", desc: "Xem lịch sử uống thuốc" },
                     ],
                 },
                 {
@@ -183,7 +184,7 @@ const Navbar = () => {
                 {
                     category: "Học sinh",
                     links: [
-                        { to: "/student/health-events", label: "Sự kiện tiêm chủng", desc: "Xem lịch tiêm chủng cá nhân" },
+                        { to: "/student/vaccination-schedule", label: "Sự kiện tiêm chủng", desc: "Xem lịch tiêm chủng cá nhân" },
                     ],
                 },
             ],
