@@ -30,7 +30,7 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
         address: "",
         gender: "Male",
         dateOfBirth: "",
-        relationship: ""
+        relationship: "Father"
     });
 
     useEffect(() => {
@@ -44,7 +44,7 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
                 address: selectedParent.address || "",
                 gender: selectedParent.gender || "Male",
                 dateOfBirth: formattedDate,
-                relationship: selectedParent.relationship || ""
+                relationship: selectedParent.relationship || "Father"
             });
         } else { resetForm() }
     }, [selectedParent]);
@@ -58,7 +58,7 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
             address: "",
             gender: "Male",
             dateOfBirth: "",
-            relationship: ""
+            relationship: "Father"
         });
         setFormErrors({});
     };
@@ -93,9 +93,6 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
 
     const validateForm = () => {
         const errors = {};
-        if (!formData.username?.trim()) {
-            errors.username = "Tên đăng nhập không được để trống";
-        }
         if (!formData.email?.trim()) {
             errors.email = "Email không được để trống";
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -127,9 +124,10 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
         }
         setLoading(true);
         try {
+            const submitData = { ...formData, username: `parent_${formData.phoneNumber}` };
             const response = selectedParent
-                ? await userApi.updateParent(selectedParent.id, formData)
-                : await userApi.createParent(formData);
+                ? await userApi.updateParent(selectedParent.id, submitData)
+                : await userApi.createParent(submitData);
 
             if (response.success) {
                 resetForm();
@@ -175,27 +173,6 @@ const AddParentModal = ({ isOpen, onClose, onSuccess, selectedParent }) => {
 
                     <form onSubmit={handleSubmit} className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
-                                    Tên đăng nhập *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleInputChange}
-                                    disabled={loading}
-                                    className="w-full p-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 disabled:opacity-50"
-                                    style={{ borderColor: formErrors.username ? ERROR[500] : BORDER.DEFAULT, focusRingColor: PRIMARY[500] + '40' }}
-                                    placeholder="Nhập tên đăng nhập..."
-                                />
-                                {formErrors.username && (
-                                    <p className="text-sm mt-1" style={{ color: ERROR[500] }}>
-                                        {formErrors.username}
-                                    </p>
-                                )}
-                            </div>
-
                             <div>
                                 <label className="block text-sm font-semibold mb-2" style={{ color: TEXT.PRIMARY }}>
                                     Họ và tên *

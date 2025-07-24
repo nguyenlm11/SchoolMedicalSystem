@@ -93,6 +93,19 @@ const healthCheckApi = {
             };
         }
     },
+    // Xóa kế hoạch kiểm tra sức khỏe
+    deleteHealthCheckPlan: async (id) => {
+        try {
+            const response = await apiClient.delete(`/health-checks/${id}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể xóa kế hoạch kiểm tra sức khỏe',
+                errors: [error.message]
+            };
+        }
+    },
     // Duyệt kế hoạch kiểm tra sức khỏe
     approveHealthCheckPlan: async (id) => {
         try {

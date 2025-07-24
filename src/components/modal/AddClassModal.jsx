@@ -196,14 +196,21 @@ const AddClassModal = ({ isOpen, onClose, onSuccess, classToEdit }) => {
                   <label className="block text-sm font-medium mb-2" style={{ color: TEXT.SECONDARY }}>
                     Năm học *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="academicYear"
                     value={formData.academicYear}
-                    disabled
+                    onChange={handleInputChange}
+                    required
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-offset-1 transition-all"
                     style={getFieldStyle('academicYear')}
-                  />
+                  >
+                    <option value="">Chọn năm học</option>
+                    {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
+                      <option key={year} value={year}>
+                        {`${year}-${year + 1}`}
+                      </option>
+                    ))}
+                  </select>
                   {renderFieldError('academicYear')}
                 </div>
               </div>

@@ -31,6 +31,12 @@ const MedicationUsageManagement = () => {
     const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit] || unit;
     const navigate = useNavigate();
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Không có';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (!event.target.closest('[data-dropdown]')) {
@@ -256,7 +262,7 @@ const MedicationUsageManagement = () => {
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
                                         HỌC SINH
                                     </th>
-                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
+                                    <th className="py-4 px-6 text-left align-top text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '180px' }}>
                                         THUỐC
                                     </th>
                                     <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '150px' }}>
@@ -299,10 +305,12 @@ const MedicationUsageManagement = () => {
                                                     <span className="text-xs font-medium" style={{ color: TEXT.SECONDARY }}>{item.studentCode}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 align-top" style={{ width: '150px' }}>
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="font-medium text-sm" style={{ color: TEXT.PRIMARY }}>{item.medicationName}</span>
-                                                    <span className="inline-block px-2 py-1 rounded-lg text-xs font-semibold mt-1" style={{ background: PRIMARY[50], color: PRIMARY[700], width: 'fit-content' }}>{item.statusDisplayName}</span>
+                                            <td className="py-4 px-6 align-top" style={{ width: '180px', verticalAlign: 'top' }}>
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <span className="font-medium text-sm" style={{ color: TEXT.PRIMARY, lineHeight: '1.3' }}>{item.medicationName}</span>
+                                                    <span className="inline-block rounded-lg text-xs font-semibold mt-1 px-2 py-1" style={{ background: PRIMARY[50], color: PRIMARY[700] }}>
+                                                        HSD: {formatDate(item.expiryDate)}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 align-top" style={{ width: '150px' }}>
