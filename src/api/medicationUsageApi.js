@@ -48,6 +48,26 @@ const medicationUsageApi = {
             };
         }
     },
+
+    // Cập nhật trạng thái sử dụng thuốc
+    updateMedicationUsageStatus: async (medicationId, status, reason = null) => {
+        try {
+            const requestBody = { status: status, reason: reason };
+            const response = await apiClient.patch(`/student-medications/${medicationId}/status`, requestBody);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể cập nhật trạng thái sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
     // Lấy chi tiết sử dụng thuốc theo ID
     getMedicationUsageById: async (id) => {
         try {

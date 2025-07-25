@@ -6,6 +6,9 @@ import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
 import StudentMedicationAdministerModal from '../../components/modal/StudentMedicationAdministerModal';
+import ConfirmModal from '../../components/modal/ConfirmModal';
+import ConfirmActionModal from '../../components/modal/ConfirmActionModal';
+import AlertModal from '../../components/modal/AlertModal';
 import { useNavigate } from 'react-router-dom';
 
 const FILTER_TABS = [
@@ -14,6 +17,7 @@ const FILTER_TABS = [
     { key: 'Completed', label: 'Đã hoàn thành', icon: <FiTrendingUp className="h-4 w-4" /> },
     { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
 ];
+const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
 
 const MedicationUsageManagement = () => {
     const { user } = useAuth();
@@ -26,9 +30,11 @@ const MedicationUsageManagement = () => {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [noteModal, setNoteModal] = useState({ open: false, instructions: '', specialNotes: '' });
     const [administerModal, setAdministerModal] = useState({ open: false, studentName: '', medicationName: '', defaultTime: '', item: null });
+    const [confirmDiscontinueModal, setConfirmDiscontinueModal] = useState({ open: false, item: null });
+    const [confirmCompleteModal, setConfirmCompleteModal] = useState({ open: false, item: null });
+    const [alertModal, setAlertModal] = useState({ open: false, message: '', type: 'info' });
     const nurseId = user?.id || '';
-    const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
-    const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit] || unit;
+    const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit];
     const navigate = useNavigate();
 
     const formatDate = (dateString) => {
@@ -119,6 +125,48 @@ const MedicationUsageManagement = () => {
             medicationName: item.medicationName
         });
         setOpenActionId(null);
+    };
+
+    const handleComplete = async (item) => {
+        setConfirmCompleteModal({ open: true, item: item });
+        setOpenActionId(null);
+    };
+
+    const handleConfirmComplete = async () => {
+        try {
+            const response = await medicationUsageApi.updateMedicationUsageStatus(confirmCompleteModal.item.id, 'Completed');
+            if (response.success) {
+                fetchMedicationUsage();
+                setAlertModal({ open: true, message: 'Đã hoàn thành sử dụng thuốc thành công.', type: 'success' });
+            } else {
+                setAlertModal({ open: true, message: 'Không thể cập nhật trạng thái hoàn thành.', type: 'error' });
+            }
+        } catch (error) {
+            setAlertModal({ open: true, message: 'Có lỗi xảy ra khi cập nhật trạng thái.', type: 'error' });
+        } finally {
+            setConfirmCompleteModal({ open: false, item: null });
+        }
+    };
+
+    const handleDiscontinue = async (item) => {
+        setConfirmDiscontinueModal({ open: true, item: item });
+        setOpenActionId(null);
+    };
+
+    const handleConfirmDiscontinue = async (reason) => {
+        try {
+            const response = await medicationUsageApi.updateMedicationUsageStatus(confirmDiscontinueModal.item.id, 'Discontinued', reason);
+            if (response.success) {
+                fetchMedicationUsage();
+                setAlertModal({ open: true, message: 'Đã ngừng sử dụng thuốc thành công.', type: 'success' });
+            } else {
+                setAlertModal({ open: true, message: 'Không thể cập nhật trạng thái ngưng sử dụng.', type: 'error' });
+            }
+        } catch (error) {
+            setAlertModal({ open: true, message: 'Có lỗi xảy ra khi cập nhật trạng thái.', type: 'error' });
+        } finally {
+            setConfirmDiscontinueModal({ open: false, item: null });
+        }
     };
 
     const stats = {
@@ -255,7 +303,7 @@ const MedicationUsageManagement = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto" style={{ overflow: 'visible' }}>
                         <table className="w-full">
                             <thead>
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
@@ -345,7 +393,7 @@ const MedicationUsageManagement = () => {
                                                     ))}
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 align-top text-center" style={{ width: '80px' }}>
+                                            <td className="py-4 px-6 align-top text-center" style={{ width: '80px', position: 'relative' }}>
                                                 <div style={{ position: 'relative', display: 'inline-block' }} data-dropdown>
                                                     <button
                                                         onClick={() => toggleDropdown(item.id)}
@@ -357,16 +405,18 @@ const MedicationUsageManagement = () => {
                                                     {openActionId === item.id && (
                                                         <div
                                                             className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '2px', zIndex: 50 }}
+                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '2px', zIndex: 9999 }}
                                                         >
-                                                            <button
-                                                                className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                style={{ color: PRIMARY[600] }}
-                                                                onClick={() => handleAdministerModal(item)}
-                                                            >
-                                                                <FiEdit className="w-4 h-4 flex-shrink-0" />
-                                                                <span>Ghi nhận KQ</span>
-                                                            </button>
+                                                            {item.status !== 'Completed' && item.status !== 'Discontinued' && (
+                                                                <button
+                                                                    className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                    style={{ color: PRIMARY[600] }}
+                                                                    onClick={() => handleAdministerModal(item)}
+                                                                >
+                                                                    <FiEdit className="w-4 h-4 flex-shrink-0" />
+                                                                    <span>Ghi nhận KQ</span>
+                                                                </button>
+                                                            )}
 
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -385,6 +435,28 @@ const MedicationUsageManagement = () => {
                                                                 <FiInfo className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lưu ý</span>
                                                             </button>
+
+                                                            {item.status !== 'Completed' && item.status !== 'Discontinued' && (
+                                                                <>
+                                                                    <button
+                                                                        className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                        style={{ color: SUCCESS[600] }}
+                                                                        onClick={() => handleComplete(item)}
+                                                                    >
+                                                                        <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
+                                                                        <span>Hoàn thành</span>
+                                                                    </button>
+
+                                                                    <button
+                                                                        className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                        style={{ color: ERROR[600] }}
+                                                                        onClick={() => handleDiscontinue(item)}
+                                                                    >
+                                                                        <FiAlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                                                        <span>Ngưng sử dụng</span>
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -478,6 +550,35 @@ const MedicationUsageManagement = () => {
                 timesOfDay={administerModal.item?.timesOfDay || []}
                 medicationId={administerModal.item?.id}
                 onSuccess={fetchMedicationUsage}
+            />
+
+            <ConfirmActionModal
+                isOpen={confirmDiscontinueModal.open}
+                onClose={() => setConfirmDiscontinueModal({ open: false, item: null })}
+                onConfirm={handleConfirmDiscontinue}
+                title="Xác nhận ngừng sử dụng thuốc"
+                message={`Bạn có chắc chắn muốn ngừng sử dụng thuốc "${confirmDiscontinueModal.item?.medicationName}" cho học sinh "${confirmDiscontinueModal.item?.studentName}"?`}
+                type="reject"
+                confirmText="Ngưng sử dụng"
+                cancelText="Hủy"
+            />
+
+            <ConfirmModal
+                isOpen={confirmCompleteModal.open}
+                onClose={() => setConfirmCompleteModal({ open: false, item: null })}
+                onConfirm={handleConfirmComplete}
+                title="Xác nhận hoàn thành"
+                message={`Bạn có chắc chắn muốn hoàn thành sử dụng thuốc "${confirmCompleteModal.item?.medicationName}" cho học sinh "${confirmCompleteModal.item?.studentName}"?`}
+                type="success"
+                confirmText="Hoàn thành"
+                cancelText="Hủy"
+            />
+
+            <AlertModal
+                isOpen={alertModal.open}
+                onClose={() => setAlertModal({ ...alertModal, open: false })}
+                message={alertModal.message}
+                type={alertModal.type}
             />
         </div>
     );
