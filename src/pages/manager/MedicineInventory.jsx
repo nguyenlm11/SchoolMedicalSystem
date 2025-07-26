@@ -33,7 +33,7 @@ const MedicineInventory = () => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
             setCurrentPage(1);
-        }, 500);
+        }, 750);
 
         return () => clearTimeout(timer);
     }, [searchTerm]);
@@ -64,12 +64,7 @@ const MedicineInventory = () => {
 
     const fetchMedicines = async () => {
         try {
-            setLoading(true);
-            const params = {
-                pageIndex: currentPage,
-                pageSize: pageSize,
-                type: 'Medication'
-            };
+            const params = { pageIndex: currentPage, pageSize: pageSize, type: 'Medication' };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
             }
@@ -89,14 +84,12 @@ const MedicineInventory = () => {
                 const lowStock = response.data.filter(item => item.isLowStock).length;
                 setStats({ total, inactive, lowStock });
             } else {
-                console.error('Error fetching medicines:', response.message);
                 showAlert("error", "Lỗi", response.message || "Không thể tải danh sách thuốc. Vui lòng thử lại.");
                 setMedicines([]);
                 setTotalCount(0);
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching medicines:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách thuốc. Vui lòng thử lại.");
             setMedicines([]);
             setTotalCount(0);

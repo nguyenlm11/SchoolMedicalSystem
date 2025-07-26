@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FiSearch, FiRefreshCw, FiEye, FiMoreVertical, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo, FiEdit } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiCheckCircle, FiAlertTriangle, FiActivity, FiTrendingUp, FiChevronLeft, FiChevronRight, FiPackage, FiInfo, FiEye, FiMoreVertical, FiPlus } from "react-icons/fi";
 import { PRIMARY, WARNING, ERROR, SUCCESS, INFO, TEXT, BACKGROUND, BORDER, GRAY } from '../../constants/colors';
 import Loading from '../../components/Loading';
 import { useAuth } from '../../utils/AuthContext';
 import medicationUsageApi from '../../api/medicationUsageApi';
+import userApi from '../../api/userApi';
 import MedicationUsageNoteModal from '../../components/modal/MedicationUsageNoteModal';
-import StudentMedicationAdministerModal from '../../components/modal/StudentMedicationAdministerModal';
-import ConfirmModal from '../../components/modal/ConfirmModal';
-import ConfirmActionModal from '../../components/modal/ConfirmActionModal';
-import AlertModal from '../../components/modal/AlertModal';
-import { useNavigate } from 'react-router-dom';
+import SupplementMedicationModal from '../../components/modal/SupplementMedicationModal';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const FILTER_TABS = [
     { key: 'Approved', label: 'Đã duyệt', icon: <FiCheckCircle className="h-4 w-4" /> },
@@ -17,25 +15,86 @@ const FILTER_TABS = [
     { key: 'Completed', label: 'Đã hoàn thành', icon: <FiTrendingUp className="h-4 w-4" /> },
     { key: 'Discontinued', label: 'Đã ngừng', icon: <FiAlertTriangle className="h-4 w-4" /> },
 ];
-const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
 
-const MedicationUsageManagement = () => {
-    const { user } = useAuth();
+const StudentMedicationUsageHistory = (props) => {
+    const { user: authUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState([]);
+    const [allStudentsData, setAllStudentsData] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [pagination, setPagination] = useState({ pageIndex: 1, pageSize: 10, totalCount: 0, totalPages: 0 });
-    const [openActionId, setOpenActionId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("Approved");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [noteModal, setNoteModal] = useState({ open: false, instructions: '', specialNotes: '' });
-    const [administerModal, setAdministerModal] = useState({ open: false, studentName: '', medicationName: '', defaultTime: '', item: null });
-    const [confirmDiscontinueModal, setConfirmDiscontinueModal] = useState({ open: false, item: null });
-    const [confirmCompleteModal, setConfirmCompleteModal] = useState({ open: false, item: null });
-    const [alertModal, setAlertModal] = useState({ open: false, message: '', type: 'info' });
-    const nurseId = user?.id || '';
-    const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit];
+    const [supplementModal, setSupplementModal] = useState({ open: false, medicationData: null });
+    const [openActionId, setOpenActionId] = useState(null);
+    const [students, setStudents] = useState([]);
+    const [selectedStudentId, setSelectedStudentId] = useState("");
+    const [activeStudentTab, setActiveStudentTab] = useState("all");
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const user = authUser || JSON.parse(localStorage.getItem("user"));
+
+    useEffect(() => {
+        let sid = props.studentId;
+        if (!sid) {
+            sid = searchParams.get('studentId');
+        }
+        if (sid) {
+            setSelectedStudentId(sid);
+        }
+    }, [props.studentId, searchParams]);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [user]);
+
+    const fetchStudents = async () => {
+        if (!user || !user.id) {
+            setLoading(false);
+            return;
+        }
+        try {
+            setLoading(true);
+            const response = await userApi.getParentStudents(user.id, { pageIndex: 1, pageSize: 100 });
+            if (response && response.success) {
+                setStudents(response.data || []);
+                if (response.data && response.data.length > 0) {
+                    setSelectedStudentId(response.data[0].id);
+                    setActiveStudentTab(response.data[0].id);
+                }
+                await fetchAllStudentsData(response.data || []);
+            } else {
+                setStudents([]);
+            }
+        } catch (error) {
+            setStudents([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchAllStudentsData = async (studentsList) => {
+        try {
+            const allData = [];
+            for (const student of studentsList) {
+                const params = { pageIndex: 1, pageSize: 100, studentId: student.id, status: filterStatus };
+                if (debouncedSearchTerm) {
+                    params.searchTerm = debouncedSearchTerm;
+                }
+                const response = await medicationUsageApi.getMedicationUsage(params);
+                if (response.success && response.data) {
+                    allData.push(...response.data);
+                }
+            }
+            setAllStudentsData(allData);
+        } catch (error) {
+            setAllStudentsData([]);
+        }
+    };
+
+    const QUANTITY_UNIT_MAP = { Bottle: 'Chai', Tablet: 'Viên', Pack: 'Gói' };
+    const getQuantityUnit = (unit) => QUANTITY_UNIT_MAP[unit];
 
     const formatDate = (dateString) => {
         if (!dateString) return 'Khi cần';
@@ -43,19 +102,14 @@ const MedicationUsageManagement = () => {
         return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (!event.target.closest('[data-dropdown]')) {
-                setOpenActionId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
     const fetchMedicationUsage = async () => {
         try {
-            const params = { pageIndex: pagination.pageIndex, pageSize: pagination.pageSize, nurseId: nurseId, status: filterStatus };
+            const params = {
+                pageIndex: pagination.pageIndex,
+                pageSize: pagination.pageSize,
+                studentId: selectedStudentId,
+                status: filterStatus
+            };
             if (debouncedSearchTerm) {
                 params.searchTerm = debouncedSearchTerm;
             }
@@ -82,7 +136,13 @@ const MedicationUsageManagement = () => {
 
     useEffect(() => {
         fetchMedicationUsage();
-    }, [pagination.pageIndex, pagination.pageSize, nurseId, filterStatus, debouncedSearchTerm]);
+    }, [pagination.pageIndex, pagination.pageSize, selectedStudentId, activeStudentTab, students, filterStatus, debouncedSearchTerm]);
+
+    useEffect(() => {
+        if (students.length > 0) {
+            fetchAllStudentsData(students);
+        }
+    }, [filterStatus, debouncedSearchTerm, students]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -101,21 +161,6 @@ const MedicationUsageManagement = () => {
         setPagination(prev => ({ ...prev, pageIndex: newPageIndex }));
     };
 
-    const toggleDropdown = (id) => {
-        setOpenActionId(openActionId === id ? null : id);
-    };
-
-    const handleAdministerModal = (item) => {
-        setAdministerModal({
-            open: true,
-            studentName: item.studentName,
-            medicationName: item.medicationName,
-            defaultTime: '',
-            item: item
-        });
-        setOpenActionId(null);
-    };
-
     const handleNoteModal = (item) => {
         setNoteModal({
             open: true,
@@ -124,63 +169,59 @@ const MedicationUsageManagement = () => {
             studentName: item.studentName,
             medicationName: item.medicationName
         });
-        setOpenActionId(null);
     };
 
-    const handleComplete = async (item) => {
-        setConfirmCompleteModal({ open: true, item: item });
-        setOpenActionId(null);
+    const handleSupplementModal = (item) => {
+        setSupplementModal({
+            open: true,
+            medicationData: item
+        });
+        setOpenActionId(null); // Đóng dropdown
     };
 
-    const handleConfirmComplete = async () => {
+    const handleSupplementSubmit = async (requestData) => {
         try {
-            const response = await medicationUsageApi.updateMedicationUsageStatus(confirmCompleteModal.item.id, 'Completed');
+            const response = await medicationUsageApi.supplementMedication(requestData);
             if (response.success) {
+                // Refresh data
                 fetchMedicationUsage();
-                setAlertModal({ open: true, message: 'Đã hoàn thành sử dụng thuốc thành công.', type: 'success' });
-            } else {
-                setAlertModal({ open: true, message: 'Không thể cập nhật trạng thái hoàn thành.', type: 'error' });
+                fetchAllStudentsData(students);
             }
+            return response; // Trả về kết quả để modal hiển thị thông báo
         } catch (error) {
-            setAlertModal({ open: true, message: 'Có lỗi xảy ra khi cập nhật trạng thái.', type: 'error' });
-        } finally {
-            setConfirmCompleteModal({ open: false, item: null });
+            console.error('Error supplementing medication:', error);
+            return {
+                success: false,
+                message: 'Đã xảy ra lỗi khi bổ sung thuốc'
+            };
         }
     };
 
-    const handleDiscontinue = async (item) => {
-        setConfirmDiscontinueModal({ open: true, item: item });
-        setOpenActionId(null);
+    const toggleDropdown = (id) => {
+        setOpenActionId(openActionId === id ? null : id);
     };
-
-    const handleConfirmDiscontinue = async (reason) => {
-        try {
-            const response = await medicationUsageApi.updateMedicationUsageStatus(confirmDiscontinueModal.item.id, 'Discontinued', reason);
-            if (response.success) {
-                fetchMedicationUsage();
-                setAlertModal({ open: true, message: 'Đã ngừng sử dụng thuốc thành công.', type: 'success' });
-            } else {
-                setAlertModal({ open: true, message: 'Không thể cập nhật trạng thái ngưng sử dụng.', type: 'error' });
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('[data-dropdown]')) {
+                setOpenActionId(null);
             }
-        } catch (error) {
-            setAlertModal({ open: true, message: 'Có lỗi xảy ra khi cập nhật trạng thái.', type: 'error' });
-        } finally {
-            setConfirmDiscontinueModal({ open: false, item: null });
-        }
-    };
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const stats = {
-        approved: data.filter(r => r.status === 'Approved').length,
-        active: data.filter(r => r.status === 'Active').length,
-        completed: data.filter(r => r.status === 'Completed').length,
-        expiringSoon: data.filter(r => r.isExpiringSoon).length,
-        total: data.length
+        approved: allStudentsData.filter(r => r.status === 'Approved').length,
+        active: allStudentsData.filter(r => r.status === 'Active').length,
+        completed: allStudentsData.filter(r => r.status === 'Completed').length,
+        expiringSoon: allStudentsData.filter(r => r.isExpiringSoon).length,
+        total: allStudentsData.length
     };
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-                <Loading type="medical" size="large" color="primary" text="Đang tải dữ liệu sử dụng thuốc..." />
+                <Loading type="medical" size="large" color="primary" text="Đang tải dữ liệu lịch uống thuốc..." />
             </div>
         );
     }
@@ -192,10 +233,10 @@ const MedicationUsageManagement = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                                Quản lý sử dụng thuốc tại trường
+                                Lịch sử uống thuốc của học sinh
                             </h1>
                             <p className="mt-2 text-lg" style={{ color: TEXT.SECONDARY }}>
-                                Theo dõi và quản lý việc sử dụng thuốc của học sinh
+                                Theo dõi và quản lý việc sử dụng thuốc của con bạn tại trường
                             </p>
                         </div>
                     </div>
@@ -262,38 +303,65 @@ const MedicationUsageManagement = () => {
 
                 <div className="rounded-2xl shadow-xl border backdrop-blur-sm mb-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderColor: BORDER.LIGHT }}>
                     <div className="p-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
-                        <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+                        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
+                            <div className="flex-shrink-0">
+                                <select
+                                    className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200 font-medium"
+                                    style={{ borderColor: GRAY[200], backgroundColor: 'white', color: TEXT.PRIMARY, focusRingColor: PRIMARY[500] + '40' }}
+                                    value={selectedStudentId}
+                                    onChange={e => {
+                                        const value = e.target.value;
+                                        setActiveStudentTab(value);
+                                        setSelectedStudentId(value);
+                                        setPagination(prev => ({ ...prev, pageIndex: 1 }));
+                                    }}
+                                >
+                                    {students.map(student => (
+                                        <option key={student.id} value={student.id}>
+                                            {student.studentCode || `Student${student.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="flex-1">
                                 <div className="relative">
                                     <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: GRAY[400] }} />
                                     <input
                                         type="text"
-                                        placeholder="Tìm kiếm theo tên học sinh, thuốc, phụ huynh..."
-                                        className="w-full pl-12 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-200"
+                                        placeholder="Tìm kiếm theo tên thuốc..."
+                                        className="w-full pl-12 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-200"
                                         style={{ borderColor: BORDER.DEFAULT, backgroundColor: BACKGROUND.DEFAULT, color: TEXT.PRIMARY }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                                {FILTER_TABS.map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => setFilterStatus(tab.key)}
-                                        className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
-                                        style={{
-                                            backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
-                                            color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
-                                            border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
-                                        }}
-                                    >
-                                        {tab.icon}{tab.label}
-                                    </button>
-                                ))}
+
+                            <div className="flex-shrink-0">
+                                <div className="flex flex-wrap gap-2">
+                                    {FILTER_TABS.map(tab => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setFilterStatus(tab.key)}
+                                            className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1 text-sm ${filterStatus === tab.key ? 'text-white shadow-lg' : 'hover:shadow-sm'}`}
+                                            style={{
+                                                backgroundColor: filterStatus === tab.key ? PRIMARY[500] : BACKGROUND.DEFAULT,
+                                                color: filterStatus === tab.key ? 'white' : TEXT.PRIMARY,
+                                                border: `1px solid ${filterStatus === tab.key ? PRIMARY[500] : BORDER.DEFAULT}`,
+                                            }}
+                                        >
+                                            {tab.icon}{tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex-shrink-0">
+                                <label className="block mb-2 font-medium text-sm" style={{ color: TEXT.PRIMARY }}>&nbsp;</label>
                                 <button
                                     onClick={handleRefresh}
-                                    className="px-3 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
+                                    className="px-4 py-2 rounded-lg flex items-center justify-center transition-all duration-200 hover:opacity-80"
                                     style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                     title="Làm mới"
                                 >
@@ -303,13 +371,10 @@ const MedicationUsageManagement = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto" style={{ overflow: 'visible' }}>
+                    <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr style={{ backgroundColor: PRIMARY[50] }}>
-                                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '200px' }}>
-                                        HỌC SINH
-                                    </th>
                                     <th className="py-4 px-6 text-left align-top text-sm font-semibold uppercase tracking-wider whitespace-nowrap" style={{ color: TEXT.PRIMARY, width: '180px' }}>
                                         THUỐC
                                     </th>
@@ -333,7 +398,7 @@ const MedicationUsageManagement = () => {
                             <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                                 {data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
+                                        <td colSpan={6} className="px-6 py-12 text-center" style={{ borderTop: `1px solid ${BORDER.LIGHT}` }}>
                                             <FiPackage className="mx-auto h-12 w-12 mb-4" style={{ color: GRAY[400] }} />
                                             <h3 className="text-lg font-medium mb-2" style={{ color: TEXT.PRIMARY }}>
                                                 Không có dữ liệu sử dụng thuốc
@@ -350,12 +415,6 @@ const MedicationUsageManagement = () => {
                                             className="hover:bg-opacity-50 transition-all duration-200 group"
                                             style={{ backgroundColor: index % 2 === 0 ? 'transparent' : GRAY[25] }}
                                         >
-                                            <td className="py-4 px-6 align-top" style={{ width: '200px' }}>
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="font-semibold text-sm" style={{ color: TEXT.PRIMARY }}>{item.studentName}</span>
-                                                    <span className="text-xs font-medium" style={{ color: TEXT.SECONDARY }}>{item.studentCode}</span>
-                                                </div>
-                                            </td>
                                             <td className="py-4 px-6 align-top" style={{ width: '180px', verticalAlign: 'top' }}>
                                                 <div className="flex flex-col items-start gap-1">
                                                     <span className="font-medium text-sm" style={{ color: TEXT.PRIMARY, lineHeight: '1.3' }}>{item.medicationName}</span>
@@ -393,7 +452,7 @@ const MedicationUsageManagement = () => {
                                                     ))}
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 align-top text-center" style={{ width: '80px', position: 'relative' }}>
+                                            <td className="py-4 px-6 align-top text-center" style={{ width: '80px' }}>
                                                 <div style={{ position: 'relative', display: 'inline-block' }} data-dropdown>
                                                     <button
                                                         onClick={() => toggleDropdown(item.id)}
@@ -405,27 +464,27 @@ const MedicationUsageManagement = () => {
                                                     {openActionId === item.id && (
                                                         <div
                                                             className="absolute py-2 w-48 bg-white rounded-lg shadow-xl border"
-                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '2px', zIndex: 9999 }}
+                                                            style={{ borderColor: BORDER.DEFAULT, backgroundColor: 'white', position: 'absolute', right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '2px', zIndex: 50 }}
                                                         >
-                                                            {item.status !== 'Completed' && item.status !== 'Discontinued' && (
-                                                                <button
-                                                                    className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                    style={{ color: PRIMARY[600] }}
-                                                                    onClick={() => handleAdministerModal(item)}
-                                                                >
-                                                                    <FiEdit className="w-4 h-4 flex-shrink-0" />
-                                                                    <span>Ghi nhận KQ</span>
-                                                                </button>
-                                                            )}
-
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                                                                 style={{ color: PRIMARY[600] }}
-                                                                onClick={() => navigate(`/schoolnurse/medication-usage-history/${item.id}`)}
+                                                                onClick={() => navigate(`/parent/medication-history/${item.id}`)}
                                                             >
                                                                 <FiEye className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lịch sử uống</span>
                                                             </button>
+
+                                                            {item.status === 'Active' && item.isLowStock && (
+                                                                <button
+                                                                    className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                                                                    style={{ color: PRIMARY[600] }}
+                                                                    onClick={() => handleSupplementModal(item)}
+                                                                >
+                                                                    <FiPlus className="w-4 h-4 flex-shrink-0" />
+                                                                    <span>Bổ sung thuốc</span>
+                                                                </button>
+                                                            )}
 
                                                             <button
                                                                 className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
@@ -435,28 +494,6 @@ const MedicationUsageManagement = () => {
                                                                 <FiInfo className="w-4 h-4 flex-shrink-0" />
                                                                 <span>Lưu ý</span>
                                                             </button>
-
-                                                            {item.status !== 'Completed' && item.status !== 'Discontinued' && (
-                                                                <>
-                                                                    <button
-                                                                        className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                        style={{ color: SUCCESS[600] }}
-                                                                        onClick={() => handleComplete(item)}
-                                                                    >
-                                                                        <FiCheckCircle className="w-4 h-4 flex-shrink-0" />
-                                                                        <span>Hoàn thành</span>
-                                                                    </button>
-
-                                                                    <button
-                                                                        className="w-full px-4 py-2 text-left text-base hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
-                                                                        style={{ color: ERROR[600] }}
-                                                                        onClick={() => handleDiscontinue(item)}
-                                                                    >
-                                                                        <FiAlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                                                        <span>Ngưng sử dụng</span>
-                                                                    </button>
-                                                                </>
-                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -541,47 +578,14 @@ const MedicationUsageManagement = () => {
                 medicationName={noteModal.medicationName}
             />
 
-            <StudentMedicationAdministerModal
-                isOpen={administerModal.open}
-                onClose={() => setAdministerModal({ ...administerModal, open: false })}
-                studentName={administerModal.studentName}
-                medicationName={administerModal.medicationName}
-                defaultTime={administerModal.defaultTime}
-                timesOfDay={administerModal.item?.timesOfDay || []}
-                medicationId={administerModal.item?.id}
-                onSuccess={fetchMedicationUsage}
-            />
-
-            <ConfirmActionModal
-                isOpen={confirmDiscontinueModal.open}
-                onClose={() => setConfirmDiscontinueModal({ open: false, item: null })}
-                onConfirm={handleConfirmDiscontinue}
-                title="Xác nhận ngừng sử dụng thuốc"
-                message={`Bạn có chắc chắn muốn ngừng sử dụng thuốc "${confirmDiscontinueModal.item?.medicationName}" cho học sinh "${confirmDiscontinueModal.item?.studentName}"?`}
-                type="reject"
-                confirmText="Ngưng sử dụng"
-                cancelText="Hủy"
-            />
-
-            <ConfirmModal
-                isOpen={confirmCompleteModal.open}
-                onClose={() => setConfirmCompleteModal({ open: false, item: null })}
-                onConfirm={handleConfirmComplete}
-                title="Xác nhận hoàn thành"
-                message={`Bạn có chắc chắn muốn hoàn thành sử dụng thuốc "${confirmCompleteModal.item?.medicationName}" cho học sinh "${confirmCompleteModal.item?.studentName}"?`}
-                type="success"
-                confirmText="Hoàn thành"
-                cancelText="Hủy"
-            />
-
-            <AlertModal
-                isOpen={alertModal.open}
-                onClose={() => setAlertModal({ ...alertModal, open: false })}
-                message={alertModal.message}
-                type={alertModal.type}
+            <SupplementMedicationModal
+                isOpen={supplementModal.open}
+                onClose={() => setSupplementModal({ ...supplementModal, open: false })}
+                medicationData={supplementModal.medicationData}
+                onSubmit={handleSupplementSubmit}
             />
         </div>
     );
 };
 
-export default MedicationUsageManagement;
+export default StudentMedicationUsageHistory;

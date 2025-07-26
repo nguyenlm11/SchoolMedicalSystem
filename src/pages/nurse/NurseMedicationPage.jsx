@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiX, FiClock, FiEye, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiTablet, FiAlertTriangle, FiPackage, FiClock, FiEye, FiTrash2, FiChevronLeft, FiChevronRight, FiPlus } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -9,11 +9,8 @@ import ConfirmModal from "../../components/modal/ConfirmModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseMedicationPage = () => {
-    const location = useLocation();
-    const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [medicines, setMedicines] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
@@ -35,13 +32,8 @@ const NurseMedicationPage = () => {
             setDebouncedSearchTerm(searchTerm);
             setCurrentPage(1);
         }, 750);
-
         return () => clearTimeout(timer);
     }, [searchTerm]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [filterStatus]);
 
     useEffect(() => {
         fetchMedicines();
@@ -54,7 +46,6 @@ const NurseMedicationPage = () => {
 
     const fetchMedicines = async () => {
         try {
-            setLoading(true);
             const params = { pageIndex: currentPage, pageSize: pageSize, type: 'Medication' };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
@@ -78,7 +69,6 @@ const NurseMedicationPage = () => {
                 const pending = response.data.filter(item => item.status === 'Pending').length;
                 setStats({ total, dispensed, pending });
             } else {
-                console.error('Error fetching medicines:', response.message);
                 showAlert("error", "Lỗi", response.message || "Không thể tải danh sách thuốc. Vui lòng thử lại.");
                 setMedicines([]);
                 setTotalCount(0);
@@ -172,20 +162,7 @@ const NurseMedicationPage = () => {
                                     boxShadow: `0 1px 2px ${PRIMARY[900]}20`,
                                 }}
                             >
-                                <svg
-                                    className="mr-2 h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                </svg>
+                                <FiPlus className="mr-2 h-5 w-5" />
                                 Thêm thuốc mới
                             </button>
                         </div>

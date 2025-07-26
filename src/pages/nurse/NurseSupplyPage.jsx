@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { FiSearch, FiRefreshCw, FiPackage, FiAlertTriangle, FiBox, FiX, FiEye, FiTrash2, FiChevronLeft, FiChevronRight, FiPlus } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -9,11 +9,8 @@ import ConfirmModal from "../../components/modal/ConfirmModal";
 import medicalApi from "../../api/medicalApi";
 
 const NurseSupplyPage = () => {
-    const location = useLocation();
-    const initialFilter = new URLSearchParams(location.search).get("filter") || "";
     const [supplies, setSupplies] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterStatus, setFilterStatus] = useState(initialFilter);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("name");
@@ -26,10 +23,7 @@ const NurseSupplyPage = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [filters, setFilters] = useState({
-        approvalStatus: '',
-        priority: ''
-    });
+    const [filters, setFilters] = useState({ approvalStatus: '', priority: '' });
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [selectedItemId, setSelectedItemId] = useState(null);
 
@@ -43,10 +37,6 @@ const NurseSupplyPage = () => {
     }, [searchTerm]);
 
     useEffect(() => {
-        setCurrentPage(1);
-    }, [filterStatus, filters.approvalStatus, filters.priority]);
-
-    useEffect(() => {
         fetchSupplies();
     }, [filters, sortBy, sortOrder, currentPage, pageSize, debouncedSearchTerm]);
 
@@ -57,13 +47,7 @@ const NurseSupplyPage = () => {
 
     const fetchSupplies = async () => {
         try {
-            setLoading(true);
-            const params = {
-                pageIndex: currentPage,
-                pageSize: pageSize,
-                type: 'Supply',
-                role: 'SCHOOLNURSE'
-            };
+            const params = { pageIndex: currentPage, pageSize: pageSize, type: 'Supply', role: 'SCHOOLNURSE' };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
             }
@@ -87,14 +71,12 @@ const NurseSupplyPage = () => {
                 const lowStock = items.filter(item => item.isLowStock).length;
                 setStats({ total, inactive, lowStock });
             } else {
-                console.error('Error fetching supplies:', response.message);
                 showAlert("error", "Lỗi", response.message || "Không thể tải danh sách vật tư. Vui lòng thử lại.");
                 setSupplies([]);
                 setTotalCount(0);
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching supplies:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách vật tư. Vui lòng thử lại.");
             setSupplies([]);
             setTotalCount(0);
@@ -143,7 +125,6 @@ const NurseSupplyPage = () => {
                 showAlert("error", "Lỗi", response.message || "Không thể xóa vật tư. Vui lòng thử lại.");
             }
         } catch (error) {
-            console.error('Error deleting supply:', error);
             showAlert("error", "Lỗi", "Không thể xóa vật tư. Vui lòng thử lại.");
         }
     };
@@ -178,20 +159,7 @@ const NurseSupplyPage = () => {
                                 className="px-4 py-2 rounded-xl flex items-center transition-all duration-300 hover:opacity-80"
                                 style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                             >
-                                <svg
-                                    className="mr-2 h-5 w-5"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                    />
-                                </svg>
+                                <FiPlus className="mr-2 h-5 w-5" />
                                 Thêm vật tư y tế
                             </button>
                         </div>
@@ -593,10 +561,7 @@ const NurseSupplyPage = () => {
                 <ConfirmModal
                     isOpen={showConfirmModal}
                     onClose={() => setShowConfirmModal(false)}
-                    onConfirm={() => {
-                        handleDelete(selectedItemId);
-                        setShowConfirmModal(false);
-                    }}
+                    onConfirm={() => { handleDelete(selectedItemId); setShowConfirmModal(false) }}
                     title="Xác nhận xóa"
                     message="Bạn có chắc chắn muốn xóa vật tư này không? Hành động này không thể hoàn tác."
                     confirmText="Xóa"

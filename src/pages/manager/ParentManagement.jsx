@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiUser, FiUsers, FiUserCheck, FiUserX, FiEdit, FiTrash2, FiSearch, FiRefreshCw, FiEye, FiArrowUp, FiArrowDown, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiPlus, FiUser, FiUsers, FiUserCheck, FiUserX, FiEdit, FiTrash2, FiSearch, FiEye, FiArrowUp, FiArrowDown, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { PRIMARY, SUCCESS, ERROR, WARNING, GRAY, TEXT, BACKGROUND, BORDER } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import AlertModal from "../../components/modal/AlertModal";
@@ -40,7 +40,6 @@ const ParentManagement = () => {
     };
 
     const fetchParents = async () => {
-        // setLoading(true);
         try {
             const params = {
                 pageIndex: paginationState.currentPage,
@@ -107,13 +106,6 @@ const ParentManagement = () => {
     const handleAddParentSuccess = (message) => {
         showAlert("success", "Thành công", message);
         fetchParents();
-    };
-
-    const resetFilters = () => {
-        setSearchTerm("");
-        setSortBy("fullName");
-        setSortOrder("asc");
-        setPaginationState(prev => ({ ...prev, currentPage: 1 }));
     };
 
     const handleDelete = async () => {
@@ -261,14 +253,6 @@ const ParentManagement = () => {
                                     />
                                 </div>
                             </div>
-                            <button
-                                onClick={resetFilters}
-                                className="px-4 py-2 rounded-lg flex items-center transition-all duration-300"
-                                style={{ backgroundColor: PRIMARY[50], color: PRIMARY[600] }}
-                            >
-                                <FiRefreshCw className="mr-2 h-4 w-4" />
-                                Đặt lại bộ lọc
-                            </button>
                         </div>
                     </div>
 

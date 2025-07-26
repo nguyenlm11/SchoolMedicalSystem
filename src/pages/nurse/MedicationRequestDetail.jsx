@@ -27,6 +27,7 @@ const MedicationRequestDetail = () => {
     const [receivedQuantities, setReceivedQuantities] = useState({});
     const isParent = user?.role === 'parent';
     const isNurse = user?.role === 'schoolnurse';
+    const [activeTab, setActiveTab] = useState(0);
 
     const STATUS_CONFIG = {
         PendingApproval: { icon: FiClock, label: "Chờ duyệt", bgColor: WARNING[50], textColor: WARNING[700], borderColor: WARNING[200] },
@@ -59,36 +60,36 @@ const MedicationRequestDetail = () => {
         if (id) { fetchDetail() }
     }, [id, user?.id, isParent]);
 
-        const fetchDetail = async () => {
-            if (isParent && !user?.id) {
-                setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
-                return;
-            }
-            setLoading(true);
-            try {
-                const response = await medicationRequestApi.getMedicationRequestDetail(id);
-                if (response.success) {
-                    if (isParent && response.data.parentId !== user.id) {
-                        setMedicationRequest(null);
-                        setShowAlert(true);
-                        setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
-                        return;
-                    }
-                    setMedicationRequest(response.data);
-                } else {
+    const fetchDetail = async () => {
+        if (isParent && !user?.id) {
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không tìm thấy thông tin người dùng" });
+            return;
+        }
+        setLoading(true);
+        try {
+            const response = await medicationRequestApi.getMedicationRequestDetail(id);
+            if (response.success) {
+                if (isParent && response.data.parentId !== user.id) {
                     setMedicationRequest(null);
                     setShowAlert(true);
-                    setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
+                    setAlertInfo({ type: "error", message: "Bạn không có quyền xem yêu cầu thuốc này" });
+                    return;
                 }
-            } catch (error) {
+                setMedicationRequest(response.data);
+            } else {
                 setMedicationRequest(null);
                 setShowAlert(true);
-                setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
-            } finally {
-                setLoading(false);
+                setAlertInfo({ type: "error", message: response.message || "Không thể tải chi tiết yêu cầu thuốc" });
             }
-        };
+        } catch (error) {
+            setMedicationRequest(null);
+            setShowAlert(true);
+            setAlertInfo({ type: "error", message: "Không thể tải chi tiết yêu cầu thuốc" });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleApproveClick = () => {
         setApprovalAction("approve");
@@ -360,11 +361,11 @@ const MedicationRequestDetail = () => {
                             <div className="flex items-center mb-6">
                                 <div className="w-16 h-16 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
                                     <FiUser className="h-8 w-8" style={{ color: PRIMARY[600] }} />
-                        </div>
+                                </div>
                                 <div>
                                     <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
                                         {medicationRequest.studentName}
-                                </h3>
+                                    </h3>
                                     <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                         Mã học sinh: {medicationRequest.studentCode}
                                     </p>
@@ -402,12 +403,12 @@ const MedicationRequestDetail = () => {
                                 <div className="flex items-center justify-between py-3">
                                     <span className="text-base" style={{ color: TEXT.SECONDARY }}>Độ ưu tiên:</span>
                                     {getPriorityBadge(medicationRequest.priorityDisplayName)}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                         <div className="flex-1"></div>
-                            {(isNurse && medicationRequest.status === "Approved") && (
+                        {(isNurse && medicationRequest.status === "Approved") && (
                             <div className="bg-white rounded-xl shadow-sm border p-8 mt-6" style={{ borderColor: BORDER.DEFAULT }}>
                                 <h4 className="text-base font-semibold mb-6" style={{ color: TEXT.PRIMARY }}>
                                     Thao tác
@@ -421,8 +422,8 @@ const MedicationRequestDetail = () => {
                                     Xác nhận số lượng
                                 </button>
                             </div>
-                            )}
-                        </div>
+                        )}
+                    </div>
 
                     <div className="lg:col-span-2 h-full">
                         <div className="bg-white rounded-xl shadow-sm border h-full flex flex-col" style={{ borderColor: BORDER.DEFAULT }}>
@@ -444,138 +445,153 @@ const MedicationRequestDetail = () => {
                                         <p className="text-base" style={{ color: TEXT.SECONDARY }}>
                                             Không có thuốc nào được yêu cầu
                                         </p>
-                                </div>
-                            ) : (
-                                    <div
-                                        className={`space-y-6 ${medicationRequest.medications.length > 2 ? 'max-h-[700px] overflow-y-auto pr-3' : ''}`}
-                                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                    >
-                                        {medicationRequest.medications.map((medication, index) => (
-                                            <div key={medication.id} className="bg-gray-50 rounded-lg p-6 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <div className="flex items-center">
-                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
-                                                            <span className="text-base font-semibold" style={{ color: PRIMARY[600] }}>
-                                                                {index + 1}
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                                {medication.medicationName}
-                                                            </h3>
-                                                            <div className="flex items-center mt-2 space-x-3">
-                                                                {getStatusBadge(medication.status)}
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Tabs */}
+                                        <div className="flex space-x-2 mb-6 border-b" style={{ borderColor: BORDER.LIGHT }}>
+                                            {medicationRequest.medications.map((medication, idx) => (
+                                                <button
+                                                    key={medication.id}
+                                                    className={`px-4 py-2 text-base font-medium border-b-2 transition-colors duration-200 ${activeTab === idx ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-primary-600'}`}
+                                                    style={activeTab === idx ? { borderColor: PRIMARY[600], color: PRIMARY[700] } : { borderColor: 'transparent', color: GRAY[500] }}
+                                                    onClick={() => setActiveTab(idx)}
+                                                >
+                                                    {medication.medicationName}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {/* Tab content */}
+                                        {(() => {
+                                            const medication = medicationRequest.medications[activeTab];
+                                            if (!medication) return null;
+                                            return (
+                                                <div className="bg-gray-50 rounded-lg p-6 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                    <div className="flex items-center justify-between mb-6">
+                                                        <div className="flex items-center">
+                                                            <div className="w-10 h-10 rounded-full flex items-center justify-center mr-4" style={{ backgroundColor: PRIMARY[100] }}>
+                                                                <span className="text-base font-semibold" style={{ color: PRIMARY[600] }}>
+                                                                    {activeTab + 1}
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-xl font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                    {medication.medicationName}
+                                                                </h3>
+                                                                <div className="flex items-center mt-2 space-x-3">
+                                                                    {getStatusBadge(medication.status)}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-2">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Liều lượng</span>
-                                                        </div>
-                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {medication.dosage}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-2">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng gửi</span>
-                                                        </div>
-                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {medication.quantitySent} {getQuantityUnitText(medication.quantityUnit)}
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-2">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng nhận</span>
-                                                        </div>
-                                                        <p className="text-base font-semibold" style={{ color: medication.quantityReceived > 0 ? SUCCESS[600] : WARNING[600] }}>
-                                                            {medication.quantityReceived > 0
-                                                                ? `${medication.quantityReceived} ${getQuantityUnitText(medication.quantityUnit)}`
-                                                                : "Chưa nhận"
-                                                            }
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-2">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tần suất</span>
-                                                        </div>
-                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {medication.frequencyCount} lần/ngày
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                                                    <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-2">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Hạn sử dụng</span>
-                                                        </div>
-                                                        <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                            {formatDate(medication.expiryDate)}
-                                                        </p>
-                                                    </div>
-
-                                                    {medication.startDate && (
+                                                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                                                         <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
                                                             <div className="flex items-center mb-2">
-                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ngày bắt đầu</span>
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Liều lượng</span>
                                                             </div>
                                                             <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
-                                                                {formatDate(medication.startDate)}
+                                                                {medication.dosage}/lần
                                                             </p>
+                                                        </div>
+
+                                                        <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-2">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng gửi</span>
+                                                            </div>
+                                                            <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {medication.quantitySent} {getQuantityUnitText(medication.quantityUnit)}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-2">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Số lượng nhận</span>
+                                                            </div>
+                                                            <p className="text-base font-semibold" style={{ color: medication.quantityReceived > 0 ? SUCCESS[600] : WARNING[600] }}>
+                                                                {medication.quantityReceived > 0
+                                                                    ? `${medication.quantityReceived} ${getQuantityUnitText(medication.quantityUnit)}`
+                                                                    : "Chưa nhận"
+                                                                }
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-2">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Tần suất</span>
+                                                            </div>
+                                                            <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {medication.frequencyCount} lần/ngày
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                                        <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-2">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Hạn sử dụng</span>
+                                                            </div>
+                                                            <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                {formatDate(medication.expiryDate)}
+                                                            </p>
+                                                        </div>
+
+                                                        {medication.startDate && (
+                                                            <div className="bg-white rounded-lg p-4 border" style={{ borderColor: BORDER.LIGHT }}>
+                                                                <div className="flex items-center mb-2">
+                                                                    <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Ngày bắt đầu</span>
+                                                                </div>
+                                                                <p className="text-base font-semibold" style={{ color: TEXT.PRIMARY }}>
+                                                                    {formatDate(medication.startDate)}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {medication.timesOfDay && medication.timesOfDay.length > 0 && (
+                                                        <div className="bg-white rounded-lg p-4 border mb-6" style={{ borderColor: BORDER.LIGHT }}>
+                                                            <div className="flex items-center mb-3">
+                                                                <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Thời gian uống</span>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-3">
+                                                                {medication.timesOfDay.map((time, timeIndex) => (
+                                                                    <span
+                                                                        key={timeIndex}
+                                                                        className="px-4 py-2 text-sm rounded-full font-medium"
+                                                                        style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}
+                                                                    >
+                                                                        {time}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {(shouldShowSpecialNotes(medication.specialNotes) || shouldShowInstructions(medication.instructions)) && (
+                                                        <div className="space-y-4">
+                                                            {shouldShowSpecialNotes(medication.specialNotes) && (
+                                                                <div className="bg-white rounded-lg p-4 border" style={{ borderColor: WARNING[200] }}>
+                                                                    <div className="flex items-center mb-3">
+                                                                        <span className="text-sm font-medium" style={{ color: WARNING[700] }}>⚠️ Ghi chú đặc biệt</span>
+                                                                    </div>
+                                                                    <p className="text-base" style={{ color: WARNING[700] }}>{medication.specialNotes}</p>
+                                                                </div>
+                                                            )}
+                                                            {shouldShowInstructions(medication.instructions) && (
+                                                                <div className="bg-white rounded-lg p-4 border" style={{ borderColor: INFO[200] }}>
+                                                                    <div className="flex items-center mb-3">
+                                                                        <span className="text-sm font-medium" style={{ color: INFO[700] }}>📋 Hướng dẫn sử dụng</span>
+                                                                    </div>
+                                                                    <p className="text-base" style={{ color: INFO[700] }}>{medication.instructions}</p>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
-
-                                                {medication.timesOfDay && medication.timesOfDay.length > 0 && (
-                                                    <div className="bg-white rounded-lg p-4 border mb-6" style={{ borderColor: BORDER.LIGHT }}>
-                                                        <div className="flex items-center mb-3">
-                                                            <span className="text-sm font-medium" style={{ color: TEXT.SECONDARY }}>Thời gian uống</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-3">
-                                                            {medication.timesOfDay.map((time, timeIndex) => (
-                                                                <span
-                                                                    key={timeIndex}
-                                                                    className="px-4 py-2 text-sm rounded-full font-medium"
-                                                                    style={{ backgroundColor: PRIMARY[100], color: PRIMARY[700] }}
-                                                                >
-                                                                    {time}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {(shouldShowSpecialNotes(medication.specialNotes) || shouldShowInstructions(medication.instructions)) && (
-                                                    <div className="space-y-4">
-                                                        {shouldShowSpecialNotes(medication.specialNotes) && (
-                                                            <div className="bg-white rounded-lg p-4 border" style={{ borderColor: WARNING[200] }}>
-                                                                <div className="flex items-center mb-3">
-                                                                    <span className="text-sm font-medium" style={{ color: WARNING[700] }}>⚠️ Ghi chú đặc biệt</span>
-                                                                </div>
-                                                                <p className="text-base" style={{ color: WARNING[700] }}>{medication.specialNotes}</p>
-                                                            </div>
-                                                        )}
-                                                        {shouldShowInstructions(medication.instructions) && (
-                                                            <div className="bg-white rounded-lg p-4 border" style={{ borderColor: INFO[200] }}>
-                                                                <div className="flex items-center mb-3">
-                                                                    <span className="text-sm font-medium" style={{ color: INFO[700] }}>📋 Hướng dẫn sử dụng</span>
-                                                                </div>
-                                                                <p className="text-base" style={{ color: INFO[700] }}>{medication.instructions}</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                    ))}
-                                </div>
-                            )}
+                                            );
+                                        })()}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

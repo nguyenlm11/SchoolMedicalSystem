@@ -49,41 +49,11 @@ const medicationUsageApi = {
         }
     },
 
-    // Lấy danh sách thuốc cho student (loại trừ trạng thái Chờ duyệt)
-    getStudentMedicationUsage: async (params = {}) => {
+    // Cập nhật trạng thái sử dụng thuốc
+    updateMedicationUsageStatus: async (medicationId, status, reason = null) => {
         try {
-            const {
-                pageIndex = 1,
-                pageSize = 10,
-                studentId = '',
-                searchTerm = ''
-            } = params;
-
-            const queryParams = new URLSearchParams();
-            queryParams.append('pageIndex', pageIndex);
-            queryParams.append('pageSize', pageSize);
-
-            if (studentId) {
-                queryParams.append('studentId', studentId);
-            }
-            if (searchTerm) {
-                queryParams.append('searchTerm', searchTerm);
-            }
-
-            const response = await apiClient.get(`/student-medications/by-nurse-or-student?${queryParams.toString()}`);
-
-            if (response.data && response.data.success) {
-                // Filter loại trừ trạng thái "Chờ duyệt" cho student
-                const filteredData = (response.data.data || []).filter(item => item.status !== 'PendingApproval');
-
-                return {
-                    ...response.data,
-                    data: filteredData,
-                    totalCount: filteredData.length,
-                    totalPages: Math.ceil(filteredData.length / pageSize)
-                };
-            }
-
+            const requestBody = { status: status, reason: reason };
+            const response = await apiClient.patch(`/student-medications/${medicationId}/status`, requestBody);
             return response.data;
         } catch (error) {
             if (error.response && error.response.data) {
@@ -91,12 +61,26 @@ const medicationUsageApi = {
             }
             return {
                 success: false,
-                message: "Không thể lấy danh sách sử dụng thuốc",
-                data: [],
-                totalCount: 0,
-                pageSize: 10,
-                currentPage: 1,
-                totalPages: 0,
+                message: "Không thể cập nhật trạng thái sử dụng thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
+    // Bổ sung thuốc
+    supplementMedication: async (requestData) => {
+        try {
+            const response = await apiClient.post('/student-medications/stocks', requestData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể bổ sung thuốc",
+                data: null,
                 errors: []
             };
         }

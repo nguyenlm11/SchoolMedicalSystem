@@ -53,7 +53,6 @@ const SupplyInventory = () => {
                 setOpenActionId(null);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -65,12 +64,7 @@ const SupplyInventory = () => {
 
     const fetchSupplies = async () => {
         try {
-            setLoading(true);
-            const params = {
-                pageIndex: currentPage,
-                pageSize: pageSize,
-                type: 'Supply'
-            };
+            const params = { pageIndex: currentPage, pageSize: pageSize, type: 'Supply' };
             if (filters.approvalStatus) {
                 params.approvalStatus = filters.approvalStatus;
             }
@@ -94,14 +88,12 @@ const SupplyInventory = () => {
                 const lowStock = items.filter(item => item.isLowStock).length;
                 setStats({ total, inactive, lowStock });
             } else {
-                console.error('Error fetching supplies:', response.message);
                 showAlert("error", "Lỗi", response.message || "Không thể tải danh sách vật tư. Vui lòng thử lại.");
                 setSupplies([]);
                 setTotalCount(0);
                 setTotalPages(0);
             }
         } catch (error) {
-            console.error('Error fetching supplies:', error);
             showAlert("error", "Lỗi", "Không thể tải danh sách vật tư. Vui lòng thử lại.");
             setSupplies([]);
             setTotalCount(0);

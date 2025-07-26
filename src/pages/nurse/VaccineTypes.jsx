@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import vaccineApi from '../../api/vaccineApi';
 import Loading from '../../components/Loading';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiEye, FiChevronLeft, FiChevronRight, FiPackage } from 'react-icons/fi';
-import { PRIMARY, TEXT, BORDER, BACKGROUND, GRAY, ERROR, SUCCESS, WARNING } from '../../constants/colors';
+import { PRIMARY, TEXT, BORDER, BACKGROUND, GRAY } from '../../constants/colors';
 import VaccineTypeDetailModal from '../../components/modal/VaccineTypeDetailModal';
 import ConfirmModal from '../../components/modal/ConfirmModal';
 import AlertModal from '../../components/modal/AlertModal';
@@ -17,18 +17,15 @@ const VaccineTypes = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState('view'); // 'view' | 'create' | 'edit'
+  const [modalMode, setModalMode] = useState('view');
   const [modalData, setModalData] = useState({});
   const [modalLoading, setModalLoading] = useState(false);
 
-  // Confirm delete
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Alert
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertType, setAlertType] = useState('info');
   const [alertTitle, setAlertTitle] = useState('');
@@ -38,22 +35,16 @@ const VaccineTypes = () => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setPageIndex(1);
-    }, 600);
+    }, 750);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
   useEffect(() => {
     fetchVaccineTypes();
-    // eslint-disable-next-line
   }, [debouncedSearchTerm, pageIndex]);
 
   const fetchVaccineTypes = async () => {
-    setLoading(true);
-    const params = {
-      pageIndex,
-      pageSize,
-      searchTerm: debouncedSearchTerm,
-    };
+    const params = { pageIndex, pageSize, searchTerm: debouncedSearchTerm, };
     const response = await vaccineApi.getVaccineTypes(params);
     if (response && response.data) {
       setVaccineTypes(response.data);
@@ -67,24 +58,24 @@ const VaccineTypes = () => {
     setLoading(false);
   };
 
-  // Modal handlers
   const openCreateModal = () => {
     setModalMode('create');
     setModalData({});
     setModalOpen(true);
   };
+
   const openEditModal = (data) => {
     setModalMode('edit');
     setModalData(data);
     setModalOpen(true);
   };
+
   const openViewModal = (data) => {
     setModalMode('view');
     setModalData(data);
     setModalOpen(true);
   };
 
-  // CRUD handlers
   const handleCreate = async (formData) => {
     setModalLoading(true);
     const res = await vaccineApi.createVaccineType(formData);
@@ -123,7 +114,6 @@ const VaccineTypes = () => {
     }
   };
 
-  // Alert handler
   const showAlert = (type, title, message) => {
     setAlertType(type);
     setAlertTitle(title);
@@ -131,7 +121,6 @@ const VaccineTypes = () => {
     setAlertOpen(true);
   };
 
-  // Pagination logic giống mẫu
   const renderPagination = () => {
     if (totalPages <= 1) return null;
     let pages = [];
@@ -224,23 +213,21 @@ const VaccineTypes = () => {
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr style={{ backgroundColor: PRIMARY[50] }}>
-                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 60, minWidth: 60, maxWidth: 60 }}>STT</th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 220, minWidth: 180, maxWidth: 260 }}>Tên loại vaccine</th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 340, minWidth: 220, maxWidth: 420 }}>Mô tả</th>
-                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 90, minWidth: 70, maxWidth: 110 }}>Tuổi khuyến nghị</th>
-                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 80, minWidth: 60, maxWidth: 100 }}>Số mũi tiêm</th>
-                    <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 140, minWidth: 120, maxWidth: 180 }}>Thao tác</th>
+                    <th className="py-4 px-4 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 60 }}>STT</th>
+                    <th className="py-4 px-4 text-left text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 220 }}>Tên loại vaccine</th>
+                    <th className="py-4 px-4 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 120 }}>Tuổi khuyến nghị</th>
+                    <th className="py-4 px-4 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 120 }}>Số mũi tiêm</th>
+                    <th className="py-4 px-4 text-center text-sm font-semibold uppercase tracking-wider" style={{ color: TEXT.PRIMARY, width: 160 }}>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y" style={{ divideColor: BORDER.LIGHT }}>
                   {vaccineTypes.map((vaccine, idx) => (
                     <tr key={vaccine.id || idx} style={{ backgroundColor: idx % 2 === 0 ? 'transparent' : GRAY[50] }}>
-                      <td className="py-4 px-6 font-semibold text-center" style={{ color: TEXT.PRIMARY, width: 60, minWidth: 60, maxWidth: 60 }}>{(pageIndex - 1) * pageSize + idx + 1}</td>
-                      <td className="py-4 px-6 font-semibold" style={{ color: TEXT.PRIMARY, width: 220, minWidth: 180, maxWidth: 260 }}>{vaccine.name || 'Không xác định'}</td>
-                      <td className="py-4 px-6" style={{ color: TEXT.SECONDARY, width: 340, minWidth: 220, maxWidth: 420 }}>{vaccine.description || '-'}</td>
-                      <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY, width: 90, minWidth: 70, maxWidth: 110 }}>{vaccine.recommendedAge ?? '-'}</td>
-                      <td className="py-4 px-6 text-center" style={{ color: TEXT.PRIMARY, width: 80, minWidth: 60, maxWidth: 100 }}>{vaccine.doseCount ?? '-'}</td>
-                      <td className="py-4 px-6 text-center" style={{ width: 140, minWidth: 120, maxWidth: 180 }}>
+                      <td className="py-4 px-4 font-semibold text-center" style={{ color: TEXT.PRIMARY, width: 60 }}>{(pageIndex - 1) * pageSize + idx + 1}</td>
+                      <td className="py-4 px-4 font-semibold" style={{ color: TEXT.PRIMARY, width: 220 }}>{vaccine.name || 'Không xác định'}</td>
+                      <td className="py-4 px-4 text-center" style={{ color: TEXT.PRIMARY, width: 120 }}>{vaccine.recommendedAge ?? '-'}</td>
+                      <td className="py-4 px-4 text-center" style={{ color: TEXT.PRIMARY, width: 120 }}>{vaccine.doseCount ?? '-'}</td>
+                      <td className="py-4 px-4 text-center" style={{ width: 160 }}>
                         <div className="flex items-center justify-center gap-2">
                           <button
                             className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition"
@@ -293,7 +280,7 @@ const VaccineTypes = () => {
             </div>
           )}
         </div>
-        {/* Modal chi tiết/tạo/sửa */}
+
         <VaccineTypeDetailModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -302,7 +289,7 @@ const VaccineTypes = () => {
           isLoading={modalLoading}
           onSubmit={modalMode === 'create' ? handleCreate : handleEdit}
         />
-        {/* Modal xác nhận xóa */}
+
         <ConfirmModal
           isOpen={confirmOpen}
           onClose={() => { if (!deleteLoading) setConfirmOpen(false); setDeleteId(null); }}
@@ -314,7 +301,7 @@ const VaccineTypes = () => {
           type="error"
           isLoading={deleteLoading}
         />
-        {/* AlertModal */}
+
         <AlertModal
           isOpen={alertOpen}
           onClose={() => setAlertOpen(false)}

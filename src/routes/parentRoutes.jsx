@@ -16,6 +16,8 @@ import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
 import ChangePassword from "../pages/auth/ChangePassword";
 import HealthCheckSchedule from "../pages/parent/HealthCheckSchedule";
 import HealthCheckDetail from "../pages/parent/HealthCheckDetail";
+import StudentMedicationUsageHistory from "../pages/parent/StudentMedicationUsageHistory";
+import MedicationUsageHistory from "../pages/nurse/MedicationUsageHistory";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -37,6 +39,8 @@ const parentRoutes = (
     <Route path="/parent/medication/request" element={<MedicationRequestCreate />} />
     <Route path="/parent/medication/history" element={<ParentMedicationRequestList />} />
     <Route path="/parent/medication/history/:id" element={<MedicationRequestDetail />} />
+    <Route path="/parent/medication/usage-history" element={<StudentMedicationUsageHistory />} />
+    <Route path="/parent/medication-history/:id" element={<MedicationUsageHistory />} />
     <Route path="/parent/medication/detail/:id" element={<PlaceholderPage title="Chi tiết thuốc (đang phát triển)" />} />
 
     {/* Vaccination routes */}

@@ -41,7 +41,6 @@ const MedicationUsageHistory = () => {
 
     const fetchData = async () => {
         if (!medicationId) return;
-        setLoading(true);
         setError('');
         try {
             const params = {

@@ -341,18 +341,20 @@ const VaccinationManagement = () => {
                                                     <Link to={`/schoolnurse/vaccination/${vaccination.id}`} className="text-blue-500 hover:text-blue-700 p-1 rounded-lg hover:bg-blue-50">
                                                         <FiEye className="h-4 w-4" />
                                                     </Link>
-                                                    <button
-                                                        onClick={() => confirmDelete(vaccination.id, vaccination.sessionName)}
-                                                        className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        disabled={deleteLoading}
-                                                        title="Xóa buổi tiêm chủng"
-                                                    >
-                                                        {deleteLoading && selectedItemId === vaccination.id ? (
-                                                            <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                                                        ) : (
-                                                            <FiTrash2 className="h-4 w-4" />
-                                                        )}
-                                                    </button>
+                                                    {vaccination.status === "PendingApproval" && (
+                                                        <button
+                                                            onClick={() => confirmDelete(vaccination.id, vaccination.sessionName)}
+                                                            className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            disabled={deleteLoading}
+                                                            title="Xóa buổi tiêm chủng"
+                                                        >
+                                                            {deleteLoading && selectedItemId === vaccination.id ? (
+                                                                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                                                            ) : (
+                                                                <FiTrash2 className="h-4 w-4" />
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

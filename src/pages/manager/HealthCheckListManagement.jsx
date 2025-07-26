@@ -53,7 +53,6 @@ const HealthCheckListManagement = () => {
 
     const fetchHealthCheckPlans = async () => {
         try {
-            setLoading(true);
             const data = await healthCheckApi.getHealthCheckPlans({ pageIndex: currentPage, pageSize: 10, searchTerm });
             setHealthCheckList(data.data);
             setTotalCount(data.totalCount);

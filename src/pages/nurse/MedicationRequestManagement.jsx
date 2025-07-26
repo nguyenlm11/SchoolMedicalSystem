@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiRefreshCw, FiEye, FiMoreVertical, FiCalendar, FiUser, FiTrendingUp, FiPhone, FiTrash2, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
+import { FiPlus, FiSearch, FiAlertTriangle, FiCheckCircle, FiClock, FiRefreshCw, FiEye, FiMoreVertical, FiTrendingUp, FiTrash2, FiChevronLeft, FiChevronRight, FiPackage } from "react-icons/fi";
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, SUCCESS, ERROR, WARNING, INFO } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +16,6 @@ const MedicationRequestManagement = () => {
     const [openActionId, setOpenActionId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("all");
     const [filterPriority, setFilterPriority] = useState("all");
-    const [dateRange, setDateRange] = useState({ fromDate: "", toDate: "" });
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [showAlert, setShowAlert] = useState(false);
@@ -33,9 +32,7 @@ const MedicationRequestManagement = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Fetch data from API
     const fetchMedicationRequests = async (params = {}) => {
-        setLoading(true);
         try {
             const apiParams = {
                 pageIndex: params.pageIndex || pagination.pageIndex,
@@ -80,7 +77,6 @@ const MedicationRequestManagement = () => {
     }, [searchTerm]);
 
     const handleRefresh = () => {
-        setDateRange({ fromDate: "", toDate: "" });
         setFilterStatus("all");
         setFilterPriority("all");
         setSearchTerm("");
@@ -125,20 +121,11 @@ const MedicationRequestManagement = () => {
         { value: 'Discontinued', label: 'Đã ngừng' }
     ];
 
-    const priorityOptions = [
-        { value: "all", label: "Tất cả độ ưu tiên" },
-        { value: 'Low', label: 'Thấp' },
-        { value: 'Normal', label: 'Bình thường' },
-        { value: 'High', label: 'Cao' },
-        { value: 'Critical', label: 'Khẩn cấp' }
-    ];
-
     const handleDeleteRequest = async () => {
         try {
             const response = await medicationRequestApi.deleteMedicationRequest(selectedRequestId);
             setShowDeleteModal(false);
             setSelectedRequestId(null);
-
             if (response.success) {
                 setShowAlert(true);
                 setAlertInfo({ type: "success", message: "Xóa yêu cầu thuốc thành công" });
@@ -159,14 +146,6 @@ const MedicationRequestManagement = () => {
         setSelectedRequestId(requestId);
         setShowDeleteModal(true);
         setOpenActionId(null);
-    };
-
-    const handleDateChange = (e) => {
-        const { name, value } = e.target;
-        setDateRange(prev => ({
-            ...prev,
-            [name]: value
-        }));
     };
 
     const getStatusBadge = (status) => {

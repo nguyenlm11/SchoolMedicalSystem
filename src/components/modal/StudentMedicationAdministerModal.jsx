@@ -36,9 +36,8 @@ function getTimeTabs(timesOfDay = []) {
 const initialForm = { dosageUsed: '', note: '', administeredTime: '' };
 
 const getVNDateString = (date = new Date()) => {
-    const tzOffset = 7 * 60;
-    const local = new Date(date.getTime() + (tzOffset - date.getTimezoneOffset()) * 60000);
-    return local.toISOString().slice(0, 10);
+    const vn = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+    return vn.toISOString().slice(0, 10);
 };
 
 const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, studentName, medicationName, defaultTime, timesOfDay = [], onSuccess, }) => {
@@ -134,9 +133,12 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
         if (!form.administeredTime) {
             errors.administeredTime = 'Vui lòng chọn thời gian.';
         } else {
-            const today = getVNDateString();
-            const inputDateTime = new Date(`${today}T${form.administeredTime}:00`);
-            const nowVN = new Date();
+            const todayVN = getVNDateString();
+            const inputDateTime = new Date(`${todayVN}T${form.administeredTime}:00+07:00`);
+            const now = new Date();
+            const nowVN = new Date(now.getTime());
+            console.log('todayVN:', todayVN, 'form.administeredTime:', form.administeredTime);
+            console.log('inputDateTime (VN):', inputDateTime.toString(), '| nowVN:', nowVN.toString());
             if (inputDateTime > nowVN) {
                 errors.administeredTime = 'Không thể ghi nhận thời gian ở tương lai.';
             }
@@ -162,6 +164,7 @@ const StudentMedicationAdministerModal = ({ isOpen, onClose, medicationId, stude
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log(formState);
         if (!validate()) return;
         setLoading(true);
         try {

@@ -286,7 +286,6 @@ const VaccinationDetail = () => {
         const assignedClassIds = vaccination.classNurseAssignments
             .filter(assignment => assignment.nurseId !== null)
             .map(assignment => assignment.classId);
-
         return vaccination.classIds.some(classId => !assignedClassIds.includes(classId));
     };
 
@@ -337,21 +336,25 @@ const VaccinationDetail = () => {
                             {userRole === "manager" && (
                                 <>
                                     {hasUnassignedClasses() ? (
-                                        <button
-                                            onClick={() => setAssignNurseModalOpen(true)}
-                                            className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                                            style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                                        >
-                                            <FiUserPlus className="w-4 h-4 mr-2" />Phân công
-                                        </button>
+                                        vaccination.status !== "Completed" && vaccination.status !== "Declined" && (
+                                            <button
+                                                onClick={() => setAssignNurseModalOpen(true)}
+                                                className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
+                                                style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                            >
+                                                <FiUserPlus className="w-4 h-4 mr-2" />Phân công
+                                            </button>
+                                        )
                                     ) : (
-                                        <button
-                                            onClick={() => setReassignNurseModalOpen(true)}
-                                            className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                                            style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                                        >
-                                            <FiUserCheck className="w-4 h-4 mr-2" />Tái phân công
-                                        </button>
+                                        vaccination.status !== "Completed" && vaccination.status !== "Declined" && (
+                                            <button
+                                                onClick={() => setReassignNurseModalOpen(true)}
+                                                className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
+                                                style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                                            >
+                                                <FiUserCheck className="w-4 h-4 mr-2" />Tái phân công
+                                            </button>
+                                        )
                                     )}
                                 </>
                             )}
