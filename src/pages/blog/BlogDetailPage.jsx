@@ -72,9 +72,8 @@ const BlogDetailPage = () => {
     const handleFormSubmit = async (data) => {
         setFormLoading(true);
         try {
-            // Use a hardcoded authorId to work around backend issue
-            const authorId = "98bf1b28-547e-4685-b402-98e0dc508468";
-            const postData = { ...data, authorId };
+            // Use user.id as the authorId
+            const postData = { ...data };
             
             await blogPostApi.updateBlogPost(id, postData);
             setAlert({ isOpen: true, type: 'success', title: 'Thành công', message: 'Cập nhật bài viết thành công!' });
@@ -415,50 +414,12 @@ const BlogDetailPage = () => {
             
             {/* Edit Form Modal */}
             {showEditForm && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', overflow: 'hidden' }}
-                    onClick={() => setShowEditForm(false)}
-                >
-                    <div
-                        className="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 transform transition-all duration-300 scale-100 relative"
-                        style={{ 
-                            boxShadow: '0 25px 50px -12px rgba(25,118,210,0.18), 0 0 0 1px #e5e7eb',
-                            maxHeight: '90vh',
-                            display: 'flex',
-                            flexDirection: 'column'
-                        }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#f3f4f6' }}>
-                            <h3 className="text-2xl font-bold" style={{ color: PRIMARY[700] }}>
-                                Chỉnh sửa bài viết
-                            </h3>
-                            <button
-                                onClick={() => setShowEditForm(false)}
-                                disabled={formLoading}
-                                className="p-2 rounded-lg transition-all duration-200 hover:bg-gray-100 disabled:opacity-50"
-                                style={{ color: '#6b7280' }}
-                            >
-                                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-y-auto" style={{ flexGrow: 1 }}>
-                            <BlogForm initialData={post} onSubmit={handleFormSubmit} loading={formLoading} />
-                        </div>
-                        <div className="flex items-center justify-end space-x-3 p-6 pt-4 border-t" style={{ borderColor: '#f3f4f6' }}>
-                            <button
-                                type="button"
-                                onClick={() => setShowEditForm(false)}
-                                disabled={formLoading}
-                                className="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50"
-                                style={{ color: PRIMARY[700], border: '1px solid #e5e7eb', background: '#fff' }}
-                            >
-                                Hủy
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <BlogForm 
+                    initialData={post}
+                    onSubmit={handleFormSubmit}
+                    loading={formLoading}
+                    onCancel={() => setShowEditForm(false)}
+                />
             )}
             
             {/* Confirm Delete Modal */}

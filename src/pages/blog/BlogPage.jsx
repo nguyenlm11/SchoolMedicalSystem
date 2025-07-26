@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { FiSearch, FiPlus, FiBookOpen, FiStar } from 'react-icons/fi';
 import blogPostApi from '../../api/blogPostApi';
 import BlogList from '../../components/blog/BlogList';
 import BlogForm from '../../components/blog/BlogForm';
-import { PRIMARY, BACKGROUND, TEXT } from '../../constants/colors';
-import { FiBookOpen, FiSearch, FiStar, FiPlus } from 'react-icons/fi';
-import AuthContext from '../../utils/AuthContext';
 import ConfirmModal from '../../components/modal/ConfirmModal';
 import AlertModal from '../../components/modal/AlertModal';
+import { PRIMARY, TEXT, BACKGROUND } from '../../constants/colors';
+import AuthContext from '../../utils/AuthContext';
 
 const CATEGORY_OPTIONS = [
   { label: 'Tất cả', value: '' },
@@ -14,12 +14,14 @@ const CATEGORY_OPTIONS = [
   { label: 'Dinh dưỡng', value: 'Dinh dưỡng' },
   { label: 'Phòng bệnh', value: 'Phòng bệnh' },
 ];
+
 const SORT_OPTIONS = [
   { label: 'Mới nhất', value: 'desc' },
   { label: 'Cũ nhất', value: 'asc' },
 ];
 
 const BlogPage = () => {
+  const { user } = useContext(AuthContext);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +37,6 @@ const BlogPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [alert, setAlert] = useState({ isOpen: false, type: 'success', title: '', message: '' });
   const pageSize = 6;
-  const { user } = useContext(AuthContext);
   const isSchoolNurse = user && user.role === 'schoolnurse';
 
   const fetchPosts = () => {
@@ -81,9 +82,8 @@ const BlogPage = () => {
   const handleFormSubmit = async (data) => {
     setFormLoading(true);
     try {
-      // Use a hardcoded authorId to work around backend issue
-      const authorId = "98bf1b28-547e-4685-b402-98e0dc508468";
-      const postData = { ...data, authorId };
+      // Use user.id as authorId
+      const postData = { ...data };
       
       if (editData) {
         await blogPostApi.updateBlogPost(editData.id, postData);
@@ -212,50 +212,15 @@ const BlogPage = () => {
       </div>
       {/* Modal BlogForm */}
       {showForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', overflow: 'hidden' }}
-          onClick={() => { setShowForm(false); setEditData(null); }}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 transform transition-all duration-300 scale-100 relative"
-            style={{ 
-              boxShadow: '0 25px 50px -12px rgba(25,118,210,0.18), 0 0 0 1px #e5e7eb',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#f3f4f6' }}>
-              <h3 className="text-2xl font-bold" style={{ color: PRIMARY[700] }}>
-                {editData ? 'Chỉnh sửa bài viết' : 'Tạo bài viết mới'}
-              </h3>
-              <button
-                onClick={() => { setShowForm(false); setEditData(null); }}
-                disabled={formLoading}
-                className="p-2 rounded-lg transition-all duration-200 hover:bg-gray-100 disabled:opacity-50"
-                style={{ color: '#6b7280' }}
-              >
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto" style={{ flexGrow: 1 }}>
-              <BlogForm initialData={editData || {}} onSubmit={handleFormSubmit} loading={formLoading} />
-            </div>
-            <div className="flex items-center justify-end space-x-3 p-6 pt-4 border-t" style={{ borderColor: '#f3f4f6' }}>
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setEditData(null); }}
-                disabled={formLoading}
-                className="px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:shadow-md disabled:opacity-50"
-                style={{ color: PRIMARY[700], border: '1px solid #e5e7eb', background: '#fff' }}
-              >
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
+        <BlogForm 
+          initialData={editData}
+          onSubmit={handleFormSubmit}
+          loading={formLoading}
+          onCancel={() => {
+            setShowForm(false);
+            setEditData(null);
+          }}
+        />
       )}
       {/* Modal xác nhận xóa */}
       {confirmDelete && (
@@ -264,7 +229,7 @@ const BlogPage = () => {
           onClose={() => setConfirmDelete(null)}
           onConfirm={handleConfirmDelete}
           title="Xác nhận xóa bài viết"
-          message={`Bạn có chắc chắn muốn xóa bài viết "${confirmDelete.title}"?`}
+          message={`Bạn có chắc chắn muốn xóa bài viết "${confirmDelete?.title}"?`}
           confirmText={deleteLoading ? 'Đang xóa...' : 'Xóa'}
           cancelText="Hủy"
           type="error"

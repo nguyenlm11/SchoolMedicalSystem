@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import blogPostApi from '../../api/blogPostApi';
 import AuthContext from '../../utils/AuthContext';
+import { PRIMARY, GRAY, TEXT, ERROR, SUCCESS } from '../../constants/colors';
 
 const CommentSection = ({ postId }) => {
   const { user } = useContext(AuthContext);
@@ -13,10 +14,14 @@ const CommentSection = ({ postId }) => {
 
   useEffect(() => {
     setLoading(true);
-    blogPostApi.getBlogPostById(postId)
+    blogPostApi.getCommentsByPostId(postId, { isApproved: true })
       .then(res => {
-        setComments((res.data?.comments || []).filter(c => c.isApproved));
-        setError('');
+        if (res.success) {
+          setComments(res.data || []);
+          setError('');
+        } else {
+          setError(res.message || 'Lỗi tải bình luận');
+        }
       })
       .catch(() => setError('Lỗi tải bình luận'))
       .finally(() => setLoading(false));
@@ -40,16 +45,16 @@ const CommentSection = ({ postId }) => {
 
   return (
     <div style={{ marginTop: 48 }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Bình luận</h2>
-      {loading ? <div>Đang tải bình luận...</div> :
-        error ? <div style={{ color: 'red' }}>{error}</div> :
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16, color: TEXT.PRIMARY }}>Bình luận</h2>
+      {loading ? <div style={{ color: TEXT.SECONDARY }}>Đang tải bình luận...</div> :
+        error ? <div style={{ color: ERROR[500] }}>{error}</div> :
         <div style={{ marginBottom: 32 }}>
-          {comments.length === 0 ? <div>Chưa có bình luận nào.</div> :
+          {comments.length === 0 ? <div style={{ color: TEXT.SECONDARY }}>Chưa có bình luận nào.</div> :
             comments.map(c => (
-              <div key={c.id} style={{ background: '#f5f5f5', borderRadius: 8, padding: 16, marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, color: '#1976d2' }}>{c.authorName}</div>
-                <div style={{ color: '#333', marginTop: 4 }}>{c.content}</div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{new Date(c.createdAt).toLocaleString()}</div>
+              <div key={c.id} style={{ background: GRAY[50], borderRadius: 8, padding: 16, marginBottom: 12 }}>
+                <div style={{ fontWeight: 600, color: PRIMARY[500] }}>{c.userName}</div>
+                <div style={{ color: TEXT.PRIMARY, marginTop: 4 }}>{c.content}</div>
+                <div style={{ fontSize: 12, color: TEXT.SECONDARY, marginTop: 4 }}>{new Date(c.createdDate).toLocaleString()}</div>
               </div>
             ))}
         </div>
@@ -61,16 +66,32 @@ const CommentSection = ({ postId }) => {
             onChange={e => setContent(e.target.value)}
             placeholder="Nhập bình luận..."
             rows={3}
-            style={{ borderRadius: 8, border: '1px solid #ccc', padding: 12, fontSize: 16 }}
+            style={{ borderRadius: 8, border: `1px solid ${GRAY[200]}`, padding: 12, fontSize: 16 }}
             disabled={submitting}
           />
-          <button type="submit" disabled={submitting || !content.trim()} style={{ alignSelf: 'flex-end', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 20px', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
+          <button 
+            type="submit" 
+            disabled={submitting || !content.trim()} 
+            style={{ 
+              alignSelf: 'flex-end', 
+              background: PRIMARY[500], 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: 6, 
+              padding: '8px 20px', 
+              fontWeight: 700, 
+              fontSize: 16, 
+              cursor: 'pointer',
+              opacity: submitting || !content.trim() ? 0.7 : 1,
+              transition: 'opacity 0.2s ease'
+            }}
+          >
             {submitting ? 'Đang gửi...' : 'Gửi bình luận'}
           </button>
-          {success && <div style={{ color: 'green', marginTop: 8 }}>{success}</div>}
+          {success && <div style={{ color: SUCCESS[600], marginTop: 8 }}>{success}</div>}
         </form>
       )}
-      {!user && <div style={{ color: '#888', marginTop: 16 }}>Đăng nhập để bình luận.</div>}
+      {!user && <div style={{ color: TEXT.SECONDARY, marginTop: 16 }}>Đăng nhập để bình luận.</div>}
     </div>
   );
 };

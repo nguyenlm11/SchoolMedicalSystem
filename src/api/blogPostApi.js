@@ -92,6 +92,34 @@ const blogPostApi = {
         }
     },
 
+    // Lấy danh sách bình luận theo bài viết và trạng thái phê duyệt
+    getCommentsByPostId: async (postId, params = {}) => {
+        try {
+            const {
+                pageIndex = 1,
+                pageSize = 10,
+                isApproved = false
+            } = params;
+
+            const queryParams = new URLSearchParams();
+            queryParams.append('pageIndex', pageIndex);
+            queryParams.append('pageSize', pageSize);
+            queryParams.append('isApproved', isApproved);
+
+            const response = await apiClient.get(`/blog-posts/${postId}/comments?${queryParams.toString()}`);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: error.message,
+                data: []
+            };
+        }
+    },
+
     // Tạo bài viết
     createBlogPost: async (postData) => {
         try {
