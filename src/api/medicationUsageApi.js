@@ -68,6 +68,24 @@ const medicationUsageApi = {
         }
     },
 
+    // Bổ sung thuốc
+    supplementMedication: async (requestData) => {
+        try {
+            const response = await apiClient.post('/student-medications/stocks', requestData);
+            return response.data;
+        } catch (error) {
+            if (error.response && error.response.data) {
+                return error.response.data;
+            }
+            return {
+                success: false,
+                message: "Không thể bổ sung thuốc",
+                data: null,
+                errors: []
+            };
+        }
+    },
+
     // Lấy chi tiết sử dụng thuốc theo ID
     getMedicationUsageById: async (id) => {
         try {
