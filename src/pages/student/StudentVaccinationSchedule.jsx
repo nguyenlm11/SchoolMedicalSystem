@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { FiCalendar, FiSearch, FiEye, FiAlertCircle, FiCheckCircle, FiAlertTriangle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import { FiCalendar, FiSearch, FiAlertCircle, FiCheckCircle, FiAlertTriangle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth } from "../../utils/AuthContext";
@@ -242,9 +241,6 @@ const StudentVaccinationSchedule = () => {
                                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/6" style={{ color: TEXT.PRIMARY }}>
                                             Trạng thái
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-40" style={{ color: TEXT.PRIMARY }}>
-                                            Thao tác
-                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y" style={{ divideColor: GRAY[100] }}>
@@ -310,33 +306,6 @@ const StudentVaccinationSchedule = () => {
                                             </td>
                                             <td className="py-4 px-6 w-1/6">
                                                 {getStatusBadge(mapApiStatusToComponentStatus(vaccination.status))}
-                                            </td>
-                                            <td className="py-4 px-6 w-40">
-                                                <div className="flex items-center space-x-2">
-                                                    {mapApiStatusToComponentStatus(vaccination.status) === 'completed' ? (
-                                                        <Link
-                                                            to={`/student/vaccination/result/${vaccination.id}`}
-                                                            state={{ studentId: user?.id }}
-                                                            className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
-                                                            title="Xem kết quả"
-                                                            style={{ color: PRIMARY[700], border: `1px solid ${PRIMARY[700]}` }}
-                                                        >
-                                                            <FiEye className="h-3 w-3" />
-                                                            <span>Kết quả</span>
-                                                        </Link>
-                                                    ) : (
-                                                        <Link
-                                                            to={`/student/vaccination/details/${vaccination.id}`}
-                                                            state={{ studentId: user?.id }}
-                                                            className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
-                                                            title="Xem chi tiết"
-                                                            style={{ color: PRIMARY[700], border: `1px solid ${PRIMARY[700]}` }}
-                                                        >
-                                                            <FiEye className="h-3 w-3" />
-                                                            <span>Chi tiết</span>
-                                                        </Link>
-                                                    )}
-                                                </div>
                                             </td>
                                         </tr>
                                     ))}

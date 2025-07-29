@@ -10,6 +10,7 @@ import ChangePassword from "../pages/auth/ChangePassword";
 import MedicationUsageSchedule from "../pages/student/MedicationUsageSchedule";
 import StudentVaccinationSchedule from "../pages/student/StudentVaccinationSchedule";
 import MedicationUsageHistory from '../pages/nurse/MedicationUsageHistory.jsx';
+import HealthEventDetail from "../pages/nurse/HealthEventDetail";
 
 const PlaceholderPage = ({ title }) => (
   <div className="p-8 text-center">{title}</div>
@@ -25,6 +26,7 @@ const studentRoutes = (
     <Route path="/student/report-symptom" element={<PlaceholderPage title="Báo cáo triệu chứng (đang phát triển)" />} />
     <Route path="/student/request-visit" element={<PlaceholderPage title="Yêu cầu gặp y tá (đang phát triển)" />} />
     <Route path="/student/health-events" element={<StudentHealthEvents />} />
+    <Route path="/student/student-health-events-detail/:id" element={<HealthEventDetail />} />
     <Route path="/student/profile" element={<StudentProfile />} />
     <Route path="/student/change-password" element={<ChangePassword />} />
   </Route>

@@ -1,26 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { FiHeart, FiUsers, FiShield, FiActivity, FiFileText, FiCalendar, FiCheckCircle, FiUserCheck, FiClipboard, FiPieChart, FiBook, FiStar, FiArrowRight, FiPhone, FiMail, FiMapPin, FiClock, FiUser, FiEye, FiAward, FiTarget, FiBookOpen } from 'react-icons/fi';
+import { FiHeart, FiUsers, FiShield, FiActivity, FiFileText, FiCalendar, FiCheckCircle, FiUserCheck, FiPieChart, FiBook, FiStar, FiArrowRight, FiPhone, FiMail, FiMapPin, FiClock, FiUser, FiEye, FiAward, FiTarget, FiBookOpen } from 'react-icons/fi';
 import { PRIMARY, BACKGROUND, TEXT } from '../../constants/colors';
 import { useAuth } from "../../utils/AuthContext";
 import Loading from '../Loading';
 import { Helmet } from 'react-helmet';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 
 const HomePage = () => {
   const { user, isAuthenticated, hasRole } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [redirectPath, setRedirectPath] = useState(null);
 
-  useEffect(() => {
-    // Initialize AOS animation library
-    AOS.init({
-      duration: 1000,
-      once: true,
-      easing: 'ease-in-out'
-    });
-  }, []);
+
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
@@ -61,7 +52,7 @@ const HomePage = () => {
       return (
         <Link
           to="/login"
-          className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+          className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-white shadow-lg"
           style={{ backgroundColor: PRIMARY[500] }}
         >
           <FiArrowRight className="w-5 h-5 mr-2" />
@@ -91,7 +82,7 @@ const HomePage = () => {
     return (
       <Link
         to={dashboardPath}
-        className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+        className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl text-white shadow-lg"
         style={{ backgroundColor: PRIMARY[500] }}
       >
         <FiArrowRight className="w-5 h-5 mr-2" />
@@ -145,49 +136,7 @@ const HomePage = () => {
     }
   ];
 
-  // Update login URLs based on roles
-  const userRoles = [
-    {
-      role: "Phụ huynh",
-      icon: FiHeart,
-      description: "Khai báo hồ sơ sức khỏe con em, gửi thuốc, theo dõi tình hình sức khỏe",
-      features: ["Hồ sơ sức khỏe", "Gửi thuốc", "Xem báo cáo"],
-      color: PRIMARY[500],
-      loginUrl: "/login?role=parent"
-    },
-    {
-      role: "Học sinh",
-      icon: FiUsers,
-      description: "Xem thông tin sức khỏe cá nhân, lịch kiểm tra và tiêm chủng",
-      features: ["Hồ sơ cá nhân", "Lịch khám", "Kết quả kiểm tra"],
-      color: PRIMARY[500],
-      loginUrl: "/login?role=student"
-    },
-    {
-      role: "Nhân viên y tế",
-      icon: FiUserCheck,
-      description: "Quản lý thuốc, thực hiện tiêm chủng và kiểm tra sức khỏe",
-      features: ["Quản lý thuốc", "Tiêm chủng", "Kiểm tra y tế"],
-      color: PRIMARY[500],
-      loginUrl: "/login?role=nurse"
-    },
-    {
-      role: "Quản lý",
-      icon: FiClipboard,
-      description: "Giám sát hoạt động, phê duyệt quy trình, xem báo cáo",
-      features: ["Giám sát", "Phê duyệt", "Báo cáo"],
-      color: PRIMARY[500],
-      loginUrl: "/login?role=manager"
-    },
-    {
-      role: "Quản trị viên",
-      icon: FiShield,
-      description: "Quản lý hệ thống, người dùng, cấu hình và bảo mật",
-      features: ["Quản lý hệ thống", "Người dùng", "Bảo mật"],
-      color: PRIMARY[500],
-      loginUrl: "/login?role=admin"
-    }
-  ];
+
 
   const blogPosts = [
     {
@@ -270,7 +219,6 @@ const HomePage = () => {
         {/* Hero Section */}
         <section
           className="relative py-20 lg:py-32 overflow-hidden"
-          data-aos="fade-up"
           style={{
             background: `linear-gradient(135deg, ${PRIMARY[50]} 0%, ${BACKGROUND.DEFAULT} 50%, ${PRIMARY[25] || '#f0fffe'} 100%)`
           }}
@@ -321,7 +269,7 @@ const HomePage = () => {
                 {getActionButton()}
                 <a
                   href="#about"
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border-2 transition-all duration-300 hover:shadow-lg"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border-2"
                   style={{
                     borderColor: PRIMARY[500],
                     color: PRIMARY[500],
@@ -336,12 +284,10 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="py-16" style={{ backgroundColor: PRIMARY[500] }}></section>
-
         {/* About Section */}
-        <section id="about" className="py-20" style={{ backgroundColor: BACKGROUND.DEFAULT }}>
+        <section id="about" className="py-20" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
+            <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
                 Về chúng tôi
               </h2>
@@ -355,7 +301,7 @@ const HomePage = () => {
               {schoolValues.map((value, index) => (
                 <div
                   key={index}
-                  className="text-center p-8 rounded-2xl border-2 border-transparent hover:border-current transition-all duration-300"
+                  className="text-center p-8 rounded-2xl border-2"
                   style={{ borderColor: PRIMARY[100] }}
                 >
                   <div
@@ -377,9 +323,9 @@ const HomePage = () => {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+        <section id="features" className="py-20" style={{ backgroundColor: BACKGROUND.DEFAULT }}>
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
+            <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
                 Tính năng chính
               </h2>
@@ -392,10 +338,10 @@ const HomePage = () => {
               {mainFeatures.map((feature, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 group"
+                  className="bg-white rounded-2xl shadow-lg p-8"
                 >
                   <div
-                    className="w-16 h-16 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                    className="w-16 h-16 rounded-xl flex items-center justify-center mb-6"
                     style={{ backgroundColor: feature.bgColor }}
                   >
                     <feature.icon className="h-8 w-8" style={{ color: feature.color }} />
@@ -413,9 +359,9 @@ const HomePage = () => {
         </section>
 
         {/* Blog Section */}
-        <section className="py-20" style={{ backgroundColor: BACKGROUND.DEFAULT }}>
+        <section className="py-20" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
+            <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
                 Blog sức khỏe học đường
               </h2>
@@ -428,7 +374,7 @@ const HomePage = () => {
               {blogPosts.map((post, index) => (
                 <article
                   key={post.id}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden"
                 >
                   <div className="p-8">
                     <div className="flex items-center justify-between mb-4">
@@ -441,7 +387,7 @@ const HomePage = () => {
                       <div className="text-6xl">{post.image}</div>
                     </div>
 
-                    <h3 className="text-xl font-bold mb-3 group-hover:text-current transition-colors duration-300"
+                    <h3 className="text-xl font-bold mb-3"
                       style={{ color: TEXT.PRIMARY }}>
                       {post.title}
                     </h3>
@@ -472,7 +418,7 @@ const HomePage = () => {
 
                     <div className="mt-6">
                       <button
-                        className="inline-flex items-center font-medium hover:underline transition-all duration-300"
+                        className="inline-flex items-center font-medium"
                         style={{ color: post.color }}
                       >
                         Đọc thêm
@@ -487,7 +433,7 @@ const HomePage = () => {
             <div className="text-center mt-12">
               <Link
                 to="/blog"
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border-2 transition-all duration-300 hover:shadow-lg"
+                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border-2"
                 style={{
                   borderColor: PRIMARY[500],
                   color: PRIMARY[500],
@@ -501,77 +447,12 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* User Roles Section */}
-        <section className="py-20" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
-                Dành cho mọi đối tượng
-              </h2>
-              <p className="text-lg lg:text-xl max-w-3xl mx-auto" style={{ color: TEXT.SECONDARY }}>
-                Giao diện và chức năng được thiết kế riêng cho từng vai trò sử dụng trong hệ thống
-              </p>
-            </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {userRoles.map((role, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 group border-2 border-transparent hover:border-current"
-                  style={{ '--tw-border-opacity': 0.1, borderColor: role.color }}
-                >
-                  <div className="text-center mb-6">
-                    <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300"
-                      style={{ backgroundColor: `${role.color}20` }}
-                    >
-                      <role.icon className="h-10 w-10" style={{ color: role.color }} />
-                    </div>
-                    <h3 className="text-2xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                      {role.role}
-                    </h3>
-                  </div>
-
-                  <p className="mb-6 text-center" style={{ color: TEXT.SECONDARY }}>
-                    {role.description}
-                  </p>
-
-                  <div className="mb-6">
-                    <h4 className="font-semibold mb-3" style={{ color: TEXT.PRIMARY }}>
-                      Chức năng chính:
-                    </h4>
-                    <ul className="space-y-2">
-                      {role.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-center">
-                          <FiCheckCircle className="h-4 w-4 mr-2" style={{ color: role.color }} />
-                          <span style={{ color: TEXT.SECONDARY }}>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <Link
-                    to={role.loginUrl}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 font-semibold rounded-xl border-2 transition-all duration-300 hover:shadow-lg group-hover:scale-105"
-                    style={{
-                      borderColor: role.color,
-                      color: 'white',
-                      backgroundColor: role.color
-                    }}
-                  >
-                    Đăng nhập
-                    <FiArrowRight className="w-4 h-4 ml-2" />
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Process Section */}
-        <section className="py-20" style={{ backgroundColor: PRIMARY[50] }}>
+        <section className="py-20" style={{ backgroundColor: BACKGROUND.DEFAULT }}>
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
+            <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
                 Quy trình hoạt động
               </h2>
@@ -650,44 +531,10 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20" style={{ backgroundColor: PRIMARY[500] }}>
-          <div className="container mx-auto px-4 text-center" data-aos="zoom-in">
-            <div className="max-w-4xl mx-auto text-white">
-              <h2 className="text-3xl lg:text-4xl font-bold mb-6">
-                Sẵn sàng bắt đầu?
-              </h2>
-              <p className="text-lg lg:text-xl mb-8 opacity-90">
-                Tham gia cùng chúng tôi để mang lại sự chăm sóc y tế tốt nhất cho học sinh.
-                Hệ thống được thiết kế để phục vụ tất cả các đối tượng trong cộng đồng trường học.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl bg-white text-current shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  style={{ color: PRIMARY[500] }}
-                >
-                  <FiUserCheck className="w-5 h-5 mr-2" />
-                  Đăng nhập ngay
-                </Link>
-                <a
-                  href="#contact"
-                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold rounded-xl border-2 border-white text-white hover:bg-white transition-all duration-300"
-                  style={{ '&:hover': { color: PRIMARY[500] } }}
-                >
-                  <FiPhone className="w-5 h-5 mr-2" />
-                  Liên hệ hỗ trợ
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Contact Section */}
-        <section id="contact" className="py-20" style={{ backgroundColor: BACKGROUND.NEUTRAL }}>
+        <section id="contact" className="py-20" style={{ backgroundColor: PRIMARY[50] }}>
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16" data-aos="fade-up">
+            <div className="text-center mb-16">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: TEXT.PRIMARY }}>
                 Liên hệ với chúng tôi
               </h2>

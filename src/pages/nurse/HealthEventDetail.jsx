@@ -273,7 +273,7 @@ const HealthEventDetail = () => {
                         style={{ backgroundColor: PRIMARY[500], color: 'white' }}
                     >
                         <FiArrowLeft className="mr-2 h-5 w-5 inline" />
-                        Quay lại danh sách
+                        Quay lại
                     </button>
                 </div>
             </div>
