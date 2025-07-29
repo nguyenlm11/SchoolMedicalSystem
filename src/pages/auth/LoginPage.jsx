@@ -69,7 +69,7 @@ const LoginPage = () => {
 
             if (result.success) {
                 const redirectMap = {
-                    admin: "/admin/dashboard",
+                    admin: "/admin/users",
                     schoolnurse: "/",
                     manager: "/manager/student-management",
                     parent: "/",

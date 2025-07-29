@@ -225,7 +225,7 @@ const HealthCheckDetail = () => {
                                 </p>
                             </div>
                         </div>
-                        <div className="flex space-x-3">
+                        {/* <div className="flex space-x-3">
                             <Link
                                 to={`/schoolnurse/health-check/${id}/edit`}
                                 className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
@@ -233,7 +233,7 @@ const HealthCheckDetail = () => {
                             >
                                 <FiEdit className="h-4 w-4 mr-2" />Chỉnh sửa
                             </Link>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

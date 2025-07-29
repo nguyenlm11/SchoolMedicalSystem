@@ -81,7 +81,7 @@ const EditableField = ({ label, value, icon: Icon, isEditing, onEdit, onSave, on
             <p className="text-sm font-medium mb-1" style={{ color: TEXT.SECONDARY }}>{label}</p>
             <p className="text-lg font-semibold flex items-center" style={{ color: TEXT.PRIMARY }}>
                 {Icon && <Icon className="h-5 w-5 mr-2" style={{ color: PRIMARY[500] }} />}
-                {value || "Chưa cập nhật"}
+                {value !== 'Unknown' ? value : "Chưa cập nhật"}
             </p>
             {canEdit && (
                 <button

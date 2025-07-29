@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PRIMARY, GRAY, TEXT, BACKGROUND, BORDER, ERROR, SUCCESS, WARNING, INFO } from '../../constants/colors';
-import { FiArrowLeft, FiEdit, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiUser, FiActivity, FiFileText, FiClock, FiCheckCircle, FiTablet, FiThermometer, FiHeart, FiWind, FiMail, FiUserCheck } from 'react-icons/fi';
+import { FiArrowLeft, FiTrash2, FiAlertTriangle, FiCalendar, FiMapPin, FiUser, FiActivity, FiFileText, FiClock, FiCheckCircle, FiTablet, FiThermometer, FiHeart, FiWind, FiMail, FiUserCheck } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import AlertModal from '../../components/modal/AlertModal';
 import ConfirmModal from '../../components/modal/ConfirmModal';
@@ -30,7 +30,7 @@ const STYLES = {
 const HealthEventDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, hasRole } = useAuth();
+    const { hasRole } = useAuth();
     const isNurse = hasRole('schoolnurse');
 
     React.useEffect(() => {
@@ -268,7 +268,7 @@ const HealthEventDetail = () => {
                         {error || "Sự kiện y tế không tồn tại"}
                     </p>
                     <button
-                        onClick={() => navigate('/schoolnurse/health-events')}
+                        onClick={() => navigate(-1)}
                         className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
                         style={{ backgroundColor: PRIMARY[500], color: 'white' }}
                     >
@@ -292,7 +292,7 @@ const HealthEventDetail = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <button
-                                onClick={() => navigate('/schoolnurse/health-events')}
+                                onClick={() => navigate(-1)}
                                 className="p-2 rounded-lg transition-all duration-200 hover:scale-105"
                                 style={{ backgroundColor: BACKGROUND.DEFAULT, border: `1px solid ${BORDER.DEFAULT}` }}
                             >
@@ -329,15 +329,6 @@ const HealthEventDetail = () => {
 
                             {isNurse && (
                                 <>
-                                    <button
-                                        onClick={() => navigate(`/schoolnurse/health-events/edit/${id}`)}
-                                        className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"
-                                        style={{ backgroundColor: PRIMARY[500], color: 'white' }}
-                                    >
-                                        <FiEdit className="mr-2 h-4 w-4" />
-                                        Chỉnh sửa
-                                    </button>
-
                                     <button
                                         onClick={() => setShowDeleteModal(true)}
                                         className="px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center"

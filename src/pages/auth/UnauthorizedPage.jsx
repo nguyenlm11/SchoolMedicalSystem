@@ -8,11 +8,11 @@ const UnauthorizedPage = ({ currentRole = null }) => {
 
     const handleGoBack = () => {
         const dashboardMap = {
-            admin: '/admin/dashboard',
-            manager: '/manager/dashboard',
-            staff: '/staff/dashboard',
-            parent: '/parent/dashboard',
-            student: '/student/dashboard'
+            admin: '/admin/users',
+            manager: '/manager/student-management',
+            staff: '/',
+            parent: '/',
+            student: '/'
         };
         const dashboard = dashboardMap[currentRole?.toLowerCase()];
         navigate(dashboard || '/', { replace: true });
