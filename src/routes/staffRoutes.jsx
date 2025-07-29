@@ -57,7 +57,7 @@ const staffRoutes = (
     {/* Health Check Routes */}
     <Route path="/schoolnurse/health-check" element={<HealthCheckManagement />} />
     <Route path="/schoolnurse/health-check/:id" element={<HealthCheckDetail />} />
-    <Route path="/schoolnurse/health-check-result/:id" element={<HealthCheckResult />} />
+    <Route path="/schoolnurse/health-check/:id/result" element={<HealthCheckResult />} />
     <Route path="/schoolnurse/health-check/create" element={<HealthCheckPlanCreate />} />
     <Route path="/schoolnurse/health-check-items" element={<HealthCheckCategoryManagement />} />
     <Route path="/schoolnurse/health-check/:id/process" element={<HealthCheckProcess />} />

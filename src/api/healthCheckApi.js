@@ -269,9 +269,24 @@ const healthCheckApi = {
     },
 
     // Lấy tất cả kết quả kiểm tra sức khỏe cho health check plan
-    getHealthCheckResults: async (healthCheckId, studentId) => {
+    getHealthCheckResults: async (healthCheckId) => {
         try {
-            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}&studentId=${studentId}`);
+            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy kết quả kiểm tra sức khỏe',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
+
+    // Lấy kết quả kiểm tra sức khỏe cho học sinh
+    getHealthCheckResultsByStudent: async (healthCheckId, studentId) => {
+        try {
+            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}`);
             return response.data;
         } catch (error) {
             return {
