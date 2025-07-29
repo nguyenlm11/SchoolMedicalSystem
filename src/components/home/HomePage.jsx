@@ -206,10 +206,10 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>MedSchool - Hệ thống quản lý y tế học đường</title>
-        <meta name="description" content="MedSchool - Hệ thống quản lý y tế học đường hiện đại nhất. Chúng tôi cung cấp giải pháp toàn diện cho việc chăm sóc sức khỏe học sinh, hỗ trợ phụ huynh, nhân viên y tế và ban quản lý trường học." />
+        <title>MeduCare - Hệ thống quản lý y tế học đường</title>
+        <meta name="description" content="MeduCare - Hệ thống quản lý y tế học đường hiện đại nhất. Chúng tôi cung cấp giải pháp toàn diện cho việc chăm sóc sức khỏe học sinh, hỗ trợ phụ huynh, nhân viên y tế và ban quản lý trường học." />
         <meta name="keywords" content="y tế học đường, quản lý y tế, sức khỏe học sinh, tiêm chủng học đường, khám sức khỏe định kỳ" />
-        <meta property="og:title" content="MedSchool - Hệ thống quản lý y tế học đường" />
+        <meta property="og:title" content="MeduCare - Hệ thống quản lý y tế học đường" />
         <meta property="og:description" content="Giải pháp toàn diện cho việc chăm sóc sức khỏe học sinh tại trường học" />
         <meta property="og:type" content="website" />
       </Helmet>
@@ -244,8 +244,8 @@ const HomePage = () => {
                 </div>
                 <div className="text-left">
                   <h1 className="text-3xl lg:text-5xl font-bold" style={{ color: TEXT.PRIMARY }}>
-                    <span style={{ color: PRIMARY[500] }}>Med</span>
-                    <span style={{ color: PRIMARY[600] }}>School</span>
+                    <span style={{ color: PRIMARY[500] }}>Medu</span>
+                    <span style={{ color: PRIMARY[600] }}>Care</span>
                   </h1>
                   <p className="text-lg" style={{ color: PRIMARY[600] }}>
                     Hệ thống quản lý y tế học đường
@@ -260,7 +260,7 @@ const HomePage = () => {
               </h2>
 
               <p className="text-lg lg:text-xl mb-8 leading-relaxed max-w-4xl mx-auto" style={{ color: TEXT.SECONDARY }}>
-                Chào mừng bạn đến với <strong>MedSchool</strong> - Hệ thống quản lý y tế học đường hiện đại nhất.
+                Chào mừng bạn đến với <strong>MeduCare</strong> - Hệ thống quản lý y tế học đường hiện đại nhất.
                 Chúng tôi cung cấp giải pháp toàn diện cho việc chăm sóc sức khỏe học sinh,
                 hỗ trợ phụ huynh, nhân viên y tế và ban quản lý trường học.
               </p>
@@ -292,7 +292,7 @@ const HomePage = () => {
                 Về chúng tôi
               </h2>
               <p className="text-lg lg:text-xl max-w-4xl mx-auto" style={{ color: TEXT.SECONDARY }}>
-                MedSchool được phát triển với mục tiêu mang lại hệ thống quản lý y tế học đường
+                MeduCare được phát triển với mục tiêu mang lại hệ thống quản lý y tế học đường
                 hiện đại, an toàn và hiệu quả nhất cho cộng đồng giáo dục Việt Nam
               </p>
             </div>
@@ -570,7 +570,7 @@ const HomePage = () => {
                 <h3 className="text-xl font-bold mb-2" style={{ color: TEXT.PRIMARY }}>
                   Email
                 </h3>
-                <p style={{ color: TEXT.SECONDARY }}>support@medschool.edu.vn</p>
+                <p style={{ color: TEXT.SECONDARY }}>support@meducare.edu.vn</p>
                 <p className="text-sm opacity-75" style={{ color: TEXT.SECONDARY }}>
                   Phản hồi trong 24h
                 </p>

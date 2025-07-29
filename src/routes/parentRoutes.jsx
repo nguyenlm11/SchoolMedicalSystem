@@ -16,6 +16,7 @@ import MedicationRequestDetail from "../pages/nurse/MedicationRequestDetail";
 import ChangePassword from "../pages/auth/ChangePassword";
 import HealthCheckSchedule from "../pages/parent/HealthCheckSchedule";
 import HealthCheckDetail from "../pages/parent/HealthCheckDetail";
+import HealthCheckResult from "../pages/parent/HealthCheckResult";
 import StudentMedicationUsageHistory from "../pages/parent/StudentMedicationUsageHistory";
 import MedicationUsageHistory from "../pages/nurse/MedicationUsageHistory";
 
@@ -51,7 +52,7 @@ const parentRoutes = (
     {/* Health check routes */}
     <Route path="/parent/health-check" element={<HealthCheckSchedule />} />
     <Route path="/parent/health-check/:id" element={<HealthCheckDetail />} />
-    <Route path="/parent/health-check/:id/results" element={<PlaceholderPage title="Kết quả kiểm tra chi tiết (đang phát triển)" />} />
+    <Route path="/parent/health-check/:id/results" element={<HealthCheckResult />} />
   </Route>
 );
 

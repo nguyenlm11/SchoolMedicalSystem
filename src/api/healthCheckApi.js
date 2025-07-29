@@ -269,9 +269,9 @@ const healthCheckApi = {
     },
 
     // Lấy tất cả kết quả kiểm tra sức khỏe cho health check plan
-    getHealthCheckResults: async (healthCheckId) => {
+    getHealthCheckResults: async (healthCheckId, studentId) => {
         try {
-            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}`);
+            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}&studentId=${studentId}`);
             return response.data;
         } catch (error) {
             return {
