@@ -61,14 +61,19 @@ const HealthCheckProcess = () => {
                     classItem.students
                         .filter(student => student.status === 'Confirmed')
                         .flatMap(student =>
-                            assignedItems.map(item => ({
-                                ...student,
-                                classId: classItem.classId,
-                                className: classItem.className,
-                                healthCheckItemId: item.healthCheckItemId,
-                                healthCheckItemName: item.healthCheckItemName,
-                                resultStatus: student.resultStatus || "NotChecked"
-                            }))
+                            assignedItems.map(item => {
+                                const resultItem = (resultsRes.success && Array.isArray(resultsRes.data)) ?
+                                    resultsRes.data.find(r => r.userId === student.studentId && r.healthCheckItemId === item.healthCheckItemId) : null;
+                                return {
+                                    ...student,
+                                    classId: classItem.classId,
+                                    className: classItem.className,
+                                    healthCheckItemId: item.healthCheckItemId,
+                                    healthCheckItemName: item.healthCheckItemName,
+                                    unit: resultItem?.unit || "",
+                                    resultStatus: student.resultStatus || "NotChecked"
+                                };
+                            })
                         )
                 ) : [];
             setStudents(allStudents);
@@ -444,6 +449,8 @@ const HealthCheckResult = ({ student, healthCheckResults }) => {
         r.userId === student.studentId && r.healthCheckItemId === student.healthCheckItemId
     );
 
+    console.log(resultDetails);
+
     return (
         <div className="space-y-6">
             <div className="p-4 rounded-xl border" style={{ backgroundColor: PRIMARY[50], borderColor: PRIMARY[200] }}>
@@ -475,7 +482,7 @@ const HealthCheckResult = ({ student, healthCheckResults }) => {
                                         Kết quả:
                                     </label>
                                     <p className="text-base font-semibold mt-1" style={{ color: TEXT.PRIMARY }}>
-                                        {item.value}
+                                        {item.value} {resultDetails.unit}
                                     </p>
                                 </div>
                                 {item.notes && (
@@ -515,6 +522,7 @@ const HealthCheckForm = ({ student, onSubmit, setAlertModal }) => {
                 value: form.value,
                 comments: form.comments
             });
+            setForm({ value: '', comments: '' });
         } catch (error) {
             setAlertModal({ isOpen: true, type: 'error', message: error.message || 'Có lỗi xảy ra khi lưu kết quả khám.' });
         }
@@ -524,43 +532,35 @@ const HealthCheckForm = ({ student, onSubmit, setAlertModal }) => {
     let label = "Kết quả khám *";
     let type = "text";
     let placeholder = "Nhập kết quả khám";
-    let unit = "";
+    let unit = student.unit || "";
 
     if (name.trim().includes('mắt trái')) {
         label = "Thị lực mắt trái *";
         placeholder = "Nhập kết quả thị lực";
-        unit = "";
     } else if (name.trim().includes('mắt phải')) {
         label = "Thị lực mắt phải *";
         placeholder = "Nhập kết quả thị lực";
-        unit = "";
     } else if (name.trim().includes('tai trái')) {
         label = "Thính lực tai trái *";
         placeholder = "Nhập kết quả nghe";
-        unit = "dB";
     } else if (name.trim().includes('tai phải')) {
         label = "Thính lực tai phải *";
         placeholder = "Nhập kết quả nghe";
-        unit = "dB";
     } else if (name.trim().includes('chiều cao')) {
         label = "Chiều cao *";
         type = "number";
         placeholder = "Nhập chiều cao";
-        unit = "cm";
     } else if (name.trim().includes('cân nặng')) {
         label = "Cân nặng *";
         type = "number";
         placeholder = "Nhập cân nặng";
-        unit = "kg";
     } else if (name.trim().includes('huyết áp')) {
         label = "Huyết áp *";
         placeholder = "Nhập kết quả đo huyết áp";
-        unit = "mmHg";
     } else if (name.trim().includes('nhịp tim')) {
         label = "Nhịp tim *";
         type = "number";
         placeholder = "Nhập kết quả đo nhịp tim";
-        unit = "bpm";
     }
 
     return (

@@ -136,8 +136,8 @@ const HealthCheckDetail = () => {
                             <span>Xem hồ sơ</span>
                         </Link>
                         <Link
-                            to={`/schoolnurse/health-check-result/${student.studentId}`}
-                            state={{ healthCheckId: id }}
+                            to={`/schoolnurse/health-check/${id}/result`}
+                            state={{ studentId: student.studentId }}
                             onClick={() => setIsOpen(false)}
                             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
                             style={{ color: ERROR[600] }}
@@ -338,7 +338,7 @@ const HealthCheckDetail = () => {
                                 Hạng mục kiểm tra sức khỏe
                             </h3>
 
-                            {user?.role === 'schoolnurse' && (() => {
+                            {user?.role === 'schoolnurse' && healthCheck.status === 'Scheduled' && (() => {
                                 const assignments = healthCheck.itemNurseAssignments || [];
                                 const assignedItems = assignments.filter(a => a.nurseId === user.id);
                                 if (assignedItems.length > 0) {
