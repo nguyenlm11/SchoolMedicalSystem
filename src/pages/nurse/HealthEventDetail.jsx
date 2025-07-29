@@ -268,12 +268,12 @@ const HealthEventDetail = () => {
                         {error || "Sự kiện y tế không tồn tại"}
                     </p>
                     <button
-                        onClick={() => navigate('/schoolnurse/health-events')}
+                        onClick={() => navigate(-1)}
                         className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
                         style={{ backgroundColor: PRIMARY[500], color: 'white' }}
                     >
                         <FiArrowLeft className="mr-2 h-5 w-5 inline" />
-                        Quay lại danh sách
+                        Quay lại
                     </button>
                 </div>
             </div>
@@ -292,7 +292,7 @@ const HealthEventDetail = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <button
-                                onClick={() => navigate('/schoolnurse/health-events')}
+                                onClick={() => navigate(-1)}
                                 className="p-2 rounded-lg transition-all duration-200 hover:scale-105"
                                 style={{ backgroundColor: BACKGROUND.DEFAULT, border: `1px solid ${BORDER.DEFAULT}` }}
                             >
