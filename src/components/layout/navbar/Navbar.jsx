@@ -270,7 +270,7 @@ const Navbar = () => {
                                     className="font-bold text-xl sm:text-2xl lg:text-2xl 2xl:text-3xl tracking-tight leading-none transition-all duration-300 group-hover:text-opacity-90"
                                     style={{ color: COMMON.WHITE }}
                                 >
-                                    MedSchool
+                                    MeduCare
                                 </span>
                                 <span
                                     className="text-xs sm:text-sm font-medium hidden sm:block transition-all duration-300 group-hover:text-opacity-80"

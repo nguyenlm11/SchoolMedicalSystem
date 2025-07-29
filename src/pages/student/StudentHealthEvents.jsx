@@ -318,14 +318,26 @@ const StudentHealthEvents = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-center" style={{ width: '100px' }}>
-                      <button
-                        onClick={() => navigate(`/student/student-health-events-detail/${event.id}`)}
-                        className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                        style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
-                        title="Xem chi tiết"
-                      >
-                        <FiEye className="w-4 h-4" />
-                      </button>
+                      {user.role === 'parent' && (
+                        <button
+                          onClick={() => navigate(`/parent/student-health-events-detail/${event.id}`)}
+                          className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                          style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                          title="Xem chi tiết"
+                        >
+                          <FiEye className="w-4 h-4" />
+                        </button>
+                      )}
+                      {user.role === 'student' && (
+                        <button
+                          onClick={() => navigate(`/student/student-health-events-detail/${event.id}`)}
+                          className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
+                          style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
+                          title="Xem chi tiết"
+                        >
+                          <FiEye className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

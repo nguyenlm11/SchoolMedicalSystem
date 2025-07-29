@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FiCalendar, FiSearch, FiEye, FiAlertCircle, FiCheckCircle, FiAlertTriangle, FiChevronRight, FiChevronLeft, FiUsers } from "react-icons/fi";
+import { FiCalendar, FiSearch, FiEye, FiAlertCircle, FiCheckCircle, FiAlertTriangle, FiChevronRight, FiChevronLeft, FiUsers, FiFileText } from "react-icons/fi";
 import { PRIMARY, GRAY, SUCCESS, WARNING, ERROR, TEXT, BACKGROUND } from "../../constants/colors";
 import Loading from "../../components/Loading";
 import { useAuth } from "../../utils/AuthContext";
@@ -300,7 +300,7 @@ const HealthCheckSchedule = () => {
                                         <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-1/6" style={{ color: TEXT.PRIMARY }}>
                                             Trạng thái
                                         </th>
-                                        <th className="py-4 px-6 text-left text-sm font-semibold uppercase tracking-wider w-40" style={{ color: TEXT.PRIMARY }}>
+                                        <th className="py-4 px-6 text-center text-sm font-semibold uppercase tracking-wider w-48" style={{ color: TEXT.PRIMARY }}>
                                             Thao tác
                                         </th>
                                     </tr>
@@ -377,17 +377,35 @@ const HealthCheckSchedule = () => {
                                             <td className="py-4 px-6 w-1/6">
                                                 {getStatusBadge(mapApiStatusToComponentStatus(plan.status))}
                                             </td>
-                                            <td className="py-4 px-6 w-40">
-                                                <div className="flex items-center space-x-2">
+                                            <td className="py-4 px-3 w-48">
+                                                <div className="flex items-center justify-center space-x-1.5">
                                                     <Link
                                                         to={`/parent/health-check/${plan.id}`}
                                                         state={{ studentId: selectedStudentData?.id }}
-                                                        className="flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium"
+                                                        className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-sm hover:opacity-80"
                                                         title="Xem chi tiết"
-                                                        style={{ color: PRIMARY[700], border: `1px solid ${PRIMARY[700]}` }}
+                                                        style={{
+                                                            color: PRIMARY[700],
+                                                            border: `1px solid ${PRIMARY[700]}`,
+                                                            backgroundColor: 'white'
+                                                        }}
                                                     >
                                                         <FiEye className="h-3 w-3" />
                                                         <span>Chi tiết</span>
+                                                    </Link>
+                                                    <Link
+                                                        to={`/parent/health-check/${plan.id}/results`}
+                                                        state={{ studentId: selectedStudentData?.id }}
+                                                        className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:shadow-sm hover:opacity-80"
+                                                        title="Xem kết quả"
+                                                        style={{
+                                                            color: SUCCESS[700],
+                                                            border: `1px solid ${SUCCESS[700]}`,
+                                                            backgroundColor: 'white'
+                                                        }}
+                                                    >
+                                                        <FiFileText className="h-3 w-3" />
+                                                        <span>Kết quả</span>
                                                     </Link>
                                                 </div>
                                             </td>

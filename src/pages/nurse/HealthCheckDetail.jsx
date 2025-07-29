@@ -135,6 +135,16 @@ const HealthCheckDetail = () => {
                             <FiEye className="w-4 h-4 flex-shrink-0" />
                             <span>Xem hồ sơ</span>
                         </Link>
+                        <Link
+                            to={`/schoolnurse/health-check-result/${student.studentId}`}
+                            state={{ healthCheckId: id }}
+                            onClick={() => setIsOpen(false)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-150"
+                            style={{ color: ERROR[600] }}
+                        >
+                            <FiEye className="w-4 h-4 flex-shrink-0" />
+                            <span>Xem kết quả</span>
+                        </Link>
                     </div>
                 )}
             </div>
