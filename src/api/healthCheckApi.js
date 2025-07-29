@@ -267,6 +267,133 @@ const healthCheckApi = {
             };
         }
     },
+
+    // Lấy tất cả kết quả kiểm tra sức khỏe cho health check plan
+    getHealthCheckResults: async (healthCheckId) => {
+        try {
+            const response = await apiClient.get(`/health-checks/health-check-results?healthCheckId=${healthCheckId}`);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Không thể lấy kết quả kiểm tra sức khỏe',
+                data: [],
+                errors: [error.message]
+            };
+        }
+    },
+
+    // Khám thị lực mắt trái
+    submitLeftVisionResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/vision/left`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả khám thị lực mắt trái',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Khám thị lực mắt phải
+    submitRightVisionResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/vision/right`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả khám thị lực mắt phải',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Khám thính lực tai trái
+    submitLeftHearingResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/hearing/left`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả khám thính lực tai trái',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Khám thính lực tai phải
+    submitRightHearingResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/hearing/right`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả khám thính lực tai phải',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Đo chiều cao
+    submitHeightResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/physical/height`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả đo chiều cao',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Đo cân nặng
+    submitWeightResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/physical/weight`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả đo cân nặng',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Đo huyết áp
+    submitBloodPressureResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/vital-sign/blood-pressure`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả đo huyết áp',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    },
+
+    // Đo nhịp tim
+    submitHeartRateResult: async (healthCheckId, data) => {
+        try {
+            const response = await apiClient.post(`/health-checks/${healthCheckId}/vital-sign/heart-rate`, data);
+            return response.data;
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || 'Không thể lưu kết quả đo nhịp tim',
+                errors: [error.response?.data?.message || error.message]
+            };
+        }
+    }
 };
 
 export default healthCheckApi; 

@@ -250,18 +250,17 @@ const HealthCheckPlanCreate = () => {
         if (!validateAllSteps()) return;
         setLoading(true);
         try {
-            const scheduledDateISO = formData.scheduledDate ? new Date(formData.scheduledDate).toISOString() : "";
-            const startTimeISO = formData.startTime ? new Date(`${formData.scheduledDate}T${formData.startTime}`).toISOString() : "";
-            const endTimeISO = formData.endTime ? new Date(`${formData.scheduledDate}T${formData.endTime}`).toISOString() : "";
+            const startTimeString = `${formData.scheduledDate}T${formData.startTime}:00.000Z`;
+            const endTimeString = `${formData.scheduledDate}T${formData.endTime}:00.000Z`;
             const requestData = {
                 healthCheckItemIds: formData.healthCheckItemIds,
                 title: formData.title,
                 description: formData.description,
                 responsibleOrganizationName: formData.responsibleOrganizationName,
                 location: formData.location,
-                scheduledDate: scheduledDateISO,
-                startTime: startTimeISO,
-                endTime: endTimeISO,
+                scheduledDate: formData.scheduledDate,
+                startTime: startTimeString,
+                endTime: endTimeString,
                 notes: formData.notes,
                 classIds: formData.classIds
             };
