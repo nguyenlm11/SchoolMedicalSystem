@@ -58,7 +58,7 @@ const StudentHealthEvents = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-  const studentId = user.id || id;
+  const studentId = id || user.id;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState("all");

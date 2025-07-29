@@ -314,13 +314,13 @@ const VaccinationDetail = () => {
                         <div className="flex space-x-3">
                             {userRole === "schoolnurse" && (
                                 <>
-                                    <Link
+                                    {/* <Link
                                         to={`/schoolnurse/vaccination/${id}/edit`}
                                         className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
                                         style={{ backgroundColor: PRIMARY[500], color: TEXT.INVERSE }}
                                     >
                                         <FiEdit className="h-4 w-4 mr-2" />Chỉnh sửa
-                                    </Link>
+                                    </Link> */}
 
                                     {(vaccination?.classNurseAssignments?.some(assignment => assignment.nurseId === user?.id) && vaccination.status === "Scheduled") && (
                                         <Link

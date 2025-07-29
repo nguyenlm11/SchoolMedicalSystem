@@ -37,11 +37,11 @@ const AdminLayout = () => {
     }
 
     const menuItems = [
-        {
-            path: "/admin/dashboard",
-            name: "Tổng quan",
-            icon: <FiHome className="w-5 h-5" />,
-        },
+        // {
+        //     path: "/admin/dashboard",
+        //     name: "Tổng quan",
+        //     icon: <FiHome className="w-5 h-5" />,
+        // },
         {
             path: "/admin/users",
             name: "Người dùng",

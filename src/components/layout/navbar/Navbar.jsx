@@ -104,7 +104,6 @@ const Navbar = () => {
                     category: "Phụ huynh",
                     links: [
                         { to: "/parent/health-profile", label: "Danh sách hồ sơ sức khỏe", desc: "Xem tất cả hồ sơ y tế" },
-                        { to: "/parent/health-profile/new", label: "Khai báo hồ sơ sức khỏe", desc: "Tạo hồ sơ mới cho con em" },
                     ],
                 },
                 {
@@ -407,7 +406,7 @@ const Navbar = () => {
                                         style={{ backgroundColor: `${PRIMARY[700]}`, backdropFilter: 'blur(15px)', borderColor: `${PRIMARY[500]}` }}
                                     >
                                         <div className="p-5 lg:p-6 space-y-3">
-                                            <Link
+                                            {/* <Link
                                                 to={getDashboardLink()}
                                                 onClick={closeUserDropdown}
                                                 className="block w-full p-2 rounded-xl transition-all duration-300 font-medium text-base transform hover:scale-[1.02]"
@@ -416,7 +415,7 @@ const Navbar = () => {
                                                 onMouseLeave={(e) => { e.target.style.backgroundColor = 'transparent' }}
                                             >
                                                 Tổng quan
-                                            </Link>
+                                            </Link> */}
 
                                             <Link
                                                 to={getProfileLink()}
