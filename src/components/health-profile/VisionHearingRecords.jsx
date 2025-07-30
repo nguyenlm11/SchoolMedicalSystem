@@ -16,10 +16,18 @@ const RecordCard = ({ title, icon, leftValue, rightValue, date, comments, isVisi
     };
     const isValidDate = (date) => date && date !== '0001-01-01T00:00:00';
 
+    const handleHearing = (value) => {
+        if (value === 'normal') return 'Bình thường';    // <26
+        if (value === 'mild') return 'Yếu';             //26~40
+        if (value === 'moderate') return 'Trung bình'; //41~65
+        if (value === 'severe') return 'Nặng';        //>66
+        return 'Không có dữ liệu';
+    }
+
     const formatValue = (value) => {
         if (!isValidValue(value)) return 'Không có dữ liệu';
         if (isVision && typeof value === 'number') { return `${value}/10` }
-        return `~${value}`;
+        return handleHearing(value);
     };
 
     return (
