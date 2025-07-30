@@ -5,7 +5,7 @@ import { FiRadio, FiX } from 'react-icons/fi';
 const ViewAllHearingModal = ({ isOpen, onClose, hearingRecords = [] }) => {
     if (!isOpen) return null;
 
-    const sortedHearingRecords = Array.isArray(hearingRecords) 
+    const sortedHearingRecords = Array.isArray(hearingRecords)
         ? [...hearingRecords].sort((a, b) => new Date(b.checkDate) - new Date(a.checkDate))
         : [];
 
@@ -18,6 +18,14 @@ const ViewAllHearingModal = ({ isOpen, onClose, hearingRecords = [] }) => {
             onClose();
         }
     };
+
+    const handleHearing = (value) => {
+        if (value === 'normal') return 'Bình thường';    // <26
+        if (value === 'mild') return 'Yếu';             //26~40
+        if (value === 'moderate') return 'Trung bình'; //41~65
+        if (value === 'severe') return 'Nặng';        //>66
+        return 'Không có dữ liệu';
+    }
 
     return (
         <div
@@ -89,20 +97,14 @@ const ViewAllHearingModal = ({ isOpen, onClose, hearingRecords = [] }) => {
                                                 {new Date(record.checkDate).toLocaleDateString('vi-VN')}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {record.leftEar > 0 && record.leftEar !== 'Not recorded' 
-                                                    ? `${record.leftEar}/10` 
-                                                    : 'Không có dữ liệu'
-                                                }
+                                                {handleHearing(record.leftEar)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold" style={{ color: TEXT.PRIMARY }}>
-                                                {record.rightEar > 0 && record.rightEar !== 'Not recorded' 
-                                                    ? `${record.rightEar}/10` 
-                                                    : 'Không có dữ liệu'
-                                                }
+                                                {handleHearing(record.rightEar)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center" style={{ color: TEXT.SECONDARY }}>
-                                                {record.comments && record.comments !== 'Not recorded' 
-                                                    ? record.comments 
+                                                {record.comments && record.comments !== 'Not recorded'
+                                                    ? record.comments
                                                     : 'Không có ghi chú'
                                                 }
                                             </td>
